@@ -1,0 +1,22 @@
+{
+  "name": "zp1",
+  "version": "0.0.1",
+  "description": "Plankton counting tool",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/natw2012/ZP1.git"
+  },
+  "author": "Nathaniel Wong",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/natw2012/ZP1/issues"
+  },
+  "homepage": "https://github.com/natw2012/ZP1#readme",
+  "devDependencies": {
+    "electron": "^2.0.2"
+  }
+}
