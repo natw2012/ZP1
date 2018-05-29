@@ -2,9 +2,9 @@
   "name": "zp1",
   "version": "0.0.1",
   "description": "Plankton counting tool",
-  "main": "main.js",
+  "main": "photon.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron app/main.js"
   },
   "repository": {
     "type": "git",
@@ -18,5 +18,9 @@
   "homepage": "https://github.com/natw2012/ZP1#readme",
   "devDependencies": {
     "electron": "^2.0.2"
+  },
+  "dependencies": {
+    "electron-photon": "^1.1.6",
+    "mysql": "^2.15.0"
   }
 }
