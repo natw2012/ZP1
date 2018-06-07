@@ -20,7 +20,9 @@
     "electron": "^2.0.2"
   },
   "dependencies": {
+    "canvas": "^1.6.11",
     "electron-photon": "^1.1.6",
+    "fabric": "^2.3.1",
     "jquery": "^3.3.1",
     "mysql": "^2.15.0"
   }
