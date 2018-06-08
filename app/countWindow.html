@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Count</title>
+    <!-- custom css -->
+    <link rel="stylesheet" href="css/measureWindow.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+        crossorigin="anonymous">;
+
+</head>
+
+<body>
+    <nav id="nav">
+        <div id="title-bar">Count</div>
+        <div id="title-bar-btns">
+            <div id="min-btn">-
+                <span></span>
+            </div>
+            <div id="max-btn">+
+                <span></span>
+            </div>
+            <div id="close-btn">&times
+                <span></span>
+            </div>
+        </div>
+    </nav>
+    <div id="tool-bar">
+        <label>Sample #:</label>
+        <select id="sampleNum"></select>
+        <label>Type:</label>
+        <select id="speciesSelect">
+            <option value="">Select Species</option>
+        </select>
+        <label>Count:</label>
+        <label id="count"></label>
+    </div>
+    <div id="tool-bar">
+        <button type="submit" id="enter">Enter</button>
+        <button type="submit" id="clear">Clear</button>
+        <button type="submit" id="delete">Delete</button>
+    </div>
+    
+    <div id="container"></div>
+    <div id="canvasContainer">
+        <canvas id="canvas" width="400" height="400" style="border: solid 1px"></canvas>
+    </div>
+
+    <script src="js/titlebar.js"></script>
+    <script src="js/count.js"></script>
+</body>
+
+</html>

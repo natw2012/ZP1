@@ -1,6 +1,4 @@
 var fabric = require('fabric').fabric;
-var rect = require("./js/drawRect"); //Path makes no sense, consider making custom module
-var lin = require("./js/drawLine");
 
 var calibrationRatio;
 var pixelLength;
@@ -25,6 +23,8 @@ function onObjectScaled(e) {
     shape.width = shape.scaleX * shape.width;
     shape.height = shape.scaleY * shape.height;
     shape.radius = shape.radius * shape.scaleX;
+    shape.rx = shape.rx * shape.scaleX;
+    shape.ry = shape.ry * shape.scaleY;
     shape.scaleX = 1;
     shape.scaleY = 1;
     
@@ -39,6 +39,9 @@ function onObjectScaled(e) {
         calcArea(shape);
     }
     else if (shape.type === "triangle") {
+        calcArea(shape);
+    }
+    else if (shape.type === "ellipse"){
         calcArea(shape);
     }
 }
@@ -68,6 +71,9 @@ function calcArea(obj) {
     else if(type === "line"){
         return 0;
     }
+    else if(type === "ellipse") {
+        return ellipseArea(obj);
+    }
 
 }
 
@@ -87,6 +93,13 @@ function circleArea(circ) {
 //Calc Area of Triangle
 function triangleArea(tri) {
     var area = tri.width * tri.height / 2 * Math.pow(calibrationRatio, 2);
+    document.getElementById("area").innerHTML = area.toFixed(2);
+    return area;
+}
+//Calc Area of Ellipse
+function ellipseArea(el) {
+    console.log(el.rx,el.ry,Math.PI,Math.pow(calibrationRatio, 2));
+    var area = el.rx * el.ry * Math.PI * Math.pow(calibrationRatio, 2);
     document.getElementById("area").innerHTML = area.toFixed(2);
     return area;
 }
@@ -172,7 +185,18 @@ function drawTriangle() {
     });
     canvas.add(triangle);
 }
-
+function drawEllipse() {
+    var ellipse = new fabric.Ellipse({
+        left: 100,
+        top: 100,
+        fill: 'transparent',
+        stroke: 'red',
+        strokeWidth: 3,
+        rx: 100,
+        ry: 50,
+    });
+    canvas.add(ellipse);
+}
 //Draw controller 
 function draw() {
     var shape = getShape();
@@ -188,6 +212,9 @@ function draw() {
     }
     else if (shape === "Rectangle") {
         drawRect();
+    }
+    else if (shape === "Ellipse") {
+        drawEllipse();
     }
 }
 
