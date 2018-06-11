@@ -17,8 +17,6 @@ function loadSpeciesDropdown() {
             console.log(err.code);
             console.log(err.fatal);
         }
-
-
         var dropdown = document.getElementById("speciesSelect");
         var sql = "SELECT name FROM species";
         con.query(sql, function (err, result, fields) {
@@ -29,16 +27,15 @@ function loadSpeciesDropdown() {
                 option = document.createElement("option");
                 option.text = result[i].name;
                 option.id = result[i].name;
-
                 document.getElementById("speciesSelect").appendChild(option);
             }
-
         });
     });
 }
-function deleteCircle() {
-    canvas.remove(canvas.getActiveObject());
-    subCount();
+function getSpecies() {
+    var e = document.getElementById("speciesSelect");
+    var text = e.options[e.selectedIndex].value;
+    return text;
 }
 function clearCanvas(event) {
     canvas.clear();
@@ -48,53 +45,6 @@ function resizeCanvas() {
     canvas.setHeight(window.innerHeight);
     canvas.renderAll();
 }
-function getSpecies() {
-    var e = document.getElementById("speciesSelect");
-    console.log(e);
-    console.log(e.selectedIndex);
-    console.log(e.options[e.selectedIndex]);
-    var text = e.options[e.selectedIndex].value;
-    return text;
-}
-
-function addCount() {
-    con.connect(function (err) {
-        // in case of error
-        if (err) {
-            console.log(err.code);
-            console.log(err.fatal);
-        }
-
-        var species = getSpecies();
-        var sql = "INSERT INTO count SET species = ?";
-        con.query(sql, species, function (err, result) {
-            if (err) throw err;
-            console.log(result);
-            markerID = result.insertId;
-            console.log(markerID);
-        });
-    });
-    getCount();
-}
-
-// function subCount() {
-//     con.connect(function (err) {
-//         // in case of error
-//         if (err) {
-//             console.log(err.code);
-//             console.log(err.fatal);
-//         }
-
-//         // var subID = canvas.getActiveObject.id;
-//         // console.log(subID);
-//         var sql = "DELETE FROM count WHERE id = ?";
-//         // con.query(sql, subID, function (err, result) {
-//         //     if (err) throw err;
-//         //     console.log(result);
-//         // });
-//     });
-//     getCount();
-// }
 function getCount() {
     con.connect(function (err) {
         // in case of error
@@ -113,40 +63,47 @@ function getCount() {
             }
         });
     });
-
 }
-function drawDot() {
-    var pointer = canvas.getPointer(event.e);
-    addCount();
-    var circle = new fabric.Circle({
-        left: pointer.x,
-        top: pointer.y,
-        fill: 'red',
-        radius: 5,
-        lockMovementX: true,
-        lockMovementY: true,
-        lockRotation: true,
-        lockScalingFlip: true,
-        lockScalingX: true,
-        lockScalingY: true,
-        lockUniScaling: true,
-    });
-    // let obj = { id: markerID };
-    // console.log(markerID,obj.id);
-    circle.setControlsVisibility({
-        bl: false,
-        br: false,
-        tl: false,
-        tr: false,
-        mt: false,
-        mb: false,
-        ml: false,
-        mr: false,
-        mtr: false,
-    });
-    canvas.add(circle);
 
+function addCount(cakkbacj)
+
+async function newCount() {
+    addCount()
+        .then((value))
+    drawDot();
 }
+function addCount() {
+    return new Promise(function (resolve, reject) {
+        var species = getSpecies();
+        var sql = "INSERT INTO count SET species = ?";
+        var returnValue = "";
+        con.query(sql, function (error, rows) {
+            if (error) {
+                returnValue = "";
+            }
+            else {
+
+            }
+        })
+    })
+    con.connect(function (err) {
+        // in case of error
+        if (err) {
+            console.log(err.code);
+            console.log(err.fatal);
+        }
+
+
+        con.query(sql, species, function (err, result) {
+            if (err) throw err;
+            markerID = result.insertId;
+            console.log(markerID);
+        });
+    });
+    getCount();
+}
+
+
 
 function init() {
     canvas = new fabric.Canvas('canvas');
@@ -155,10 +112,10 @@ function init() {
     loadSpeciesDropdown();
     getCount();
     document.getElementById("clear").addEventListener('click', clearCanvas, false);
-    document.getElementById("delete").addEventListener('click', deleteCircle, false);
+    // document.getElementById("delete").addEventListener('click', deleteCircle, false);
     document.getElementById("speciesSelect").addEventListener('change', getCount);
     canvas.on('mouse:dblclick', function (options) {
-        drawDot();
+        // drawDot();
     });
 }
 
