@@ -20,10 +20,13 @@
     "electron": "^2.0.2"
   },
   "dependencies": {
+    "bootstrap": "^4.1.1",
     "canvas": "^1.6.11",
     "electron-photon": "^1.1.6",
     "fabric": "^2.3.1",
     "jquery": "^3.3.1",
-    "mysql": "^2.15.0"
+    "mysql": "^2.15.0",
+    "popper.js": "^1.14.3",
+    "randomcolor": "^0.5.3"
   }
 }

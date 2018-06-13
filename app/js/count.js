@@ -1,5 +1,6 @@
 var fabric = require('fabric').fabric;
 var mysql = require('mysql');
+var randomColor = require('randomcolor');
 
 var markerID;
 var speciesOption = [];
@@ -13,9 +14,7 @@ var con = mysql.createConnection({
 
 //Should implement ability to choose colours in dashboard 
 function random_rgba() {
-    var o = Math.round, r = Math.random, s = 255;
-    console.log('rgba(' + o(r()*s) + ',' + o(r()*s) + ',' + o(r()*s) + ',' + r().toFixed(1) + ')');
-    return 'rgba(' + o(r()*s) + ',' + o(r()*s) + ',' + o(r()*s) + ',' + r().toFixed(1) + ')';
+    return randomColor(); //Random Color Library
 }
 function loadSpeciesDropdown() {
     con.connect(function (err) {
@@ -24,8 +23,6 @@ function loadSpeciesDropdown() {
             console.log(err.code);
             console.log(err.fatal);
         }
-
-
         var dropdown = document.getElementById("speciesSelect");
         var sql = "SELECT name FROM species";
         con.query(sql, function (err, result, fields) {
@@ -127,7 +124,7 @@ function getCount() {
 function drawDot() {
     var pointer = canvas.getPointer(event.e);
     var speciesColor;
-    for(var i = 0;speciesOption[i] != null; i++){
+    for (var i = 0; speciesOption[i] != null; i++) {
         if (getSpecies() === speciesOption[i].id)
             speciesColor = speciesOption[i].fill;
 

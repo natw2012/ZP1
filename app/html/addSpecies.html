@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Add Species</title>
+    <!-- <script>const Photon = require("electron-photon");</script>  -->
+    <link rel="stylesheet" href="../../node_modules/bootstrap/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../../node_modules/bootstrap/dist/js/bootstrap.min.js">
+</head>
+
+<body>
+    <nav id="nav">
+        <h1 id="title-bar">Add Species</h1>
+    </nav>
+    <form>
+        <div class="form-group">
+            <label for="speciesCode">Species Code[4]</label>
+            <input type="text" class="form-control" id="speciesCode" value="">  
+        </div>
+        <div class="form-group">
+                <label for="speciesAbbrev">Species Abbreviation</label>
+                <input type="text" class="form-control" id="specieAbbrev" value="">
+            </div>
+        <div class="form-group">
+            <label for="speciesName">Species Name</label>
+            <input type="text" class="form-control" id="speciesName" value="">
+        </div>
+        <div class="form-actions">
+            <button id="addSpeciesBtn" type="submit" class="btn btn-system btn-active">Add</button>
+        </div>
+    </form>
+    <script type="text/javascript" src="../js/addSpecies.js"></script>
+</body>
+
+</html>
