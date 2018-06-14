@@ -1,8 +1,18 @@
 var fabric = require('fabric').fabric;
+var randomColor = require('randomcolor');
 
 var calibrationRatio;
 var pixelLength;
 var realLength;
+var speciesOption = [];
+
+console.log(window.location.href );
+var con = require('./js/config.js').localConnect();
+
+//Should implement ability to choose colours in dashboard 
+function random_rgba() {
+    return randomColor(); //Random Color Library
+}
 
 //Clear Canvas
 function clearCanvas(event) {
@@ -14,6 +24,51 @@ function resizeCanvas() {
     canvas.setWidth(window.innerWidth);
     canvas.setHeight(window.innerHeight);
     canvas.renderAll();
+}
+
+function lengthOrArea(){
+    var shape = getShape();
+
+    console.log(shape);
+    if(shape === 'Line'){
+        document.querySelector('#lengthOutputLbl').style.display = 'initial';
+        document.querySelector('#lengthOutput').style.display = 'initial';
+        document.querySelector('#areaOutputLbl').style.display = 'none';
+        document.querySelector('#areaOutput').style.display = 'none';
+        
+    }
+    else{
+        document.querySelector('#lengthOutputLbl').style.display = 'none';
+        document.querySelector('#lengthOutput').style.display = 'none';
+        document.querySelector('#areaOutputLbl').style.display = 'initial';
+        document.querySelector('#areaOutput').style.display = 'initial';
+    }
+}
+
+function loadSpeciesDropdown() {
+    con.connect(function (err) {
+        // in case of error
+        if (err) {
+            console.log(err.code);
+            console.log(err.fatal);
+        }
+        var dropdown = document.getElementById("speciesSelect");
+        var sql = "SELECT name FROM species";
+        con.query(sql, function (err, result, fields) {
+            if (err) throw err;
+            console.log(result);
+            var option;
+            for (var i = 0; result[i] != null; i++) {
+                option = document.createElement("option");
+                option.text = result[i].name;
+                option.id = result[i].name;
+                option.fill = random_rgba();
+                speciesOption.push(option);
+                document.getElementById("speciesSelect").appendChild(option);
+            }
+
+        });
+    });
 }
 
 function onObjectScaled(e) {
@@ -81,33 +136,33 @@ function calcArea(obj) {
 function rectArea(rect) {
     //Slight measuring issue with rect.width = inside perimeter while line.width = outside
     var area = rect.width * rect.height * Math.pow(calibrationRatio, 2);
-    document.getElementById("area").innerHTML = area.toFixed(2);
+    document.getElementById("areaOutput").value = area.toFixed(2);
     return area;
 }
 //Calc Area of Circle
 function circleArea(circ) {
     var area = Math.PI * Math.pow(circ.radius, 2) * Math.pow(calibrationRatio, 2);
-    document.getElementById("area").innerHTML = area.toFixed(2);
+    document.getElementById("areaOutput").value = area.toFixed(2);
     return area;
 }
 //Calc Area of Triangle
 function triangleArea(tri) {
     var area = tri.width * tri.height / 2 * Math.pow(calibrationRatio, 2);
-    document.getElementById("area").innerHTML = area.toFixed(2);
+    document.getElementById("areaOutput").value = area.toFixed(2);
     return area;
 }
 //Calc Area of Ellipse
 function ellipseArea(el) {
     console.log(el.rx,el.ry,Math.PI,Math.pow(calibrationRatio, 2));
     var area = el.rx * el.ry * Math.PI * Math.pow(calibrationRatio, 2);
-    document.getElementById("area").innerHTML = area.toFixed(2);
+    document.getElementById("areaOutput").value = area.toFixed(2);
     return area;
 }
 
 //Calculate the pixel to measurement ratio eg. cm/pix
 function pixelToDistanceRatio() {
     calibrationRatio = Number(document.getElementById("calibrateTextBox").value) / canvas.getActiveObject().width;
-    document.getElementById("pdRatio").innerHTML = calibrationRatio.toFixed(2);
+    document.getElementById("pdRatio").value = calibrationRatio.toFixed(2);
     clearCanvas();
 }
 
@@ -222,14 +277,15 @@ function draw() {
 function init() {
     canvas = new fabric.Canvas('canvas');
     resizeCanvas();
+    loadSpeciesDropdown();
+    lengthOrArea()
 
     canvas.on('object:scaling', onObjectScaled);
     document.getElementById("clear").addEventListener('click', clearCanvas, false);
-
+    document.getElementById("shapeSelect").addEventListener('change', lengthOrArea);
     document.getElementById("drawShapeBtn").addEventListener('click', draw, false);
     window.addEventListener('resize', resizeCanvas, false);
     document.getElementById("areaBtn").addEventListener('click', calcTotalArea, false);
-
     document.getElementById("calibrateBtn").addEventListener('click', pixelToDistanceRatio, false);
     document.getElementById("pdRatio").innerHTML = "Need to Calibrate";
 }

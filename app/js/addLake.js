@@ -1,15 +1,8 @@
 var mysql = require('mysql');
-
-var con = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: null,
-  database: "ZP1"
-});
-
+var connection = require('../js/config.js').localConnect();
 function addLake() {
   // connect to mysql
-  con.connect(function (err) {
+  connection.connect(function (err) {
     // in case of error
     if (err) {
       console.log(err.code);
@@ -23,7 +16,7 @@ function addLake() {
   console.log(codeInput, nameInput);
 
   var sql = "INSERT INTO lakes SET lakeCode = ?, lakeName = ?";
-  con.query(sql, [codeInput,nameInput] , function (err, result) {
+  connection.query(sql, [codeInput,nameInput] , function (err, result) {
     if (err) throw err;
     console.log("1 record inserted");
   });

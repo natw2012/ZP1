@@ -7,8 +7,8 @@ function createAddWindow(loadHTML) {
     addWindow = new BrowserWindow({
         show: false,
         transparent: false,
-        width: 600,
-        height: 600,
+        width: 300,
+        height: 500,
         resizable: true,
         movable: true,
         frame: true,

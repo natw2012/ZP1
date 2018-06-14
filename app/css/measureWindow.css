@@ -66,11 +66,11 @@ nav{
   -webkit-app-region: drag;
   cursor: move;
   border: 2px solid grey;
-  border-bottom: none;
+
   display:block;
 }
 
-#tool-bar{
+.tool-bar{
   top: 0;
   left: 0;
   width: 100%;

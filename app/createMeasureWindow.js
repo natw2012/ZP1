@@ -20,7 +20,7 @@ function createMeasureWindow(){
     // measureWindow.openDevTools();
     //Load html into window
     measureWindow.loadURL(url.format({
-      pathname:path.join(__dirname,'videoOverlay.html'),
+      pathname:path.join(__dirname,'areaWindow.html'),
       protocol:'file:',
       slashes: true
     }))

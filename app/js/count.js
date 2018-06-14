@@ -5,12 +5,7 @@ var randomColor = require('randomcolor');
 var markerID;
 var speciesOption = [];
 
-var con = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: null,
-    database: "ZP1"
-});
+var con = require('./js/config.js').localConnect();
 
 //Should implement ability to choose colours in dashboard 
 function random_rgba() {
@@ -70,15 +65,18 @@ function addCount() {
             console.log(err.code);
             console.log(err.fatal);
         }
-
+        //Prevent DB insert if select is on default message
         var species = getSpecies();
-        var sql = "INSERT INTO count SET species = ?";
-        con.query(sql, species, function (err, result) {
-            if (err) throw err;
-            console.log(result);
-            markerID = result.insertId;
-            console.log(markerID);
-        });
+        if (species != "") {
+            var sql = "INSERT INTO count SET species = ?";
+            con.query(sql, species, function (err, result) {
+                if (err) throw err;
+                console.log(result);
+                markerID = result.insertId;
+                console.log(markerID);
+            });
+        }
+
     });
     getCount();
 }
@@ -112,9 +110,20 @@ function getCount() {
         var sql = "SELECT species, COUNT(*) as total FROM count GROUP BY species";
         con.query(sql, function (err, result, fields) {
             if (err) throw err;
+            console.log(result);
+            console.log(result[i]);
+            if (result[i] === null) {
+                document.getElementById("count").innerHTML = "0";
+            }
             for (var i = 0; result[i] != null; i++) {
-                if (result[i].species == speciesDropdown) {
+                console.log(result[i].species);
+                console.log(speciesDropdown);
+                if (result[i].species === speciesDropdown) {
                     document.getElementById("count").innerHTML = result[i].total;
+                    break;
+                }
+                else {
+                    document.getElementById("count").innerHTML = "0";
                 }
             }
         });
@@ -167,6 +176,7 @@ function init() {
     resizeCanvas();
     loadSpeciesDropdown();
     getCount();
+    window.addEventListener('resize', resizeCanvas, false);
     document.getElementById("clear").addEventListener('click', clearCanvas, false);
     document.getElementById("delete").addEventListener('click', deleteCircle, false);
     document.getElementById("speciesSelect").addEventListener('change', getCount);
