@@ -14,6 +14,12 @@ function random_rgba() {
     return randomColor(); //Random Color Library
 }
 
+function clearOutputs(event) {
+    document.getElementById("lengthOutput").value = "";
+    document.getElementById("areaOutput").value = "";
+    document.getElementById("totalAreaOutput").value = "";
+}
+
 //Clear Canvas
 function clearCanvas(event) {
     canvas.clear();
@@ -74,6 +80,8 @@ function loadSpeciesDropdown() {
 function onObjectScaled(e) {
     //Eliminates caching error during scaling
     fabric.Object.prototype.objectCaching = false;
+    console.log(e); //Something here
+    console.log(e.target);
     var shape = e.target;
     shape.width = shape.scaleX * shape.width;
     shape.height = shape.scaleY * shape.height;
@@ -84,21 +92,14 @@ function onObjectScaled(e) {
     shape.scaleY = 1;
     
     //probably redundant can do line vs everything else
-    if (shape.type === "rect") {
-        calcArea(shape);
-    }
-    else if (shape.type === "line") {
+    if (shape.type === "line") {
         lineLength(shape);
     }
-    else if (shape.type === "circle") {
+    else {
+        console.log(shape);
         calcArea(shape);
     }
-    else if (shape.type === "triangle") {
-        calcArea(shape);
-    }
-    else if (shape.type === "ellipse"){
-        calcArea(shape);
-    }
+    calcTotalArea();
 }
 
 function calcTotalArea(){
@@ -107,7 +108,7 @@ function calcTotalArea(){
     objects.forEach(object=>{
         totalArea = totalArea + calcArea(object);
     });
-    document.getElementById("area").innerHTML = totalArea.toFixed(2);
+    document.getElementById("totalAreaOutput").value = totalArea.toFixed(2);
 }
 
 //Calls area calc function depending on shape
@@ -134,6 +135,7 @@ function calcArea(obj) {
 
 //Calc Area of Rectangle
 function rectArea(rect) {
+    console.log("rect");
     //Slight measuring issue with rect.width = inside perimeter while line.width = outside
     var area = rect.width * rect.height * Math.pow(calibrationRatio, 2);
     document.getElementById("areaOutput").value = area.toFixed(2);
@@ -141,6 +143,7 @@ function rectArea(rect) {
 }
 //Calc Area of Circle
 function circleArea(circ) {
+    console.log("circle");
     var area = Math.PI * Math.pow(circ.radius, 2) * Math.pow(calibrationRatio, 2);
     document.getElementById("areaOutput").value = area.toFixed(2);
     return area;
@@ -153,7 +156,6 @@ function triangleArea(tri) {
 }
 //Calc Area of Ellipse
 function ellipseArea(el) {
-    console.log(el.rx,el.ry,Math.PI,Math.pow(calibrationRatio, 2));
     var area = el.rx * el.ry * Math.PI * Math.pow(calibrationRatio, 2);
     document.getElementById("areaOutput").value = area.toFixed(2);
     return area;
@@ -164,6 +166,7 @@ function pixelToDistanceRatio() {
     calibrationRatio = Number(document.getElementById("calibrateTextBox").value) / canvas.getActiveObject().width;
     document.getElementById("pdRatio").value = calibrationRatio.toFixed(2);
     clearCanvas();
+    clearOutputs();
 }
 
 //Find pixel length of beginning and end position of line, convert to real length by ratio and output
@@ -271,6 +274,43 @@ function draw() {
     else if (shape === "Ellipse") {
         drawEllipse();
     }
+    calcTotalArea();
+}
+
+function unselect(){
+    console.log("tes");
+    document.getElementById("areaOutput").value = "";
+}
+function select(e){
+    console.log("TEst");
+    console.log(e);
+    onObjectScaled(e);
+}
+
+function submit(){
+    var e = document.getElementById("speciesSelect");
+     let measure = {
+        species: e.options[e.selectedIndex].value,
+        area: document.getElementById("totalAreaOutput").value
+    }
+
+    con.connect(function (err) {
+        // in case of error
+        if (err) {
+            console.log(err.code);
+            console.log(err.fatal);
+        }
+        var sql = "INSERT INTO measures SET ?";
+        con.query(sql, measure, function (err, result, fields) {
+            if (err) throw err;
+            console.log(result);
+        });
+    });
+    if(document.getElementById("clearOnEnter").checked){
+        clearOutputs();
+        clearCanvas();
+    }
+    
 }
 
 //Initialize
@@ -281,11 +321,13 @@ function init() {
     lengthOrArea()
 
     canvas.on('object:scaling', onObjectScaled);
-    document.getElementById("clear").addEventListener('click', clearCanvas, false);
+    canvas.on('selection:cleared', unselect);
+    canvas.on('object:selected', select);
+    document.getElementById("clearBtn").addEventListener('click', clearCanvas, false);
     document.getElementById("shapeSelect").addEventListener('change', lengthOrArea);
     document.getElementById("drawShapeBtn").addEventListener('click', draw, false);
     window.addEventListener('resize', resizeCanvas, false);
-    document.getElementById("areaBtn").addEventListener('click', calcTotalArea, false);
+    document.getElementById("enterBtn").addEventListener('click', submit, false);
     document.getElementById("calibrateBtn").addEventListener('click', pixelToDistanceRatio, false);
     document.getElementById("pdRatio").innerHTML = "Need to Calibrate";
 }

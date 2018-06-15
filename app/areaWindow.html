@@ -33,6 +33,8 @@
     <button id="calibrateBtn">Calibrate</button>
     <label>Pixel to Distance Ratio:</label>
     <input type="textbox" id="pdRatio" style="width: 100px" readonly></input>
+    <label for="clearOnEnter">Clear On Enter:</label>
+    <input type="checkBox" id="clearOnEnter"></input>
   </div>
   <div class="tool-bar" id="tool-bar2">
     <label>Type:</label>
@@ -48,15 +50,17 @@
       <option>Ellipse</option>
     </select>
     <button id="drawShapeBtn">Draw</button>
-    <button id="areaBtn">Get Area</button>
+    
   </div>
   <div class="tool-bar" id="tool-bar3">
     <label id="lengthOutputLbl" for="lengthOutput">Length:</label>
     <input type="textbox" id="lengthOutput" style="width: 100px" readonly></input>
     <label id="areaOutputLbl" for="areaOutput">Area:</label>
     <input type="textbox" id="areaOutput" style="width: 100px" readonly></input>
-    <button type="submit" id="enter">Enter</button>
-    <button type="submit" id="clear">Clear</button>
+    <label id="totalAreaOutputLbl" for="totalAreaOutput">Total Area:</button>
+    <input type="textbox" id="totalAreaOutput" style="width: 100px" readonly></input> 
+    <button type="submit" id="enterBtn">Enter</button>
+    <button type="submit" id="clearBtn">Clear</button>
   </div>
   <div id="container"></div>
   <div id="canvasContainer">
