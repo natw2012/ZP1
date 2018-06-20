@@ -28,17 +28,16 @@
     </tool-bar>
     <window-content>
       <div id="dashboard">
-        <button class="btn btn-primary" id="addLakeWindowBtn" onclick="createAddWindow('html/addLake.html')">Add Lake</button>
-        <button class="btn btn-primary" id="startMeasureBtn" onclick="createMeasureWindow()">Start Measuring</button>
-        <button class="btn btn-primary" id="startCountBtn" onclick="createCountWindow()">Start Counting</button>
       </div>
       <div id="tables">
         <div class="pane-group">
           <div class="pane-sm sidebar">
             <nav-group class="sidebarGroup">
-              <h5 class="nav-group-title">Favourites</h5>
+              <h5 class="nav-group-title">Select:</h5>
               <nav-item href="#" onclick="loadSpecies()">Species</nav-item>
               <nav-item href="#" onclick="loadCounts()">Counts</nav-item>
+              <nav-item href="#" onclick="loadMeasures()">Measures</nav-item>
+              <nav-item href="#" onclick="loadFormulas()">Formulas</nav-item>
               <nav-item href="#" onclick="loadLakes()">Lakes</nav-item>
               <nav-item href="#" onclick="loadAttributes()">Attributes</nav-item>
               <nav-item href="#" onclick="loadGear()">Gear</nav-item>

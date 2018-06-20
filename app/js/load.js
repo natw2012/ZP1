@@ -2,6 +2,8 @@ const $ = require('jquery');
 var mysql = require('mysql');
 var photon = require('electron-photon');
 // var photon2 = require('photon');
+const {ipcRenderer} = require('electron')
+
 var connection = require('./js/config.js').localConnect();
 // connect to mysql
 connection.connect(function (err) {
@@ -12,19 +14,43 @@ connection.connect(function (err) {
     }
 });
 
+//Receive call from another window
+ipcRenderer.on('refreshTable',function(e,table){
+    console.log(table);
+    if(table === "count"){
+        loadCounts(scrollTable);
+    }
+    else if(table === "measure"){
+        loadMeasures(scrollTable);
+    }
+    else if(table === "lake"){
+        loadLakes(scrollTable);
+    }
+    else if(table === "species"){
+        loadSpecies(scrollTable);
+    }
+    
+});
+
+function scrollTable(){
+    var tbl = document.getElementById('tableSection');
+    tbl.scrollTop = tbl.scrollHeight;
+    console.log(tbl,tbl.scrollTop,tbl.scrollHeight);
+}
+
 function loadSpecies() {
     // document.getElementById("content").innerHTML = '<object type="text/html" data="html/species.html" ></object>';
-    var html = '<br></br><button class="btn btn-default" id="addSpeciesWindowBtn" onclick="createAddWindow(\'html/addSpecies.html\')">Add Species</button><br></br>';
+    var html = '<button class="btn btn-default" id="addSpeciesWindowBtn" onclick="createAddWindow(\'html/addSpecies.html\')">Add Species</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
 
     $query = 'SELECT `code` ,`abbrev`, `name` FROM `species`';
 
-    getFirstTenRows($query,function (rows) {
-        var html = '<thead><th>Species Code</th><th>Species Abbrev</th><th>Species Name</th><th>Actions</th></thead><tbody>';
+    loadTable($query, function (rows) {
+        var html = '<thead><th>Species Code</th><th>Species Abbrev</th><th>Species Name</th><th>Actions</th><th>Actions</th><th>Actions</th></thead><tbody>';
 
         rows.forEach(function (row) {
             html += '<tr>';
-            html += '<td>';
+            html += '<td class="code">';
             html += row.code;
             html += '</td>';
             html += '<td>';
@@ -34,7 +60,13 @@ function loadSpecies() {
             html += row.name;
             html += '</td>';
             html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this)">Delete</button>';
+            html += '<button class="btn btn-default">Info</button>';
+            html += '</td>';
+            html += '<td>';
+            html += '<button class="btn btn-default">Edit</button>';
+            html += '</td>';
+            html += '<td>';
+            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteSpeciesRow(this)">Delete</button>';
             html += '</td>';
             html += '</tr>';
             console.log(row);
@@ -44,44 +76,131 @@ function loadSpecies() {
         document.querySelector('#table').innerHTML = html;
     });
 }
-function loadCounts() {
+function loadCounts(callback) {
+    var html = '<button class="btn btn-default" id="startCountBtn" onclick="createCountWindow()">Start Counting</button>'
+    html += '<button class="btn btn-default" id="exportCountBtn" onclick="exportCount()">Export Table</button><br></br>'
+
     // document.getElementById("content").innerHTML = '<object type="text/html" data="html/counts.html" ></object>';
-    document.querySelector('#buttonSection').innerHTML = '';
+    document.querySelector('#buttonSection').innerHTML = html;
 
-    $query = 'SELECT `id` as speciesID,`species` FROM `count`';
+    $query = 'SELECT `id` as speciesID,`species`,`type` as speciesType FROM `count`';
 
-    getFirstTenRows($query,function (rows) {
-        var html = '<thead><th>Count ID</th><th>Count Species</th><th>Actions</th></thead><tbody>';
+    loadTable($query, function (rows) {
+        var html = '<thead><th>Count ID</th><th>Count Species</th><th>Count Type</th><th>Actions</th><th>Actions</th><th>Actions</th></thead><tbody>';
 
         rows.forEach(function (row) {
             html += '<tr>';
-            html += '<td>';
+            html += '<td class="code">';
             html += row.speciesID;
             html += '</td>';
             html += '<td>';
             html += row.species;
             html += '</td>';
             html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this)">Delete</button>';
+            html += row.speciesType;
+            html += '</td>';
+            html += '<td>';
+            html += '<button class="btn btn-default">Info</button>';
+            html += '</td>';
+            html += '<td>';
+            html += '<button class="btn btn-default">Edit</button>';
+            html += '</td>';
+            html += '<td>';
+            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteCountRow(this)">Delete</button>';
             html += '</td>';
             html += '</tr>';
             console.log(row);
         });
         html += '</tbody>';
         document.querySelector('#table').innerHTML = html;
+
+        typeof callback === 'function' && callback();
     });
 
 }
-function loadAttributes() {
-    // document.getElementById("content").innerHTML = '<object type="text/html" data="html/attributes.html" ></object>';
+function loadMeasures(callback) {
+    var html = '<button class="btn btn-default" id="startMeasureBtn" onclick="createMeasureWindow()">Start Measuring</button><br></br>'
+
+    document.querySelector('#buttonSection').innerHTML = html;
+
+    $query = 'SELECT `id` as measureID,`species`,`area` FROM `measures`';
+
+    loadTable($query, function (rows) {
+        var html = '<thead><th>ID</th><th>Species</th><th>Area</th><th>Actions</th><th>Actions</th><th>Actions</th></thead><tbody>';
+
+        rows.forEach(function (row) {
+            html += '<tr>';
+            html += '<td class="code">';
+            html += row.measureID;
+            html += '</td>';
+            html += '<td>';
+            html += row.species;
+            html += '</td>';
+            html += '<td>';
+            html += row.area;
+            html += '</td>';
+            html += '<td>';
+            html += '<button class="btn btn-default">Info</button>';
+            html += '</td>';
+            html += '<td>';
+            html += '<button class="btn btn-default">Edit</button>';
+            html += '</td>';
+            html += '<td>';
+            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteMeasuresRow(this)">Delete</button>';
+            html += '</td>';
+            html += '</tr>';
+            console.log(row);
+        });
+        html += '</tbody>';
+        document.querySelector('#table').innerHTML = html;
+
+        typeof callback === 'function' && callback();
+    });
 }
-function loadLakes() {
+function loadFormulas() {
+    var html = '<button class="btn btn-default" id="addFormulaBtn" onclick="createAddWindow(\'html/addFormula.html\')">Add Formula</button><br></br>'
+
+    document.querySelector('#buttonSection').innerHTML = html;
+
+    $query = 'SELECT `id` as measureID,`species`,`area` FROM `measures`';
+
+    loadTable($query, function (rows) {
+        var html = '<thead><th>ID</th><th>Species</th><th>Area</th><th>Actions</th><th>Actions</th><th>Actions</th></thead><tbody>';
+
+        // rows.forEach(function (row) {
+        //     html += '<tr>';
+        //     html += '<td class="code">';
+        //     html += row.measureID;
+        //     html += '</td>';
+        //     html += '<td>';
+        //     html += row.species;
+        //     html += '</td>';
+        //     html += '<td>';
+        //     html += row.area;
+        //     html += '</td>';
+        //     html += '<td>';
+        //     html += '<button class="btn btn-default">Info</button>';
+        //     html += '</td>';
+        //     html += '<td>';
+        //     html += '<button class="btn btn-default">Edit</button>';
+        //     html += '</td>';
+        //     html += '<td>';
+        //     html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteMeasuresRow(this)">Delete</button>';
+        //     html += '</td>';
+        //     html += '</tr>';
+        //     console.log(row);
+        // });
+        html += '</tbody>';
+        document.querySelector('#table').innerHTML = html;
+    });
+}
+function loadLakes(callback) {
     // document.getElementById("content").innerHTML='<object type="text/html" data="html/lakes.html" style="width:100%; height: 100%;"></object>';
-    var html = '<br></br><button class="btn btn-default" id="addLakeWindowBtn" onclick="createAddWindow(\'html/addLake.html\')">Add Lake</button><br></br>';
+    var html = '<button class="btn btn-default" id="addLakeWindowBtn" onclick="createAddWindow(\'html/addLake.html\')">Add Lake</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
 
     $query = 'SELECT `lakeCode`,`lakeName` FROM `lakes` LIMIT 10';
-    getFirstTenRows($query,function (rows) {
+    loadTable($query, function (rows) {
         var html = '<thead><th>Lake Code</th><th>Lake Name</th><th>Actions</th><th>Actions</th><th>Actions</th></thead>';
 
         rows.forEach(function (row) {
@@ -99,21 +218,26 @@ function loadLakes() {
             html += '<button class="btn btn-default">Edit</button>';
             html += '</td>';
             html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this)">Delete</button>';
+            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteLakeRow(this)">Delete</button>';
             html += '</td>';
             html += '</tr>';
             console.log(row);
         });
         html += '</tbody>';
         document.querySelector('#table').innerHTML = html;
+
+        typeof callback === 'function' && callback();
     });
 
+}
+function loadAttributes() {
+    // document.getElementById("content").innerHTML = '<object type="text/html" data="html/attributes.html" ></object>';
 }
 function loadGear() {
     // document.getElementById("content").innerHTML = '<object type="text/html" data="html/gear.html" ></object>';
 }
 
-function getFirstTenRows($query,callback) {
+function loadTable($query, callback) {
     // Perform a query
     connection.query($query, function (err, rows, fields) {
         if (err) {
@@ -128,7 +252,7 @@ function getFirstTenRows($query,callback) {
     });
 }
 
-function deleteRow(btn){
+function deleteLakeRow(btn) {
     var row = btn.parentNode.parentNode;
     var code = row.getElementsByClassName("code")[0].innerText;
     row.parentNode.removeChild(row);
@@ -142,11 +266,60 @@ function deleteRow(btn){
             return;
         }
         console.log("Query succesfully executed");
-        
+
     });
-
 }
+function deleteSpeciesRow(btn) {
+    var row = btn.parentNode.parentNode;
+    var code = row.getElementsByClassName("code")[0].innerText;
+    row.parentNode.removeChild(row);
 
+    $query = 'DELETE FROM species WHERE code = ?';
+    // Perform a query
+    connection.query($query, code, function (err, rows, fields) {
+        if (err) {
+            console.log("An error ocurred performing the query.");
+            console.log(err);
+            return;
+        }
+        console.log("Query succesfully executed");
+
+    });
+}
+function deleteCountRow(btn) {
+    var row = btn.parentNode.parentNode;
+    var code = row.getElementsByClassName("code")[0].innerText;
+    row.parentNode.removeChild(row);
+
+    $query = 'DELETE FROM count WHERE id = ?';
+    // Perform a query
+    connection.query($query, code, function (err, rows, fields) {
+        if (err) {
+            console.log("An error ocurred performing the query.");
+            console.log(err);
+            return;
+        }
+        console.log("Query succesfully executed");
+
+    });
+}
+function deleteMeasuresRow(btn) {
+    var row = btn.parentNode.parentNode;
+    var code = row.getElementsByClassName("code")[0].innerText;
+    row.parentNode.removeChild(row);
+
+    $query = 'DELETE FROM measures WHERE id = ?';
+    // Perform a query
+    connection.query($query, code, function (err, rows, fields) {
+        if (err) {
+            console.log("An error ocurred performing the query.");
+            console.log(err);
+            return;
+        }
+        console.log("Query succesfully executed");
+
+    });
+}
 //Should probably figure out where to put this
     // // Close the connection
     // connection.end(function () {

@@ -29,7 +29,7 @@ function createCountWindow(){
         countWindow.show();
         countWindow.focus();
     })
-    countWindow.on('close', function(){
+    countWindow.on('closed', function(){
         countWindow = null;
     });
   }

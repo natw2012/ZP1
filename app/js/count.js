@@ -1,6 +1,8 @@
 var fabric = require('fabric').fabric;
 var mysql = require('mysql');
 var randomColor = require('randomcolor');
+const electron = require('electron');
+const { ipcRenderer } = electron;
 
 var markerID;
 var speciesOption = [];
@@ -11,6 +13,30 @@ var con = require('./js/config.js').localConnect();
 function random_rgba() {
     return randomColor(); //Random Color Library
 }
+
+function loadCountingTypes() {
+    con.connect(function (err) {
+        // in case of error
+        if (err) {
+            console.log(err.code);
+            console.log(err.fatal);
+        }
+        var sql = "SELECT type FROM counttypes";
+        con.query(sql, function (err, result, fields) {
+            if (err) throw err;
+            console.log(result);
+            var option;
+            for (var i = 0; result[i] != null; i++) {
+                option = document.createElement("option");
+                option.text = result[i].type;
+                option.id = result[i].type;
+                document.getElementById("typeSelect").appendChild(option);
+            }
+
+        });
+    });
+}
+
 function loadSpeciesDropdown() {
     con.connect(function (err) {
         // in case of error
@@ -51,9 +77,17 @@ function resizeCanvas() {
 }
 function getSpecies() {
     var e = document.getElementById("speciesSelect");
-    console.log(e);
-    console.log(e.selectedIndex);
-    console.log(e.options[e.selectedIndex]);
+    // console.log(e);
+    // console.log(e.selectedIndex);
+    // console.log(e.options[e.selectedIndex]);
+    var text = e.options[e.selectedIndex].value;
+    return text;
+}
+function getType() {
+    var e = document.getElementById("typeSelect");
+    // console.log(e);
+    // console.log(e.selectedIndex);
+    // console.log(e.options[e.selectedIndex]);
     var text = e.options[e.selectedIndex].value;
     return text;
 }
@@ -67,19 +101,27 @@ function addCount() {
         }
         //Prevent DB insert if select is on default message
         var species = getSpecies();
+        var type = getType();
         if (species != "") {
-            var sql = "INSERT INTO count SET species = ?";
-            con.query(sql, species, function (err, result) {
+            var sql = "INSERT INTO count SET species = ?, type = ?";
+            con.query(sql, [species, type], function (err, result) {
                 if (err) throw err;
                 console.log(result);
                 markerID = result.insertId;
-                console.log(markerID);
+                // console.log(markerID);
+                console.log("after getCount");
+                refreshCountTable();
             });
         }
-
     });
-    getCount();
+    getCount(); //Refresh displayed count total
 }
+
+//Calls main window to refresh the count table
+function refreshCountTable() {
+    ipcRenderer.send('refreshTable', "count");
+}
+
 
 // function subCount() {
 //     con.connect(function (err) {
@@ -99,6 +141,8 @@ function addCount() {
 //     });
 //     getCount();
 // }
+
+//Get number of entries of selected species
 function getCount() {
     con.connect(function (err) {
         // in case of error
@@ -110,14 +154,15 @@ function getCount() {
         var sql = "SELECT species, COUNT(*) as total FROM count GROUP BY species";
         con.query(sql, function (err, result, fields) {
             if (err) throw err;
-            console.log(result);
-            console.log(result[i]);
+            // console.log(result);
+            // console.log(result[i]);
             if (result[i] === null) {
                 document.getElementById("count").innerHTML = "0";
             }
             for (var i = 0; result[i] != null; i++) {
-                console.log(result[i].species);
-                console.log(speciesDropdown);
+                // console.log(result[i].species);
+                // console.log(speciesDropdown);
+                console.log("Inside getCount");
                 if (result[i].species === speciesDropdown) {
                     document.getElementById("count").innerHTML = result[i].total;
                     break;
@@ -128,7 +173,7 @@ function getCount() {
             }
         });
     });
-
+    console.log("during getCount");
 }
 function drawDot() {
     var pointer = canvas.getPointer(event.e);
@@ -138,8 +183,6 @@ function drawDot() {
             speciesColor = speciesOption[i].fill;
 
     }
-    console.log(speciesColor);
-    addCount();
     var circle = new fabric.Circle({
         left: pointer.x,
         top: pointer.y,
@@ -170,11 +213,16 @@ function drawDot() {
 
 }
 
+// function exportCount(){
+
+// }
+
 function init() {
     canvas = new fabric.Canvas('canvas');
 
     resizeCanvas();
     loadSpeciesDropdown();
+    loadCountingTypes();
     getCount();
     window.addEventListener('resize', resizeCanvas, false);
     document.getElementById("clear").addEventListener('click', clearCanvas, false);
@@ -182,6 +230,7 @@ function init() {
     document.getElementById("speciesSelect").addEventListener('change', getCount);
     canvas.on('mouse:dblclick', function (options) {
         drawDot();
+        addCount();
     });
 }
 

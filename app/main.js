@@ -2,6 +2,8 @@ const electron = require('electron')
 const path = require('path')
 const url = require('url')
 
+const {ipcMain} = require('electron')
+
 // Module to control application life.
 const app = electron.app
 // Module to create native browser window.
@@ -62,3 +64,37 @@ app.on('activate', function () {
 // code. You can also put them in separate files and require them here.
 
 
+// //Handle create count window
+// function createCountWindow(){
+//   //Create new window
+//   countWindow = new BrowserWindow({
+//     show: false,
+//     transparent:true,
+//     width:600,
+//     height:600,
+//     resizable:true,
+//     movable:true,
+//     frame:false,
+//     transparent:true
+//   });
+  
+//   // countWindow.openDevTools();
+//   //Load html into window
+//   countWindow.loadURL(url.format({
+//     pathname:path.join(__dirname,'countWindow.html'),
+//     protocol:'file:',
+//     slashes: true
+//   }))
+//   //Garbage collection handle
+//   countWindow.on('ready-to-show',function(){
+//       countWindow.show();
+//       countWindow.focus();
+//   })
+//   countWindow.on('closed', function(){
+//       countWindow = null;
+//   });
+// }
+
+ipcMain.on('refreshTable',function(e,table){
+  mainWindow.webContents.send('refreshTable',table);
+})

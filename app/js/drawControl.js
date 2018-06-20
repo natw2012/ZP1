@@ -1,5 +1,8 @@
 var fabric = require('fabric').fabric;
 var randomColor = require('randomcolor');
+const electron = require('electron');
+const { ipcRenderer } = electron;
+
 
 var calibrationRatio;
 var pixelLength;
@@ -304,13 +307,18 @@ function submit(){
         con.query(sql, measure, function (err, result, fields) {
             if (err) throw err;
             console.log(result);
+            refreshMeasureTable("measure");
         });
     });
     if(document.getElementById("clearOnEnter").checked){
         clearOutputs();
         clearCanvas();
-    }
-    
+    }    
+}
+
+//Calls main window to refresh the count table
+function refreshMeasureTable() {
+    ipcRenderer.send('refreshTable', "measure");
 }
 
 //Initialize

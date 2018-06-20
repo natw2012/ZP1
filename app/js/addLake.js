@@ -1,5 +1,9 @@
 var mysql = require('mysql');
+const electron = require('electron');
+const { ipcRenderer } = electron;
+
 var connection = require('../js/config.js').localConnect();
+
 function addLake() {
   // connect to mysql
   connection.connect(function (err) {
@@ -12,15 +16,18 @@ function addLake() {
 
   var codeInput = document.getElementById("lakeCode").value;
   var nameInput = document.getElementById("lakeName").value;
-    
-  console.log(codeInput, nameInput);
 
   var sql = "INSERT INTO lakes SET lakeCode = ?, lakeName = ?";
   connection.query(sql, [codeInput,nameInput] , function (err, result) {
     if (err) throw err;
     console.log("1 record inserted");
+    refreshLakeTable();
   });
 
+}
+
+function refreshLakeTable(){
+  ipcRenderer.send('refreshTable',"lake");
 }
 
 
