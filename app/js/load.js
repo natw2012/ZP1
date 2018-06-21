@@ -2,8 +2,10 @@ const $ = require('jquery');
 var mysql = require('mysql');
 var photon = require('electron-photon');
 // var photon2 = require('photon');
-const {ipcRenderer} = require('electron')
-
+const { ipcRenderer } = require('electron')
+var dialog = require('electron').remote.dialog;
+var fs = require('fs');
+var stringify = require('csv-stringify');
 var connection = require('./js/config.js').localConnect();
 // connect to mysql
 connection.connect(function (err) {
@@ -14,28 +16,76 @@ connection.connect(function (err) {
     }
 });
 
+function openFile() {
+    dialog.showOpenDialog({
+        filters: [{ name: 'csv', extensions: ['csv'] }
+        ]
+    }, function (fileNames) {
+        if (fileNames === undefined) return;
+
+        var fileName = fileNames[0];
+
+        fs.readFile(fileName, 'utf-8', function (err, data) {
+            console.log(data);
+        })
+    });
+}
+
+//Export MySql Count Table to csv file
+//Includes Headers
+function exportCount() {
+    dialog.showSaveDialog({
+        filters: [{ name: 'csv', extensions: ['csv'] }
+        ]
+    }, function (fileName) {
+        if (fileName === undefined) return;
+
+        var sql = "SELECT * FROM count";
+        connection.query(sql, function (err, result, fields) {
+            if (err) throw err;
+            var header = [];
+            for(var i = 0; i < fields.length; i++){
+                header.push(fields[i].name);
+            }
+            stringify(result,function(err,output){
+                fs.writeFile(fileName, header+"\n"+output, function (err) {
+                    if (err === null) {
+    
+                        dialog.showMessageBox({
+                            message: "The file has been saved! :-)",
+                            buttons: ["OK"]
+                        });
+                    } else {
+                        dialog.showErrorBox("File Save Error", err.message); //Not sure if this works
+                    }
+                });
+            });
+        })
+    });
+}
+
 //Receive call from another window
-ipcRenderer.on('refreshTable',function(e,table){
+ipcRenderer.on('refreshTable', function (e, table) {
     console.log(table);
-    if(table === "count"){
+    if (table === "count") {
         loadCounts(scrollTable);
     }
-    else if(table === "measure"){
+    else if (table === "measure") {
         loadMeasures(scrollTable);
     }
-    else if(table === "lake"){
+    else if (table === "lake") {
         loadLakes(scrollTable);
     }
-    else if(table === "species"){
+    else if (table === "species") {
         loadSpecies(scrollTable);
     }
-    
+
 });
 
-function scrollTable(){
+function scrollTable() {
     var tbl = document.getElementById('tableSection');
     tbl.scrollTop = tbl.scrollHeight;
-    console.log(tbl,tbl.scrollTop,tbl.scrollHeight);
+    console.log(tbl, tbl.scrollTop, tbl.scrollHeight);
 }
 
 function loadSpecies() {
@@ -79,6 +129,7 @@ function loadSpecies() {
 function loadCounts(callback) {
     var html = '<button class="btn btn-default" id="startCountBtn" onclick="createCountWindow()">Start Counting</button>'
     html += '<button class="btn btn-default" id="exportCountBtn" onclick="exportCount()">Export Table</button><br></br>'
+    html += '<button class="btn btn-default" id="openFile" onclick="openFile()">Open File</button><br></br>'
 
     // document.getElementById("content").innerHTML = '<object type="text/html" data="html/counts.html" ></object>';
     document.querySelector('#buttonSection').innerHTML = html;

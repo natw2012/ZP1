@@ -4,10 +4,13 @@ var randomColor = require('randomcolor');
 const electron = require('electron');
 const { ipcRenderer } = electron;
 
+
 var markerID;
 var speciesOption = [];
 
 var con = require('./js/config.js').localConnect();
+
+
 
 //Should implement ability to choose colours in dashboard 
 function random_rgba() {
