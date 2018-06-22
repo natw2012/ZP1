@@ -6,6 +6,7 @@ const { ipcRenderer } = require('electron')
 var dialog = require('electron').remote.dialog;
 var fs = require('fs');
 var stringify = require('csv-stringify');
+var parse = require('csv-parse');
 var connection = require('./js/config.js').localConnect();
 // connect to mysql
 connection.connect(function (err) {
@@ -16,7 +17,7 @@ connection.connect(function (err) {
     }
 });
 
-function openFile() {
+function importCount() {
     dialog.showOpenDialog({
         filters: [{ name: 'csv', extensions: ['csv'] }
         ]
@@ -27,6 +28,16 @@ function openFile() {
 
         fs.readFile(fileName, 'utf-8', function (err, data) {
             console.log(data);
+            parse(data, function (Err, output) {
+                console.log(output);
+                var sql = "INSERT INTO `count` (`id`, `species`, `type`) VALUES ?";
+                connection.query(sql, [output], function (err, result, fields) {
+                    if (err) throw err;
+                    loadCounts(scrollTable);
+
+                })
+            });
+
         })
     });
 }
@@ -44,13 +55,13 @@ function exportCount() {
         connection.query(sql, function (err, result, fields) {
             if (err) throw err;
             var header = [];
-            for(var i = 0; i < fields.length; i++){
+            for (var i = 0; i < fields.length; i++) {
                 header.push(fields[i].name);
             }
-            stringify(result,function(err,output){
-                fs.writeFile(fileName, header+"\n"+output, function (err) {
+            stringify(result, function (err, output) {
+                fs.writeFile(fileName, header + "\n" + output, function (err) {
                     if (err === null) {
-    
+
                         dialog.showMessageBox({
                             message: "The file has been saved! :-)",
                             buttons: ["OK"]
@@ -60,7 +71,7 @@ function exportCount() {
                     }
                 });
             });
-        })
+        });
     });
 }
 
@@ -116,20 +127,19 @@ function loadSpecies() {
             html += '<button class="btn btn-default">Edit</button>';
             html += '</td>';
             html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteSpeciesRow(this)">Delete</button>';
+            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this,\'species\',\'code\',\'id\')">Delete</button>';
             html += '</td>';
             html += '</tr>';
             console.log(row);
         });
         html += '</tbody>';
-        console.log(html);
         document.querySelector('#table').innerHTML = html;
     });
 }
 function loadCounts(callback) {
     var html = '<button class="btn btn-default" id="startCountBtn" onclick="createCountWindow()">Start Counting</button>'
     html += '<button class="btn btn-default" id="exportCountBtn" onclick="exportCount()">Export Table</button><br></br>'
-    html += '<button class="btn btn-default" id="openFile" onclick="openFile()">Open File</button><br></br>'
+    html += '<button class="btn btn-default" id="importCount" onclick="importCount()">Import Data</button><br></br>'
 
     // document.getElementById("content").innerHTML = '<object type="text/html" data="html/counts.html" ></object>';
     document.querySelector('#buttonSection').innerHTML = html;
@@ -157,7 +167,7 @@ function loadCounts(callback) {
             html += '<button class="btn btn-default">Edit</button>';
             html += '</td>';
             html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteCountRow(this)">Delete</button>';
+            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this,\'count\',\'code\',\'id\')">Delete</button>';
             html += '</td>';
             html += '</tr>';
             console.log(row);
@@ -197,7 +207,7 @@ function loadMeasures(callback) {
             html += '<button class="btn btn-default">Edit</button>';
             html += '</td>';
             html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteMeasuresRow(this)">Delete</button>';
+            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this,\'measures\',\'code\',\'id\')">Delete</button>';
             html += '</td>';
             html += '</tr>';
             console.log(row);
@@ -269,7 +279,7 @@ function loadLakes(callback) {
             html += '<button class="btn btn-default">Edit</button>';
             html += '</td>';
             html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteLakeRow(this)">Delete</button>';
+            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this,\'lakes\',\'code\',\'lakeCode\')">Delete</button>';
             html += '</td>';
             html += '</tr>';
             console.log(row);
@@ -303,74 +313,23 @@ function loadTable($query, callback) {
     });
 }
 
-function deleteLakeRow(btn) {
+//Remove row from html table and from MySql database
+function deleteRow(btn, table, className, pKey) {
     var row = btn.parentNode.parentNode;
-    var code = row.getElementsByClassName("code")[0].innerText;
+    var code = row.getElementsByClassName(className)[0].innerText;
     row.parentNode.removeChild(row);
 
-    $query = 'DELETE FROM lakes WHERE lakeCode = ?';
-    // Perform a query
+    $query = 'DELETE FROM ' + table + ' WHERE ' + pKey + ' = ?';
     connection.query($query, code, function (err, rows, fields) {
         if (err) {
-            console.log("An error ocurred performing the query.");
+            console.log("An error occured performing the query.");
             console.log(err);
             return;
         }
-        console.log("Query succesfully executed");
-
+        console.log("Query successfuly executed");
     });
 }
-function deleteSpeciesRow(btn) {
-    var row = btn.parentNode.parentNode;
-    var code = row.getElementsByClassName("code")[0].innerText;
-    row.parentNode.removeChild(row);
 
-    $query = 'DELETE FROM species WHERE code = ?';
-    // Perform a query
-    connection.query($query, code, function (err, rows, fields) {
-        if (err) {
-            console.log("An error ocurred performing the query.");
-            console.log(err);
-            return;
-        }
-        console.log("Query succesfully executed");
-
-    });
-}
-function deleteCountRow(btn) {
-    var row = btn.parentNode.parentNode;
-    var code = row.getElementsByClassName("code")[0].innerText;
-    row.parentNode.removeChild(row);
-
-    $query = 'DELETE FROM count WHERE id = ?';
-    // Perform a query
-    connection.query($query, code, function (err, rows, fields) {
-        if (err) {
-            console.log("An error ocurred performing the query.");
-            console.log(err);
-            return;
-        }
-        console.log("Query succesfully executed");
-
-    });
-}
-function deleteMeasuresRow(btn) {
-    var row = btn.parentNode.parentNode;
-    var code = row.getElementsByClassName("code")[0].innerText;
-    row.parentNode.removeChild(row);
-
-    $query = 'DELETE FROM measures WHERE id = ?';
-    // Perform a query
-    connection.query($query, code, function (err, rows, fields) {
-        if (err) {
-            console.log("An error ocurred performing the query.");
-            console.log(err);
-            return;
-        }
-        console.log("Query succesfully executed");
-
-    });
-}
 //Should probably figure out where to put this
     // // Close the connection
     // connection.end(function () {
