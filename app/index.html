@@ -10,6 +10,7 @@
   <script type='text/javascript' src='createMeasureWindow.js'></script>
   <script type='text/javascript' src='createCountWindow.js'></script>
   <script type='text/javascript' src='js/load.js'></script>
+  <!-- <script type='text/javascript' src='js/loadSettings.js'></script> -->
   <!-- <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="../node_modules/bootstrap/dist/js/bootstrap.min.js"> -->
 </head>
@@ -22,12 +23,13 @@
         <btn-group class="component-groups" type="absolute">
           <button class="btn btn-default" data-view="#dashboard">Dashboard</button>
           <button class="btn btn-default active" data-view="#tables">Tables</button>
-          <button class="btn btn-default" data-view="#defaults">Defaults</button>
+          <button class="btn btn-default" data-view="#settings">Settings</button>
         </btn-group>
       </div>
     </tool-bar>
     <window-content>
       <div id="dashboard">
+
       </div>
       <div id="tables">
         <div class="pane-group">
@@ -51,9 +53,38 @@
           </div>
         </div>
       </div>
-      <div id="defaults" style="display: none;">
+      <div id="settings" style="display: none;">
         <div class="pane-group">
-          <h1>Defaults</h1>
+            <div class="pane-sm sidebar">
+                <nav-group class="sidebarGroup">
+                  <h5 class="nav-group-title">Select:</h5>
+                  <nav-item href="#load_home" onclick="loadSettings()">Database</nav-item>
+                </nav-group>
+              </div>
+              <div class="pane" id="settingsContent" style="padding: 20px">
+                  <form style="padding: 20px" id="dbSettingsForm">
+                      <div class="form-group">
+                          <label for="dbHost">Host:</label>
+                          <input class="form-control form-control-sm" type="text" id="dbHost" value="">
+                      </div>
+                      <div class="form-group">
+                          <label for="dbUser">User:</label>
+                          <input class="form-control form-control-sm" type="text" id="dbUser" value="">
+                      </div>
+                      <div class="form-group">
+                          <label for="dbPassword">Password:</label>
+                          <input class="form-control form-control-sm" type="text" id="dbPassword" value="">
+                      </div>
+                      <div class="form-group">
+                          <label for="dbDatabase">Database:</label>
+                          <select class="form-control form-control-sm" type="text" id="dbDatabase" value=""></select>
+                      </div>
+                      <div class="form-actions">
+                          <button id="saveDB" type="submit" class="btn btn-system btn-primary" onclick="setDB()">Save</button>
+                      </div>
+                  </form>
+              </div>
+            </div>
         </div>
       </div>
 

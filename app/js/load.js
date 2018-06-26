@@ -1,17 +1,22 @@
 const $ = require('jquery');
+window.$ = window.jQuery = require('jquery');
 var mysql = require('mysql');
 var photon = require('electron-photon');
-// var photon2 = require('photon');
 const { ipcRenderer } = require('electron')
 var dialog = require('electron').remote.dialog;
 var fs = require('fs');
 var stringify = require('csv-stringify');
 var parse = require('csv-parse');
+const settings = require('electron-settings');
+
+
 var connection = require('./js/config.js').localConnect();
+
 // connect to mysql
 connection.connect(function (err) {
     // in case of error
     if (err) {
+        dialog.showErrorBox("Can't connect to database", "Check Log In Credentials");
         console.log(err.code);
         console.log(err.fatal);
     }
@@ -138,7 +143,7 @@ function loadSpecies() {
 }
 function loadCounts(callback) {
     var html = '<button class="btn btn-default" id="startCountBtn" onclick="createCountWindow()">Start Counting</button>'
-    html += '<button class="btn btn-default" id="exportCountBtn" onclick="exportCount()">Export Table</button><br></br>'
+    html += '<button class="btn btn-default" id="exportCountBtn" onclick="exportCount()">Export Table</button>'
     html += '<button class="btn btn-default" id="importCount" onclick="importCount()">Import Data</button><br></br>'
 
     // document.getElementById("content").innerHTML = '<object type="text/html" data="html/counts.html" ></object>';
@@ -167,6 +172,7 @@ function loadCounts(callback) {
             html += '<button class="btn btn-default">Edit</button>';
             html += '</td>';
             html += '<td>';
+            // html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteConfirm()">Delete</button>';
             html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this,\'count\',\'code\',\'id\')">Delete</button>';
             html += '</td>';
             html += '</tr>';
@@ -302,6 +308,7 @@ function loadTable($query, callback) {
     // Perform a query
     connection.query($query, function (err, rows, fields) {
         if (err) {
+            ipcRenderer.send('errorMessage', err);
             console.log("An error ocurred performing the query.");
             console.log(err);
             return;
@@ -315,19 +322,65 @@ function loadTable($query, callback) {
 
 //Remove row from html table and from MySql database
 function deleteRow(btn, table, className, pKey) {
-    var row = btn.parentNode.parentNode;
-    var code = row.getElementsByClassName(className)[0].innerText;
-    row.parentNode.removeChild(row);
 
-    $query = 'DELETE FROM ' + table + ' WHERE ' + pKey + ' = ?';
-    connection.query($query, code, function (err, rows, fields) {
-        if (err) {
-            console.log("An error occured performing the query.");
-            console.log(err);
-            return;
+
+    dialog.showMessageBox({
+        type: "question",
+        buttons: ['Yes', 'No'],
+        defaultId: 0,
+        message: "Are you sure you would like to delete?",
+
+    }, function (response) {
+        if (response === 0) {
+            var row = btn.parentNode.parentNode;
+            var code = row.getElementsByClassName(className)[0].innerText;
+            row.parentNode.removeChild(row);
+
+            $query = 'DELETE FROM ' + table + ' WHERE ' + pKey + ' = ?';
+            connection.query($query, code, function (err, rows, fields) {
+                if (err) {
+                    console.log("An error occured performing the query.");
+                    console.log(err);
+                    return;
+                }
+                console.log("Query successfuly executed");
+            });
         }
-        console.log("Query successfuly executed");
+    }
+    );
+}
+
+
+function loadSettings(){
+    // document.getElementById('settingsContent').innerHTML = '<object type="text/html" data="html/dbLogin.html" height=100% width=100%></object>';
+}
+
+function setDB(){
+    var dbHost = document.getElementById("dbHost").value;
+    var dbUser = document.getElementById("dbUser").value;
+    var dbPassword = document.getElementById("dbPassword").value;
+    var dbDatabase = document.getElementById("dbDatabase").value;
+    settings.set('userInfo', {
+        localhost: dbHost,
+        user: dbUser,
+        password: dbPassword,
+        database: dbDatabase
     });
+}
+
+function init(){
+    document.getElementById("dbHost").value = settings.get('userInfo.localhost');
+    document.getElementById("dbUser").value = settings.get('userInfo.user');
+    document.getElementById("dbPassword").value = settings.get('userInfo.password');
+    //Currently getting non passive event listener warning
+    option = document.createElement("option");
+    option.text = settings.get('userInfo.database');
+    document.getElementById("dbDatabase").appendChild(option);
+}
+
+window.addEventListener('load', init, false);
+function deleteConfirm(btn, table, className, pKey) {
+
 }
 
 //Should probably figure out where to put this
@@ -336,3 +389,4 @@ function deleteRow(btn, table, className, pKey) {
     //     console.log("close");
     //     // The connection has been closed
     // });
+    

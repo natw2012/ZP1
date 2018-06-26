@@ -2,6 +2,7 @@ const electron = require('electron')
 const path = require('path')
 const url = require('url')
 
+
 const {ipcMain,dialog} = require('electron')
 
 // Module to control application life.
@@ -66,4 +67,9 @@ app.on('activate', function () {
 
 ipcMain.on('refreshTable',function(e,table){
   mainWindow.webContents.send('refreshTable',table);
+})
+
+ipcMain.on('errorMessage',function(e,err){
+  console.log("from main");
+  dialog.showErrorBox("Error",err.sqlMessage);
 })
