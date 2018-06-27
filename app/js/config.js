@@ -21,10 +21,10 @@ const settings = require('electron-settings');
 var mysql = function localConnect() {
     // Add the credentials to access your database
     return require('mysql').createConnection({
-        host: settings.get('userInfo.localhost'),
+        host: "localhost",
         user: settings.get('userInfo.user'),
         password: settings.get('userInfo.password'),
-        database: settings.get('userInfo.database')
+        database: settings.get('database.db')
     });
 }
 module.exports.localConnect = mysql;

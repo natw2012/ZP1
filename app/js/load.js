@@ -33,7 +33,7 @@ function importCount() {
 
         fs.readFile(fileName, 'utf-8', function (err, data) {
             console.log(data);
-            parse(data, function (Err, output) {
+            parse(data, function (err, output) {
                 console.log(output);
                 var sql = "INSERT INTO `count` (`id`, `species`, `type`) VALUES ?";
                 connection.query(sql, [output], function (err, result, fields) {
@@ -45,6 +45,29 @@ function importCount() {
 
         })
     });
+}
+
+function importSpecies() {
+    dialog.showOpenDialog({
+        filters: [{ name: 'csv', extensions: ['csv'] }
+        ]
+    }, function (fileNames) {
+        if (fileNames === undefined) return;
+
+        var fileName = fileNames[0];
+
+        fs.readFile(fileName, 'utf-8', function (err, data) {
+            console.log(data);
+            parse(data, function (err, output) {
+                console.log(output);
+                var sql = "INSERT INTO `species` (`code`,`abbrev`,`name`) VALUES ?";
+                connection.query(sql, [output], function (err, result, fields) {
+                    if (err) throw err;
+                    loadSpecies(scrollTable);
+                })
+            })
+        })
+    })
 }
 
 //Export MySql Count Table to csv file
@@ -106,7 +129,9 @@ function scrollTable() {
 
 function loadSpecies() {
     // document.getElementById("content").innerHTML = '<object type="text/html" data="html/species.html" ></object>';
-    var html = '<button class="btn btn-default" id="addSpeciesWindowBtn" onclick="createAddWindow(\'html/addSpecies.html\')">Add Species</button><br></br>';
+    var html = '<button class="btn btn-default" id="addSpeciesWindowBtn" onclick="createAddWindow(\'html/addSpecies.html\')">Add Species</button>';
+    html += '<button class="btn btn-default" id="importSpecies" onclick="importSpecies()">Import Species List</button><br></br>'
+
     document.querySelector('#buttonSection').innerHTML = html;
 
     $query = 'SELECT `code` ,`abbrev`, `name` FROM `species`';
@@ -132,7 +157,7 @@ function loadSpecies() {
             html += '<button class="btn btn-default">Edit</button>';
             html += '</td>';
             html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this,\'species\',\'code\',\'id\')">Delete</button>';
+            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this,\'species\',\'code\',\'code\')">Delete</button>';
             html += '</td>';
             html += '</tr>';
             console.log(row);
@@ -304,6 +329,7 @@ function loadGear() {
     // document.getElementById("content").innerHTML = '<object type="text/html" data="html/gear.html" ></object>';
 }
 
+//Load Table function, used by several other functions
 function loadTable($query, callback) {
     // Perform a query
     connection.query($query, function (err, rows, fields) {
@@ -335,7 +361,7 @@ function deleteRow(btn, table, className, pKey) {
             var row = btn.parentNode.parentNode;
             var code = row.getElementsByClassName(className)[0].innerText;
             row.parentNode.removeChild(row);
-
+            console.log(btn,table,className,pKey);
             $query = 'DELETE FROM ' + table + ' WHERE ' + pKey + ' = ?';
             connection.query($query, code, function (err, rows, fields) {
                 if (err) {
@@ -351,31 +377,162 @@ function deleteRow(btn, table, className, pKey) {
 }
 
 
-function loadSettings(){
+function loadSettings() {
     // document.getElementById('settingsContent').innerHTML = '<object type="text/html" data="html/dbLogin.html" height=100% width=100%></object>';
 }
 
-function setDB(){
-    var dbHost = document.getElementById("dbHost").value;
+//Save UserInfo Settings
+function setUserInfo() {
     var dbUser = document.getElementById("dbUser").value;
     var dbPassword = document.getElementById("dbPassword").value;
-    var dbDatabase = document.getElementById("dbDatabase").value;
     settings.set('userInfo', {
-        localhost: dbHost,
         user: dbUser,
-        password: dbPassword,
-        database: dbDatabase
+        password: dbPassword
     });
+    connection.changeUser({ user: dbUser, password: dbPassword }, function (err) {
+        if (err) throw err;
+    });
+    loadDBSelect();
 }
 
-function init(){
-    document.getElementById("dbHost").value = settings.get('userInfo.localhost');
+//Save Database 
+function setDB() {
+    var dbDatabase = document.getElementById("dbDatabase").value;
+    settings.set('database', {
+        db: dbDatabase
+    });
+    connection.changeUser({ database: dbDatabase }, function (err) {
+        if (err) throw err;
+    });
+    dialog.showMessageBox({ message: "Set database as: " + dbDatabase });
+}
+
+//Load database from MySql Database into dropdown
+function loadDBSelect() {
+    //Clear options 
+    removeOptions(document.getElementById("dbDatabase"));
+    removeOptions(document.getElementById("deleteDatabaseSelect"));
+    console.log(document.getElementById("dbDatabase"));
+    // Perform a query
+    var $query = "SHOW DATABASES"
+    connection.query($query, function (err, result, fields) {
+        if (err) {
+            ipcRenderer.send('errorMessage', err);
+            console.log("An error ocurred performing the query.");
+            console.log(err);
+            return;
+        }
+        var option;
+        for (var i = 0; result[i] != null; i++) {
+            option = document.createElement("option");
+            option.text = result[i].Database;
+            option.id = result[i].Database;
+            document.getElementById("dbDatabase").appendChild(option);
+            document.getElementById("deleteDatabaseSelect").appendChild(option.cloneNode(true));
+        }
+        console.log("Query succesfully executed");
+
+        //Show saved database 
+        var e = document.getElementById("dbDatabase");
+        e.value = settings.get('database.db');
+    });
+
+}
+//Clear options from select dropdown
+function removeOptions(selectBox) {
+    console.log(selectBox);
+    if (selectBox) {
+        for (var i = selectBox.options.length - 1; i >= 0; i--) {
+            selectBox.remove(i);
+        }
+    }
+
+}
+
+//New Database
+function createNewDatabase() {
+    var name = document.getElementById("newDatabaseName").value;
+    var $query = "CREATE DATABASE " + name;
+    connection.query($query, function (err, result, fields) {
+        if (err) {
+            ipcRenderer.send('errorMessage', err);
+            console.log(err);
+        }
+        connection.changeUser({ database: name }, function (err) {
+            if (err) throw err;
+        });
+        console.log("Query succesfully executed");
+        $query = "CREATE TABLE count (id int(5) AUTO_INCREMENT PRIMARY KEY, species varchar(10), type varchar(10))";
+        connection.query($query, function (err, result, fields) {
+            if (err) {
+                ipcRenderer.send('errorMessage', err);
+            }
+            console.log("Query succesfully executed");
+        })
+        $query = "CREATE TABLE countTypes (type varchar(10) PRIMARY KEY)";
+        connection.query($query, function (err, result, fields) {
+            if (err) {
+                ipcRenderer.send('errorMessage', err);
+            }
+            console.log("Query succesfully executed");
+
+        })
+        var values = [['Cell'], ['Piece']];
+        $query = "INSERT INTO `counttypes`(`type`) VALUES ?";
+        connection.query($query, [values], function (err, result, fields) {
+            if (err) {
+                ipcRenderer.send('errorMessage', err);
+
+            }
+            console.log("Query succesfully executed");
+        })
+        $query = "CREATE TABLE lakes (lakeCode int(4) AUTO_INCREMENT PRIMARY KEY, lakeName varchar(10))";
+        connection.query($query, function (err, result, fields) {
+            if (err) {
+                ipcRenderer.send('errorMessage', err);
+            }
+            console.log("Query succesfully executed");
+        })
+        $query = "CREATE TABLE measures (id int(5) AUTO_INCREMENT PRIMARY KEY, species varchar(10), area float(10))";
+        connection.query($query, function (err, result, fields) {
+            if (err) {
+                ipcRenderer.send('errorMessage', err);
+            }
+            console.log("Query succesfully executed");
+        })
+        $query = "CREATE TABLE species (code int(3) PRIMARY KEY, abbrev varchar(8), name varchar(20))";
+        connection.query($query, function (err, result, fields) {
+            if (err) {
+                ipcRenderer.send('errorMessage', err);
+            }
+            console.log("Query succesfully executed");
+        })
+        //Load dropdown after new database is created
+        loadDBSelect();
+    });
+    dialog.showMessageBox({ message: "Succesfully Created New Database" });
+}
+
+function deleteDatabase() {
+    var db = document.getElementById("deleteDatabaseSelect").value;
+    $query = "DROP DATABASE " + db;
+    connection.query($query, function (err, result, fields) {
+        if (err) {
+            console.log(err);
+            ipcRenderer.send('errorMessage', err);
+        }
+        console.log("Query Succesfully executed");
+    });
+    loadDBSelect();
+}
+
+function init() {
+    //Load saved User Settings for Database Login
     document.getElementById("dbUser").value = settings.get('userInfo.user');
     document.getElementById("dbPassword").value = settings.get('userInfo.password');
+
     //Currently getting non passive event listener warning
-    option = document.createElement("option");
-    option.text = settings.get('userInfo.database');
-    document.getElementById("dbDatabase").appendChild(option);
+    loadDBSelect();
 }
 
 window.addEventListener('load', init, false);
@@ -389,4 +546,3 @@ function deleteConfirm(btn, table, className, pKey) {
     //     console.log("close");
     //     // The connection has been closed
     // });
-    

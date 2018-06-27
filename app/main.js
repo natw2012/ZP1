@@ -70,6 +70,5 @@ ipcMain.on('refreshTable',function(e,table){
 })
 
 ipcMain.on('errorMessage',function(e,err){
-  console.log("from main");
   dialog.showErrorBox("Error",err.sqlMessage);
 })

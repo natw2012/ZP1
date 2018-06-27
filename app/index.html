@@ -63,10 +63,7 @@
               </div>
               <div class="pane" id="settingsContent" style="padding: 20px">
                   <form style="padding: 20px" id="dbSettingsForm">
-                      <div class="form-group">
-                          <label for="dbHost">Host:</label>
-                          <input class="form-control form-control-sm" type="text" id="dbHost" value="">
-                      </div>
+                      <h3>Manage Database Login Info</h3>
                       <div class="form-group">
                           <label for="dbUser">User:</label>
                           <input class="form-control form-control-sm" type="text" id="dbUser" value="">
@@ -75,14 +72,37 @@
                           <label for="dbPassword">Password:</label>
                           <input class="form-control form-control-sm" type="text" id="dbPassword" value="">
                       </div>
+                      <div class="form-actions">
+                          <button id="saveUserInfo" type="button" class="btn btn-system btn-primary" onclick="setUserInfo()">Save User Info</button>
+                      </div>
                       <div class="form-group">
                           <label for="dbDatabase">Database:</label>
                           <select class="form-control form-control-sm" type="text" id="dbDatabase" value=""></select>
                       </div>
                       <div class="form-actions">
-                          <button id="saveDB" type="submit" class="btn btn-system btn-primary" onclick="setDB()">Save</button>
+                          <button id="saveDB" type="button" class="btn btn-system btn-primary" onclick="setDB()">Save Database</button>
                       </div>
                   </form>
+                  <form style="padding: 20px" id="dbSettingsForm">
+                    <h3>Create New Database</h3>
+                    <div class="form-group">
+                        <label for="newDatabaseName">Database:</label>
+                        <input class="form-control form-control-sm" type="text" id="newDatabaseName" value=""></input>
+                    </div>
+                      <div class="form-actions">
+                          <button id="createDB" type="button" class="btn btn-system btn-primary" onclick="createNewDatabase()">Create New Database</button>
+                      </div>
+                  </form>
+                  <form style="padding: 20px" id="dbSettingsForm">
+                      <h3>Delete Database</h3>
+                      <div class="form-group">
+                          <label for="deleteDatabaseName">Database:</label>
+                          <select class="form-control form-control-sm" type="text" id="deleteDatabaseSelect" value=""></select>
+                      </div>
+                        <div class="form-actions">
+                            <button id="createDB" type="button" class="btn btn-system btn-primary" onclick="deleteDatabase()">Delete Database</button>
+                        </div>
+                    </form>
               </div>
             </div>
         </div>
