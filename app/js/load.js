@@ -2,7 +2,7 @@ const $ = require('jquery');
 window.$ = window.jQuery = require('jquery');
 var mysql = require('mysql');
 var photon = require('electron-photon');
-const { ipcRenderer } = require('electron')
+const { ipcRenderer } = require('electron');
 var dialog = require('electron').remote.dialog;
 var fs = require('fs');
 var stringify = require('csv-stringify');
@@ -134,10 +134,10 @@ function loadSpecies() {
 
     document.querySelector('#buttonSection').innerHTML = html;
 
-    $query = 'SELECT `code` ,`abbrev`, `name` FROM `species`';
+    $query = 'SELECT `code` ,`abbrev`, `name`, `depth` FROM `species`';
 
     loadTable($query, function (rows) {
-        var html = '<thead><th>Species Code</th><th>Species Abbrev</th><th>Species Name</th><th>Actions</th><th>Actions</th><th>Actions</th></thead><tbody>';
+        var html = '<thead><th>Species Code</th><th>Species Abbrev</th><th>Species Name</th><th>Depth</th><th>Actions</th><th>Actions</th><th>Actions</th></thead><tbody>';
 
         rows.forEach(function (row) {
             html += '<tr>';
@@ -151,10 +151,13 @@ function loadSpecies() {
             html += row.name;
             html += '</td>';
             html += '<td>';
+            html += row.depth;
+            html += '</td>';
+            html += '<td>';
             html += '<button class="btn btn-default">Info</button>';
             html += '</td>';
             html += '<td>';
-            html += '<button class="btn btn-default">Edit</button>';
+            html += '<button type="button" class="btn btn-default" value="Edit" onclick="makeEditWindow(this)">Edit</button>';
             html += '</td>';
             html += '<td>';
             html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this,\'species\',\'code\',\'code\')">Delete</button>';
@@ -165,6 +168,24 @@ function loadSpecies() {
         html += '</tbody>';
         document.querySelector('#table').innerHTML = html;
     });
+}
+
+function makeEditWindow(btn){
+    console.log("test");
+    console.log(btn);
+    var row = btn.parentNode.parentNode;
+    console.log(row);
+    var info = [];
+    console.log(row.cells.length);
+    for(var i = 0; i < row.cells.length-3; i++){
+        console.log(i);
+        console.log(row.cells[i].innerHTML);
+        info.push(row.cells[i].innerHTML);
+        console.log(info);
+    }
+    var id = row.getElementsByClassName('code')[0].innerText;
+    console.log(info);
+    ipcRenderer.send('showEditWindow',"species",info);
 }
 function loadCounts(callback) {
     var html = '<button class="btn btn-default" id="startCountBtn" onclick="createCountWindow()">Start Counting</button>'
@@ -194,7 +215,7 @@ function loadCounts(callback) {
             html += '<button class="btn btn-default">Info</button>';
             html += '</td>';
             html += '<td>';
-            html += '<button class="btn btn-default">Edit</button>';
+            html += '<button type="button" class="btn btn-default" value="Edit" onclick="createEditWindow(this)">Edit</button>';
             html += '</td>';
             html += '<td>';
             // html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteConfirm()">Delete</button>';
@@ -452,7 +473,7 @@ function removeOptions(selectBox) {
 //New Database
 function createNewDatabase() {
     var name = document.getElementById("newDatabaseName").value;
-    var $query = "CREATE DATABASE " + name;
+    var $query = "CREATE DATABASE " + name; //Change to ??
     connection.query($query, function (err, result, fields) {
         if (err) {
             ipcRenderer.send('errorMessage', err);
@@ -500,7 +521,7 @@ function createNewDatabase() {
             }
             console.log("Query succesfully executed");
         })
-        $query = "CREATE TABLE species (code int(3) PRIMARY KEY, abbrev varchar(8), name varchar(20))";
+        $query = "CREATE TABLE species (code int(3) PRIMARY KEY, abbrev varchar(8), name varchar(20), depth int(11))";
         connection.query($query, function (err, result, fields) {
             if (err) {
                 ipcRenderer.send('errorMessage', err);

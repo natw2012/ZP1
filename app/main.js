@@ -3,26 +3,34 @@ const path = require('path')
 const url = require('url')
 
 
-const {ipcMain,dialog} = require('electron')
+const {app, ipcMain, dialog, BrowserWindow } = require('electron')
 
 // Module to control application life.
-const app = electron.app
+// const app = electron.app
 // Module to create native browser window.
-const BrowserWindow = electron.BrowserWindow
+// const BrowserWindow = electron.BrowserWindow
 
 
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
+let editWindow
 
 function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({ width: 800, height: 600 })
+  editWindow = new BrowserWindow({ width: 300, height: 500, show: false })
 
   // and load the index.html of the app.
   mainWindow.loadURL(url.format({
     pathname: path.join(__dirname, 'index.html'),
+    protocol: 'file:',
+    slashes: true
+  }))
+
+  editWindow.loadURL(url.format({
+    pathname: path.join(__dirname, 'html/editWindow.html'),
     protocol: 'file:',
     slashes: true
   }))
@@ -36,7 +44,20 @@ function createWindow() {
     // in an array if your app supports multi windows, this is the time
     // when you should delete the corresponding element.
     mainWindow = null
+    if (process.platform !== 'darwin') {
+      app.quit()
+    }
+
   })
+
+  editWindow.on('close', function (e) {
+    if (app.quitting) {
+      editWindow = null
+    } else {
+      e.preventDefault()
+      editWindow.hide()
+    }
+  });
 }
 
 // This method will be called when Electron has finished
@@ -44,13 +65,15 @@ function createWindow() {
 // Some APIs can only be used after this event occurs.
 app.on('ready', createWindow)
 
+app.on('before-quit', function () {
+  app.quitting = true;
+})
+
 // Quit when all windows are closed.
 app.on('window-all-closed', function () {
   // On OS X it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+
 })
 
 app.on('activate', function () {
@@ -65,10 +88,19 @@ app.on('activate', function () {
 // code. You can also put them in separate files and require them here.
 
 
-ipcMain.on('refreshTable',function(e,table){
-  mainWindow.webContents.send('refreshTable',table);
+ipcMain.on('refreshTable', function (e, table) {
+  mainWindow.webContents.send('refreshTable', table);
 })
 
-ipcMain.on('errorMessage',function(e,err){
-  dialog.showErrorBox("Error",err.sqlMessage);
+ipcMain.on('errorMessage', function (e, err) {
+  dialog.showErrorBox("Error", err.sqlMessage);
+})
+
+ipcMain.on('showEditWindow', function (e, table, info) {
+  editWindow.reload(editWindow.show());
+  
+  editWindow.webContents.on('did-finish-load', () => {
+    editWindow.webContents.send('loadIT', table, info);
+  })
+
 })
