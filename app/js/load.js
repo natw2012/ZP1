@@ -157,7 +157,7 @@ function loadSpecies() {
             html += '<button class="btn btn-default">Info</button>';
             html += '</td>';
             html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Edit" onclick="makeEditWindow(this)">Edit</button>';
+            html += '<button type="button" class="btn btn-default" value="Edit" onclick="makeEditWindow(this,\'species\')">Edit</button>';
             html += '</td>';
             html += '<td>';
             html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this,\'species\',\'code\',\'code\')">Delete</button>';

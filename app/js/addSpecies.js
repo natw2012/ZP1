@@ -8,10 +8,14 @@ function addSpecies() {
     var codeInput = document.getElementById("speciesCode").value;
     var abbrevInput = document.getElementById("speciesAbbrev").value;
     var nameInput = document.getElementById("speciesName").value;
+    var depthInput = document.getElementById("speciesDepth").value;
 
-    var sql = "INSERT INTO species SET code = ?, abbrev = ?, name = ?";
-    connection.query(sql, [codeInput, abbrevInput, nameInput], function (err, result) {
-        if (err) throw err;
+    var sql = "INSERT INTO species SET code = ?, abbrev = ?, name = ?, depth = ?";
+    connection.query(sql, [codeInput, abbrevInput, nameInput, depthInput], function (err, result) {
+        if (err){
+            ipcRenderer.send('errorMessage', err)
+            console.log(err);
+        }
         console.log("1 record inserted");
         refreshSpeciesTable()
     });

@@ -4,8 +4,8 @@
 <head>
     <meta charset="utf-8">
     <title>Add Species</title>
-    <script>const Photon = require("electron-photon");</script> 
-    <!-- <link rel="stylesheet" href="../../node_modules/bootstrap/dist/css/bootstrap.min.css"> -->
+    <!-- <script>const Photon = require("electron-photon");</script>  -->
+    <link rel="stylesheet" href="../../node_modules/bootstrap/dist/css/bootstrap.min.css">
 </head>
 
 <body>
@@ -15,7 +15,7 @@
     <form style="padding: 20px">
         <div class="form-group">
             <label for="speciesCode">Species Code[4]</label>
-            <input type="text" class="form-control form-control-sm" id="speciesCode" value="">
+            <input type="number" class="form-control form-control-sm" id="speciesCode" value="">
         </div>
         <div class="form-group">
                 <label for="speciesAbbrev">Species Abbreviation</label>
@@ -25,14 +25,18 @@
             <label for="speciesName">Species Name</label>
             <input type="text" class="form-control form-control-sm" id="speciesName" value="">
         </div>
+        <div class="form-group">
+                <label for="speciesDepth">Species Depth</label>
+                <input type="number" class="form-control form-control-sm" id="speciesDepth" value="">
+            </div>
         <div class="form-actions">
             <button id="addSpeciesBtn" type="submit" class="btn btn-system btn-active">Add</button>
         </div>
     </form>
     <script type="text/javascript" src="../js/addSpecies.js"></script>
     <script>window.$ = window.jQuery = require('jquery');</script>
-    <!-- <script src="../../node_modules/popper.js/dist/umd/popper.min.js"></script>
-    <script src="../../node_modules/bootstrap/dist/js/bootstrap.min.js"></script> -->
+    <script src="../../node_modules/popper.js/dist/umd/popper.min.js"></script>
+    <script src="../../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
 
 </body>
 
