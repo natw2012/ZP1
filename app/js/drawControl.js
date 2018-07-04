@@ -170,10 +170,10 @@ function ellipseArea(el) {
 //Calculate the pixel to measurement ratio eg. cm/pix
 function pixelToDistanceRatio() {
     if (!document.getElementById("calibrateTextBox").value) {
-        ipcRenderer.send('errorMessage', "Please enter a known distance to calibrate");
+        ipcRenderer.send('errorMessage2', "Please enter a known distance to calibrate");
     }
     else if (!canvas.getActiveObject()) {
-        ipcRenderer.send('errorMessage', "Please draw and select line object used to measure");
+        ipcRenderer.send('errorMessage2', "Please draw and select line object used to measure");
     }
     else {
         try {
@@ -316,13 +316,13 @@ function submit() {
     }
     //Must have proper input
     if (!calibrationRatio) {
-        ipcRenderer.send('errorMessage', "Please enter known distance to calibrate");
+        ipcRenderer.send('errorMessage2', "Please enter known distance to calibrate");
     }
     else if (!measure.species) {
-        ipcRenderer.send('errorMessage', "Must include species");
+        ipcRenderer.send('errorMessage2', "Must include species");
     }
     else if (!measure.area) {
-        ipcRenderer.send('errorMessage', "Must draw shape");
+        ipcRenderer.send('errorMessage2', "Must draw shape");
     }
     else {
         con.connect(function (err) {

@@ -26,6 +26,7 @@
     "canvas": "^1.6.11",
     "csv": "^3.1.0",
     "electron-photon": "^1.1.6",
+    "electron-reload": "^1.2.5",
     "electron-settings": "^3.2.0",
     "fabric": "^2.3.1",
     "jquery": "^3.3.1",

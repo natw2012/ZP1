@@ -5,12 +5,8 @@ const url = require('url')
 
 const {app, ipcMain, dialog, BrowserWindow } = require('electron')
 
-// Module to control application life.
-// const app = electron.app
-// Module to create native browser window.
-// const BrowserWindow = electron.BrowserWindow
-
-
+// Added electron-reload to refresh app on save
+require("electron-reload")(__dirname);
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -92,14 +88,29 @@ ipcMain.on('refreshTable', function (e, table) {
   mainWindow.webContents.send('refreshTable', table);
 })
 
-//Display SQL Query Error Message in Dialog
-ipcMain.on('errorMessageSQL', function (e, err) {
-  dialog.showErrorBox("Error", err.sqlMessage);
+//Display Error Message in Dialog
+ipcMain.on('errorMessage', function (e, currWindow, err) {
+  var win;
+  if(currWindow === 1){
+    win = mainWindow;
+  }
+  else if(currWindow === 2){
+    win = editWindow;
+  }
+  dialog.showMessageBox(win,{
+    type: "error",
+    title: "Error",
+    message: err,
+  });
 })
-//Display Custom Error Message in Dialog
-ipcMain.on('errorMessage', function (e, err) {
 
-  dialog.showErrorBox("Error", JSON.stringify(err));
+//Displays Error messages for windows not defined in main, will change eventually
+ipcMain.on('errorMessage2', function (e, err) {
+  dialog.showMessageBox({
+    type: "error",
+    title: "Error",
+    message: err,
+  });
 })
 
 ipcMain.on('showEditWindow', function (e, table, info) {
