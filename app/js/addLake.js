@@ -9,6 +9,7 @@ function addLake() {
   connection.connect(function (err) {
     // in case of error
     if (err) {
+      ipcRenderer.send('errorMessageSQL', err)
       console.log(err.code);
       console.log(err.fatal);
     }

@@ -21,11 +21,11 @@ document.ready = (function () {
 
 
 //Receive call from main
-ipcRenderer.on('loadIT', function (e, table, info) {
-    console.log("Remember me");
+ipcRenderer.on('loadEdit', function (e, table, info) {
     loadForm(table, info);
 });
 
+//Load html content into edit window
 function loadForm(table, info) {
     var html = "";
     var sql = 'SELECT * FROM ??';
@@ -33,14 +33,9 @@ function loadForm(table, info) {
         if (err) {
             console.log(err)
         }
-
-        // console.log(result, fields);
-        // console.log(fields[0].name);
         var name;
-        console.log(fields.length);
         for (var i = 0; i < fields.length; i++) {
             name = fields[i].name;
-            console.log(name);
             if (i === 0) {
                 html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
                 html += '<input class="form-control form-control-sm" type="text" id="' + name + '" name="' + name + '" value="' + info[i] + '"readonly></div>';
@@ -52,7 +47,6 @@ function loadForm(table, info) {
 
             }
         }
-
         document.getElementById("editForm").innerHTML = html;
     });
 }

@@ -13,7 +13,7 @@ function addSpecies() {
     var sql = "INSERT INTO species SET code = ?, abbrev = ?, name = ?, depth = ?";
     connection.query(sql, [codeInput, abbrevInput, nameInput, depthInput], function (err, result) {
         if (err){
-            ipcRenderer.send('errorMessage', err)
+            ipcRenderer.send('errorMessageSQL', err)
             console.log(err);
         }
         console.log("1 record inserted");

@@ -4,44 +4,46 @@
 <head>
     <title>Count</title>
     <!-- custom css -->
+    
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+        crossorigin="anonymous">; -->
+    <script>const Photon = require("electron-photon");</script>
     <link rel="stylesheet" href="css/measureWindow.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
-        crossorigin="anonymous">;
 
 </head>
 
 <body>
-    <nav id="nav">
-        <div id="title-bar">Count</div>
-        <div id="title-bar-btns">
-            <div id="min-btn">-
-                <span></span>
+    <ph-window>
+        <nav id="title-bar">
+            <div id="title">Count</div>
+            <div id="title-bar-btns">
+                <button id="min-btn">-</button>
+                <button id="max-btn">&square;</button>
+                <button id="close-btn">x</button>
             </div>
-            <div id="max-btn">+
-                <span></span>
+        </nav>
+        <window-content>
+            <div class="tool-bar">
+                <label id="typeSelectLbl" for="typeSelect">Type:</label>
+                <select id="typeSelect"></select>
+                <label id="speciesSelectLbl" for="speciesSelect">Species:</label>
+                <select id="speciesSelect">
+                    <option value="">Select Species</option>
+                </select>
+                <label id="countLbl" for="count">Count:</label>
+                <label id="count"></label>
+                <button type="submit" id="clear">Clear</button>
+                <button type="submit" id="delete">Delete</button>
             </div>
-            <div id="close-btn">&times
-                <span></span>
+
+            <div id="container"></div>
+            <div id="canvasContainer">
+                <canvas id="canvas" width=100% height=100% style="border: solid 1px"></canvas>
             </div>
-        </div>
-    </nav>
-    <div class="tool-bar">
-        <label>Type:</label>
-        <select id="typeSelect"></select>
-        <label>Species:</label>
-        <select id="speciesSelect">
-            <option value="">Select Species</option>
-        </select>
-        <label>Count:</label>
-        <label id="count"></label>
-        <button type="submit" id="clear">Clear</button>
-        <button type="submit" id="delete">Delete</button>
-    </div>
-   
-    <div id="container"></div>
-    <div id="canvasContainer">
-        <canvas id="canvas" width=100% height=100% style="border: solid 1px"></canvas>
-    </div>
+        </window-content>
+    </ph-window>
+
+
 
     <script src="js/titlebar.js"></script>
     <script src="js/count.js"></script>

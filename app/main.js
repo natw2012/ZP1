@@ -92,15 +92,21 @@ ipcMain.on('refreshTable', function (e, table) {
   mainWindow.webContents.send('refreshTable', table);
 })
 
-ipcMain.on('errorMessage', function (e, err) {
+//Display SQL Query Error Message in Dialog
+ipcMain.on('errorMessageSQL', function (e, err) {
   dialog.showErrorBox("Error", err.sqlMessage);
+})
+//Display Custom Error Message in Dialog
+ipcMain.on('errorMessage', function (e, err) {
+
+  dialog.showErrorBox("Error", JSON.stringify(err));
 })
 
 ipcMain.on('showEditWindow', function (e, table, info) {
   editWindow.reload(editWindow.show());
   
   editWindow.webContents.on('did-finish-load', () => {
-    editWindow.webContents.send('loadIT', table, info);
+    editWindow.webContents.send('loadEdit', table, info);
   })
 
 })

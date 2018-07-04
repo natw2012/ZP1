@@ -17,7 +17,8 @@
   },
   "homepage": "https://github.com/natw2012/ZP1#readme",
   "devDependencies": {
-    "electron": "^2.0.2",
+    "devtron": "^1.4.0",
+    "electron": "^2.0.3",
     "electron-packager": "^12.1.0"
   },
   "dependencies": {

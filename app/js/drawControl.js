@@ -9,7 +9,7 @@ var pixelLength;
 var realLength;
 var speciesOption = [];
 
-console.log(window.location.href );
+console.log(window.location.href);
 var con = require('./js/config.js').localConnect();
 
 //Should implement ability to choose colours in dashboard 
@@ -35,18 +35,19 @@ function resizeCanvas() {
     canvas.renderAll();
 }
 
-function lengthOrArea(){
+//Switch between length and area displays
+function lengthOrArea() {
     var shape = getShape();
 
     console.log(shape);
-    if(shape === 'Line'){
+    if (shape === 'Line') {
         document.querySelector('#lengthOutputLbl').style.display = 'initial';
         document.querySelector('#lengthOutput').style.display = 'initial';
         document.querySelector('#areaOutputLbl').style.display = 'none';
         document.querySelector('#areaOutput').style.display = 'none';
-        
+
     }
-    else{
+    else {
         document.querySelector('#lengthOutputLbl').style.display = 'none';
         document.querySelector('#lengthOutput').style.display = 'none';
         document.querySelector('#areaOutputLbl').style.display = 'initial';
@@ -54,6 +55,7 @@ function lengthOrArea(){
     }
 }
 
+//Load dropdown of species
 function loadSpeciesDropdown() {
     con.connect(function (err) {
         // in case of error
@@ -80,6 +82,7 @@ function loadSpeciesDropdown() {
     });
 }
 
+//Maintains scaling of shape borders while changing shape size
 function onObjectScaled(e) {
     //Eliminates caching error during scaling
     fabric.Object.prototype.objectCaching = false;
@@ -93,8 +96,7 @@ function onObjectScaled(e) {
     shape.ry = shape.ry * shape.scaleY;
     shape.scaleX = 1;
     shape.scaleY = 1;
-    
-    //probably redundant can do line vs everything else
+
     if (shape.type === "line") {
         lineLength(shape);
     }
@@ -105,13 +107,14 @@ function onObjectScaled(e) {
     calcTotalArea();
 }
 
-function calcTotalArea(){
+//Calculate area of all objects on canvas
+function calcTotalArea() {
     var totalArea = 0;
     var objects = canvas.getObjects();
-    objects.forEach(object=>{
+    objects.forEach(object => {
         totalArea = totalArea + calcArea(object);
     });
-    document.getElementById("totalAreaOutput").value = totalArea.toFixed(2);
+    document.getElementById("totalAreaOutput").value = totalArea.toFixed(4);
 }
 
 //Calls area calc function depending on shape
@@ -127,10 +130,10 @@ function calcArea(obj) {
     else if (type === "triangle") {
         return triangleArea(obj);
     }
-    else if(type === "line"){
+    else if (type === "line") {
         return 0;
     }
-    else if(type === "ellipse") {
+    else if (type === "ellipse") {
         return ellipseArea(obj);
     }
 
@@ -141,35 +144,50 @@ function rectArea(rect) {
     console.log("rect");
     //Slight measuring issue with rect.width = inside perimeter while line.width = outside
     var area = rect.width * rect.height * Math.pow(calibrationRatio, 2);
-    document.getElementById("areaOutput").value = area.toFixed(2);
+    document.getElementById("areaOutput").value = area.toFixed(4);
     return area;
 }
 //Calc Area of Circle
 function circleArea(circ) {
     console.log("circle");
     var area = Math.PI * Math.pow(circ.radius, 2) * Math.pow(calibrationRatio, 2);
-    document.getElementById("areaOutput").value = area.toFixed(2);
+    document.getElementById("areaOutput").value = area.toFixed(4);
     return area;
 }
 //Calc Area of Triangle
 function triangleArea(tri) {
     var area = tri.width * tri.height / 2 * Math.pow(calibrationRatio, 2);
-    document.getElementById("areaOutput").value = area.toFixed(2);
+    document.getElementById("areaOutput").value = area.toFixed(4);
     return area;
 }
 //Calc Area of Ellipse
 function ellipseArea(el) {
     var area = el.rx * el.ry * Math.PI * Math.pow(calibrationRatio, 2);
-    document.getElementById("areaOutput").value = area.toFixed(2);
+    document.getElementById("areaOutput").value = area.toFixed(4);
     return area;
 }
 
 //Calculate the pixel to measurement ratio eg. cm/pix
 function pixelToDistanceRatio() {
-    calibrationRatio = Number(document.getElementById("calibrateTextBox").value) / canvas.getActiveObject().width;
-    document.getElementById("pdRatio").value = calibrationRatio.toFixed(2);
-    clearCanvas();
-    clearOutputs();
+    if (!document.getElementById("calibrateTextBox").value) {
+        ipcRenderer.send('errorMessage', "Please enter a known distance to calibrate");
+    }
+    else if (!canvas.getActiveObject()) {
+        ipcRenderer.send('errorMessage', "Please draw and select line object used to measure");
+    }
+    else {
+        try {
+            calibrationRatio = Number(document.getElementById("calibrateTextBox").value) / canvas.getActiveObject().width;
+            document.getElementById("pdRatio").value = calibrationRatio.toFixed(4);
+            clearCanvas();
+            clearOutputs();
+        }
+        catch (err) {
+            // ipcRenderer.send('errorMessage', err.message);
+        }
+    }
+
+
 }
 
 //Find pixel length of beginning and end position of line, convert to real length by ratio and output
@@ -280,40 +298,52 @@ function draw() {
     calcTotalArea();
 }
 
-function unselect(){
+function unselect() {
     console.log("tes");
     document.getElementById("areaOutput").value = "";
 }
-function select(e){
+function select(e) {
     console.log("TEst");
     console.log(e);
     onObjectScaled(e);
 }
 
-function submit(){
+function submit() {
     var e = document.getElementById("speciesSelect");
-     let measure = {
+    let measure = {
         species: e.options[e.selectedIndex].value,
         area: document.getElementById("totalAreaOutput").value
     }
-
-    con.connect(function (err) {
-        // in case of error
-        if (err) {
-            console.log(err.code);
-            console.log(err.fatal);
-        }
-        var sql = "INSERT INTO measures SET ?";
-        con.query(sql, measure, function (err, result, fields) {
-            if (err) throw err;
-            console.log(result);
-            refreshMeasureTable("measure");
+    //Must have proper input
+    if (!calibrationRatio) {
+        ipcRenderer.send('errorMessage', "Please enter known distance to calibrate");
+    }
+    else if (!measure.species) {
+        ipcRenderer.send('errorMessage', "Must include species");
+    }
+    else if (!measure.area) {
+        ipcRenderer.send('errorMessage', "Must draw shape");
+    }
+    else {
+        con.connect(function (err) {
+            // in case of error
+            if (err) {
+                console.log(err.code);
+                console.log(err.fatal);
+            }
+            var sql = "INSERT INTO measures SET ?";
+            con.query(sql, measure, function (err, result, fields) {
+                if (err) throw err;
+                console.log(result);
+                refreshMeasureTable("measure");
+            });
         });
-    });
-    if(document.getElementById("clearOnEnter").checked){
-        clearOutputs();
-        clearCanvas();
-    }    
+        if (document.getElementById("clearOnEnter").checked) {
+            clearOutputs();
+            clearCanvas();
+        }
+    }
+
 }
 
 //Calls main window to refresh the count table

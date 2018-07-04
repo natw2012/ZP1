@@ -4,9 +4,10 @@
 <head>
   <title>Measure</title>
   <!-- custom css -->
+
+  <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">; -->
+  <script>const Photon = require("electron-photon");</script>
   <link rel="stylesheet" href="css/measureWindow.css">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
-    crossorigin="anonymous">;
   <!-- <script src="https://cdn.rawgit.com/konvajs/konva/2.1.3/konva.min.js"></script> -->
   <!-- <script src="../dist/fabric.js"></script> -->
   <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.6.4/fabric.min.js"></script> -->
@@ -14,58 +15,92 @@
 </head>
 
 <body>
-  <nav id="nav">
-    <div id="title-bar">Measure Area</div>
-    <div id="title-bar-btns">
-      <div id="min-btn">-
-        <span></span>
+  <ph-window>
+
+      <nav id="title-bar">
+        <div id="title">Measure Area</div>
+        <div id="title-bar-btns">
+          <button id="min-btn">-</button>
+          <button id="max-btn">&square;</button>
+          <button id="close-btn">x</button>
+        </div>
+      </nav>
+
+
+    <window-content>
+      <div class="pane-group">
+        <div class="pane-sm sidebar">
+          <div class="tool-bar" id="tool-bar1">
+            <h1 class="title">Calibrate</h1>
+
+            <input type="textbox" id="calibrateTextBox" style="width: 100px"></input>
+            <button id="calibrateBtn">Calibrate</button>
+            <br>
+            <label id="pdRatioLbl" for="pdRatio">Px-&microm Ratio:</label>
+            <input type="textbox" id="pdRatio" style="width: 100px" readonly></input>
+            <br>
+            <label id="clearOnEnterLbl" for="clearOnEnter">Clear On Enter:</label>
+            <input type="checkBox" id="clearOnEnter"></input>
+          </div>
+
+          <div class="tool-bar" id="tool-bar2">
+            <h1 class="title">Draw</h1>
+            <div class="form-group">
+              <label id="shapeSelectLbl" for="shapeSelect">Shape:</label>
+              <select id="shapeSelect">
+                <option>Line</option>
+                <option>Circle</option>
+                <option>Triangle</option>
+                <option>Rectangle</option>
+                <option>Ellipse</option>
+              </select>
+              <button id="drawShapeBtn">Draw</button>
+            </div>
+            
+          </div>
+
+          <div class="tool-bar" id="tool-bar3">
+            <h1 class="title">Select</h1>
+
+            <label id="speciesSelectLbl" for="speciesSelect">Type:</label>
+            <select id="speciesSelect">
+              <option value="">Select Species</option>
+            </select>
+          </div>
+          <div class="tool-bar" id="tool-bar4">
+            <h1 class="title">Output</h1>
+
+            <div class="form-group">
+              <label id="lengthOutputLbl" for="lengthOutput">Length[&microm]:</label>
+              <input type="textbox" id="lengthOutput" style="width: 100px" readonly></input>
+            </div>
+            <div class="form-group">
+              <label id="areaOutputLbl" for="areaOutput">Area:</label>
+              <input type="textbox" id="areaOutput" style="width: 100px" readonly></input>
+            </div>
+            <div class="form-group">
+              <label id="totalAreaOutputLbl" for="totalAreaOutput">Tot. Area[&microm
+                <sup>2</sup>]:</button>
+                <input type="textbox" id="totalAreaOutput" style="width: 100px" readonly></input>
+            </div>
+            <div class="form-group">
+              <button type="submit" id="enterBtn">Enter</button>
+              <button type="submit" id="clearBtn">Clear</button>
+
+            </div>
+          </div>
+
+        </div>
+        <div class="pane">
+          <div id="canvasContainer">
+            <canvas id="canvas" width="400" height="400" style="border: solid 1px"></canvas>
+          </div>
+        </div>
       </div>
-      <div id="max-btn">+
-        <span></span>
-      </div>
-      <div id="close-btn">&times
-        <span></span>
-      </div>
-    </div>
-  </nav>
-  <div class="tool-bar" id="tool-bar1">
-    <input type="textbox" id="calibrateTextBox" style="width: 100px"></input>
-    <button id="calibrateBtn">Calibrate</button>
-    <label>Pixel to Distance Ratio:</label>
-    <input type="textbox" id="pdRatio" style="width: 100px" readonly></input>
-    <label for="clearOnEnter">Clear On Enter:</label>
-    <input type="checkBox" id="clearOnEnter"></input>
-  </div>
-  <div class="tool-bar" id="tool-bar2">
-    <label>Type:</label>
-    <select id="speciesSelect">
-      <option value="">Select Species</option>
-    </select>
-    <label>Shape:</label>
-    <select id="shapeSelect">
-      <option>Line</option>
-      <option>Circle</option>
-      <option>Triangle</option>
-      <option>Rectangle</option>
-      <option>Ellipse</option>
-    </select>
-    <button id="drawShapeBtn">Draw</button>
-    
-  </div>
-  <div class="tool-bar" id="tool-bar3">
-    <label id="lengthOutputLbl" for="lengthOutput">Length:</label>
-    <input type="textbox" id="lengthOutput" style="width: 100px" readonly></input>
-    <label id="areaOutputLbl" for="areaOutput">Area:</label>
-    <input type="textbox" id="areaOutput" style="width: 100px" readonly></input>
-    <label id="totalAreaOutputLbl" for="totalAreaOutput">Total Area:</button>
-    <input type="textbox" id="totalAreaOutput" style="width: 100px" readonly></input> 
-    <button type="submit" id="enterBtn">Enter</button>
-    <button type="submit" id="clearBtn">Clear</button>
-  </div>
-  <div id="container"></div>
-  <div id="canvasContainer">
-    <canvas id="canvas" width="400" height="400" style="border: solid 1px"></canvas>
-  </div>
+    </window-content>
+  </ph-window>
+
+
 
 
   <!-- <canvas id="canvas"></canvas> -->
