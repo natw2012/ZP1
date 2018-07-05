@@ -96,7 +96,7 @@ function importData(table) {
                     console.log(header);
                     var sql = "INSERT INTO ?? (??) VALUES ?";
                     connection.query(sql, [table, header, output], function (err, result, fields) {
-                        if (err){
+                        if (err) {
                             console.log(win);
                             ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
                         }
@@ -302,10 +302,10 @@ function loadMeasures(callback) {
 
     document.querySelector('#buttonSection').innerHTML = html;
 
-    $query = 'SELECT `id` as measureID,`species`,`area` FROM `measures`';
+    $query = 'SELECT `id` as measureID,`species`, `length`, `width`, `area`, `volume` FROM `measures`';
 
     loadTable($query, function (rows) {
-        var html = '<thead><th>ID</th><th>Species</th><th>Area</th><th>Actions</th><th>Actions</th><th>Actions</th></thead><tbody>';
+        var html = '<thead><th>ID</th><th>Species</th><th>Length</th><th>Width</th><th>Area</th><th>Volume</th><th>Actions</th><th>Actions</th><th>Actions</th></thead><tbody>';
 
         rows.forEach(function (row) {
             html += '<tr>';
@@ -316,7 +316,16 @@ function loadMeasures(callback) {
             html += row.species;
             html += '</td>';
             html += '<td>';
+            html += row.length;
+            html += '</td>';
+            html += '<td>';
+            html += row.width;
+            html += '</td>';
+            html += '<td>';
             html += row.area;
+            html += '</td>';
+            html += '<td>';
+            html += row.volume;
             html += '</td>';
             html += '<td>';
             html += '<button class="btn btn-default">Info</button>';
@@ -436,8 +445,8 @@ function loadTable($query, callback) {
 //Remove row from html table and from MySql database
 function deleteRow(btn, table, className, pKey) {
 
-    
-    dialog.showMessageBox(win,{
+
+    dialog.showMessageBox(win, {
         type: "question",
         buttons: ['Yes', 'No'],
         defaultId: 0,
@@ -580,7 +589,7 @@ function createNewDatabase() {
             }
             console.log("Query succesfully executed");
         })
-        $query = "CREATE TABLE measures (id int(5) AUTO_INCREMENT PRIMARY KEY, species varchar(10), area float(10))";
+        $query = "CREATE TABLE measures (id int(5) AUTO_INCREMENT PRIMARY KEY, species varchar(10), length float(10), width float(10), area float(10), volume float(10))";
         connection.query($query, function (err, result, fields) {
             if (err) {
                 ipcRenderer.send('errorMessage', win, err);
@@ -600,17 +609,30 @@ function createNewDatabase() {
     dialog.showMessageBox({ message: "Succesfully Created New Database" });
 }
 
+//Delete database
 function deleteDatabase() {
-    var db = document.getElementById("deleteDatabaseSelect").value;
-    $query = "DROP DATABASE " + db;
-    connection.query($query, function (err, result, fields) {
-        if (err) {
-            console.log(err);
-            ipcRenderer.send('errorMessage', win, err);
+
+    dialog.showMessageBox(win, {
+        type: "question",
+        buttons: ['Yes', 'No'],
+        defaultId: 0,
+        message: "Are you sure you would like to delete this database?",
+
+    }, function (response) {
+        if (response === 0) { //If user clicks 'Yes'
+            var db = document.getElementById("deleteDatabaseSelect").value;
+            $query = "DROP DATABASE ??";
+            connection.query($query, db, function (err, result, fields) {
+                if (err) {
+                    console.log(err);
+                    ipcRenderer.send('errorMessage', win, err);
+                }
+                console.log("Query Succesfully executed");
+            });
+            loadDBSelect();
         }
-        console.log("Query Succesfully executed");
-    });
-    loadDBSelect();
+    }
+    );
 }
 
 function init() {

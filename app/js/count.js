@@ -232,8 +232,15 @@ function init() {
     document.getElementById("delete").addEventListener('click', deleteCircle, false);
     document.getElementById("speciesSelect").addEventListener('change', getCount);
     canvas.on('mouse:dblclick', function (options) {
-        drawDot();
-        addCount();
+        //Alert user to input species
+        if(document.getElementById("speciesSelect").value === "Select Species"){
+            ipcRenderer.send('errorMessage2', "Must Select Species");
+        }
+        else{
+            drawDot();
+            addCount();
+        }
+        
     });
 }
 

@@ -28,6 +28,7 @@
   border: 1px solid grey;
   /* border-bottom: none; */
   display: block;
+  padding: 4px;
 }
 
 * {

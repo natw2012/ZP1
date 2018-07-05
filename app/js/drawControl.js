@@ -19,6 +19,7 @@ function random_rgba() {
 
 function clearOutputs(event) {
     document.getElementById("lengthOutput").value = "";
+    document.getElementById("widthOutput").value = "";
     document.getElementById("areaOutput").value = "";
     document.getElementById("totalAreaOutput").value = "";
 }
@@ -33,26 +34,6 @@ function resizeCanvas() {
     canvas.setWidth(window.innerWidth);
     canvas.setHeight(window.innerHeight);
     canvas.renderAll();
-}
-
-//Switch between length and area displays
-function lengthOrArea() {
-    var shape = getShape();
-
-    console.log(shape);
-    if (shape === 'Line') {
-        document.querySelector('#lengthOutputLbl').style.display = 'initial';
-        document.querySelector('#lengthOutput').style.display = 'initial';
-        document.querySelector('#areaOutputLbl').style.display = 'none';
-        document.querySelector('#areaOutput').style.display = 'none';
-
-    }
-    else {
-        document.querySelector('#lengthOutputLbl').style.display = 'none';
-        document.querySelector('#lengthOutput').style.display = 'none';
-        document.querySelector('#areaOutputLbl').style.display = 'initial';
-        document.querySelector('#areaOutput').style.display = 'initial';
-    }
 }
 
 //Load dropdown of species
@@ -144,6 +125,8 @@ function rectArea(rect) {
     console.log("rect");
     //Slight measuring issue with rect.width = inside perimeter while line.width = outside
     var area = rect.width * rect.height * Math.pow(calibrationRatio, 2);
+    document.getElementById("lengthOutput").value = (rect.width * calibrationRatio).toFixed(4);
+    document.getElementById("widthOutput").value = (rect.height * calibrationRatio).toFixed(4);
     document.getElementById("areaOutput").value = area.toFixed(4);
     return area;
 }
@@ -151,18 +134,24 @@ function rectArea(rect) {
 function circleArea(circ) {
     console.log("circle");
     var area = Math.PI * Math.pow(circ.radius, 2) * Math.pow(calibrationRatio, 2);
+    document.getElementById("lengthOutput").value = (circ.width * calibrationRatio).toFixed(4);
+    document.getElementById("widthOutput").value = (circ.height * calibrationRatio).toFixed(4);
     document.getElementById("areaOutput").value = area.toFixed(4);
     return area;
 }
 //Calc Area of Triangle
 function triangleArea(tri) {
     var area = tri.width * tri.height / 2 * Math.pow(calibrationRatio, 2);
+    document.getElementById("lengthOutput").value = (tri.width * calibrationRatio).toFixed(4);
+    document.getElementById("widthOutput").value = (tri.height * calibrationRatio).toFixed(4);
     document.getElementById("areaOutput").value = area.toFixed(4);
     return area;
 }
 //Calc Area of Ellipse
 function ellipseArea(el) {
     var area = el.rx * el.ry * Math.PI * Math.pow(calibrationRatio, 2);
+    document.getElementById("lengthOutput").value = (el.width * calibrationRatio).toFixed(4);
+    document.getElementById("widthOutput").value = (el.height * calibrationRatio).toFixed(4);
     document.getElementById("areaOutput").value = area.toFixed(4);
     return area;
 }
@@ -203,6 +192,17 @@ function getShape() {
     var text = e.options[e.selectedIndex].text;
     console.log(text);
     return text;
+}
+
+function getSettings(){
+    var setting = {
+        lengthOnly:document.getElementById("lengthOnly").checked,
+        manual:document.getElementById("setManual").checked,
+    }
+
+    console.log(setting);
+    return setting;
+
 }
 
 function drawLine() {
@@ -310,9 +310,15 @@ function select(e) {
 
 function submit() {
     var e = document.getElementById("speciesSelect");
+
+    //get species depth
+
     let measure = {
         species: e.options[e.selectedIndex].value,
-        area: document.getElementById("totalAreaOutput").value
+        length: document.getElementById("lengthOutput").value,
+        width: document.getElementById("widthOutput").value,
+        area: document.getElementById("totalAreaOutput").value,
+        volume: document.getElementById("totalAreaOutput").value * 4,
     }
     //Must have proper input
     if (!calibrationRatio) {
@@ -351,23 +357,61 @@ function refreshMeasureTable() {
     ipcRenderer.send('refreshTable', "measure");
 }
 
+function changeView() {
+    var setting = getSettings();
+
+    var view;
+    //If LengthOnly is checked
+    if(setting.lengthOnly){
+        view = "lengthOnly";
+    }
+    else{
+        view = "automatic";
+    }
+
+    //Display all values
+    if(view === "automatic"){ 
+        document.querySelector('#areaOutputLbl').style.display = 'initial';
+        document.querySelector('#areaOutput').style.display = 'initial';
+        document.querySelector('#totalAreaOutputLbl').style.display = 'initial';
+        document.querySelector('#totalAreaOutput').style.display = 'initial';
+        document.querySelector('#shapeSelect').disabled = false;
+    }
+    // else if(view === "manual"){
+    //     document.querySelector('#areaOutputLbl').style.display = 'initial';
+    //     document.querySelector('#areaOutput').style.display = 'initial';
+    //     document.querySelector('#shapeSelect').value = "Line";
+    //     document.querySelector('#shapeSelect').attributes('readonly',false);
+    // }
+    //Display only line option
+    else if(view === "lengthOnly"){
+        document.querySelector('#areaOutputLbl').style.display = 'none';
+        document.querySelector('#areaOutput').style.display = 'none';
+        document.querySelector('#totalAreaOutputLbl').style.display = 'none';
+        document.querySelector('#totalAreaOutput').style.display = 'none';
+        document.querySelector('#shapeSelect').selectedIndex = 0;
+        document.querySelector('#shapeSelect').disabled = true;
+    }
+}
+
 //Initialize
 function init() {
     canvas = new fabric.Canvas('canvas');
     resizeCanvas();
     loadSpeciesDropdown();
-    lengthOrArea()
 
     canvas.on('object:scaling', onObjectScaled);
     canvas.on('selection:cleared', unselect);
     canvas.on('object:selected', select);
     document.getElementById("clearBtn").addEventListener('click', clearCanvas, false);
-    document.getElementById("shapeSelect").addEventListener('change', lengthOrArea);
     document.getElementById("drawShapeBtn").addEventListener('click', draw, false);
     window.addEventListener('resize', resizeCanvas, false);
     document.getElementById("enterBtn").addEventListener('click', submit, false);
     document.getElementById("calibrateBtn").addEventListener('click', pixelToDistanceRatio, false);
     document.getElementById("pdRatio").innerHTML = "Need to Calibrate";
+    document.getElementById("lengthOnly").addEventListener('click',changeView, false);
+    document.getElementById("setManual").addEventListener('click',changeView, false);
+
 }
 
 window.addEventListener('load', init, false);

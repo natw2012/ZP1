@@ -6,7 +6,9 @@ const url = require('url')
 const {app, ipcMain, dialog, BrowserWindow } = require('electron')
 
 // Added electron-reload to refresh app on save
-require("electron-reload")(__dirname);
+require("electron-reload")(__dirname, {
+  electron: require(`../node_modules/electron`)
+});
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
