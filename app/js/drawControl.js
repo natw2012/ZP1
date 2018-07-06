@@ -17,7 +17,7 @@ function random_rgba() {
     return randomColor(); //Random Color Library
 }
 
-function clearOutputs(event) {
+function clearOutputs() {
     document.getElementById("lengthOutput").value = "";
     document.getElementById("widthOutput").value = "";
     document.getElementById("areaOutput").value = "";
@@ -27,6 +27,7 @@ function clearOutputs(event) {
 //Clear Canvas
 function clearCanvas(event) {
     canvas.clear();
+    clearOutputs();
 }
 
 //Resize canvas to fit adjusted window
@@ -194,10 +195,17 @@ function getShape() {
     return text;
 }
 
-function getSettings(){
+function getSpecies() {
+    var e = document.getElementById("speciesSelect");
+    var text = e.options[e.selectedIndex].text;
+    console.log(text);
+    return text;
+}
+
+function getSettings() {
     var setting = {
-        lengthOnly:document.getElementById("lengthOnly").checked,
-        manual:document.getElementById("setManual").checked,
+        lengthOnly: document.getElementById("lengthOnly").checked,
+        manual: document.getElementById("setManual").checked,
     }
 
     console.log(setting);
@@ -211,7 +219,7 @@ function drawLine() {
         top: 100,
         stroke: 'red',
         fill: 'red',
-        strokeWidth: 3,
+        strokeWidth: 5,
         width: 100,
     });
     //Get's rid of resizing boxes
@@ -238,18 +246,6 @@ function drawRect() {
         height: 100,
     });
     canvas.add(rect);
-}
-
-function drawCircle() {
-    var circle = new fabric.Circle({
-        left: 100,
-        top: 100,
-        fill: 'transparent',
-        stroke: 'red',
-        strokeWidth: 3,
-        radius: 50,
-    });
-    canvas.add(circle);
 }
 
 function drawTriangle() {
@@ -286,9 +282,6 @@ function draw() {
     else if (shape === "Triangle") {
         drawTriangle();
     }
-    else if (shape === "Circle") {
-        drawCircle();
-    }
     else if (shape === "Rectangle") {
         drawRect();
     }
@@ -296,10 +289,13 @@ function draw() {
         drawEllipse();
     }
     calcTotalArea();
+    //Select newly created 
+    canvas.setActiveObject(canvas.item(canvas.getObjects().length-1));
 }
 
 function unselect() {
-    console.log("tes");
+    document.getElementById("lengthOutput").value = "";
+    document.getElementById("widthOutput").value = "";
     document.getElementById("areaOutput").value = "";
 }
 function select(e) {
@@ -309,46 +305,65 @@ function select(e) {
 }
 
 function submit() {
+    var species = getSpecies();
     var e = document.getElementById("speciesSelect");
 
-    //get species depth
-
-    let measure = {
-        species: e.options[e.selectedIndex].value,
-        length: document.getElementById("lengthOutput").value,
-        width: document.getElementById("widthOutput").value,
-        area: document.getElementById("totalAreaOutput").value,
-        volume: document.getElementById("totalAreaOutput").value * 4,
-    }
     //Must have proper input
     if (!calibrationRatio) {
         ipcRenderer.send('errorMessage2', "Please enter known distance to calibrate");
     }
-    else if (!measure.species) {
+    else if (!e.options[e.selectedIndex].value) {
         ipcRenderer.send('errorMessage2', "Must include species");
     }
-    else if (!measure.area) {
+    else if (!document.getElementById("lengthOutput").value) {
         ipcRenderer.send('errorMessage2', "Must draw shape");
     }
     else {
+        //get species depth
         con.connect(function (err) {
             // in case of error
             if (err) {
                 console.log(err.code);
                 console.log(err.fatal);
             }
-            var sql = "INSERT INTO measures SET ?";
-            con.query(sql, measure, function (err, result, fields) {
-                if (err) throw err;
-                console.log(result);
-                refreshMeasureTable("measure");
+            var sql = "SELECT `depth` FROM `species` WHERE `name` = ?";
+            con.query(sql, species, function (err, result, fields) {
+                if (err) {
+                    console.log(err.code);
+                    console.log(err.fatal);
+                }
+
+                let measure = {
+                    species: e.options[e.selectedIndex].value,
+                    length: document.getElementById("lengthOutput").value,
+                    width: document.getElementById("widthOutput").value,
+                    area: document.getElementById("totalAreaOutput").value,
+                    volume: document.getElementById("totalAreaOutput").value * result[0].depth,
+                }
+
+                con.connect(function (err) {
+                    // in case of error
+                    if (err) {
+                        console.log(err.code);
+                        console.log(err.fatal);
+                    }
+                    var sql = "INSERT INTO measures SET ?";
+                    con.query(sql, measure, function (err, result, fields) {
+                        if (err) throw err;
+                        console.log(result);
+                        refreshMeasureTable("measure");
+                    });
+                });
+                if (document.getElementById("clearOnEnter").checked) {
+                    clearOutputs();
+                    clearCanvas();
+                }
+
             });
         });
-        if (document.getElementById("clearOnEnter").checked) {
-            clearOutputs();
-            clearCanvas();
-        }
     }
+
+
 
 }
 
@@ -362,19 +377,21 @@ function changeView() {
 
     var view;
     //If LengthOnly is checked
-    if(setting.lengthOnly){
+    if (setting.lengthOnly) {
         view = "lengthOnly";
     }
-    else{
+    else {
         view = "automatic";
     }
 
     //Display all values
-    if(view === "automatic"){ 
+    if (view === "automatic") {
         document.querySelector('#areaOutputLbl').style.display = 'initial';
         document.querySelector('#areaOutput').style.display = 'initial';
+        document.querySelector('#areaOutputLbl2').style.display = 'initial';
         document.querySelector('#totalAreaOutputLbl').style.display = 'initial';
         document.querySelector('#totalAreaOutput').style.display = 'initial';
+        document.querySelector('#totalAreaOutputLbl2').style.display = 'initial';
         document.querySelector('#shapeSelect').disabled = false;
     }
     // else if(view === "manual"){
@@ -384,14 +401,32 @@ function changeView() {
     //     document.querySelector('#shapeSelect').attributes('readonly',false);
     // }
     //Display only line option
-    else if(view === "lengthOnly"){
+    else if (view === "lengthOnly") {
+        clearCanvas();
         document.querySelector('#areaOutputLbl').style.display = 'none';
         document.querySelector('#areaOutput').style.display = 'none';
+        document.querySelector('#areaOutputLbl2').style.display = 'none';
         document.querySelector('#totalAreaOutputLbl').style.display = 'none';
         document.querySelector('#totalAreaOutput').style.display = 'none';
+        document.querySelector('#totalAreaOutputLbl2').style.display = 'none';
         document.querySelector('#shapeSelect').selectedIndex = 0;
         document.querySelector('#shapeSelect').disabled = true;
     }
+}
+
+function deleteObject() {
+    canvas.remove(canvas.getActiveObject());
+}
+
+//Calibrate and create shape for testing 
+function devTest() {
+    document.getElementById("calibrateTextBox").value = 10;
+    drawLine();
+    canvas.setActiveObject(canvas.item(0));
+    pixelToDistanceRatio();
+    drawRect();
+    canvas.setActiveObject(canvas.item(0));
+    document.getElementById("speciesSelect").selectedIndex = 1;
 }
 
 //Initialize
@@ -409,9 +444,11 @@ function init() {
     document.getElementById("enterBtn").addEventListener('click', submit, false);
     document.getElementById("calibrateBtn").addEventListener('click', pixelToDistanceRatio, false);
     document.getElementById("pdRatio").innerHTML = "Need to Calibrate";
-    document.getElementById("lengthOnly").addEventListener('click',changeView, false);
-    document.getElementById("setManual").addEventListener('click',changeView, false);
+    document.getElementById("lengthOnly").addEventListener('click', changeView, false);
+    document.getElementById("setManual").addEventListener('click', changeView, false);
+    document.getElementById("deleteObjectBtn").addEventListener('click',deleteObject,false);
 
+    document.getElementById("devBtn").addEventListener('click', devTest, false);
 }
 
 window.addEventListener('load', init, false);

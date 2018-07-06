@@ -18,7 +18,7 @@ connection.connect(function (err) {
     // in case of error
     if (err) {
 
-        dialog.showErrorBox("Can't connect to database", "Check Log In Credentials");
+        dialog.showErrorBox("Can't connect to database, Check Log In Credentials");
         console.log(err.code);
         console.log(err.fatal);
     }
@@ -62,7 +62,7 @@ function importSpecies() {
             console.log(data);
             parse(data, function (err, output) {
                 console.log(output);
-                var sql = "INSERT INTO `species` (`code`,`abbrev`,`name`) VALUES ?";
+                var sql = "INSERT INTO `species` (`code`,`abbrev`,`name`,`depth`) VALUES ?";
                 connection.query(sql, [output], function (err, result, fields) {
                     if (err) throw err;
                     loadSpecies(scrollTable);
@@ -110,7 +110,7 @@ function importData(table) {
                             loadMeasures(scrollTable);
                         }
                         else {
-                            ipcRenderer.send('errorMessage', "Error Importing Count");
+                            ipcRenderer.send('errorMessage', win.id, "Error Importing Count");
                         }
                     })
                 })
@@ -152,12 +152,12 @@ function exportData(table) {
                 fs.writeFile(fileName, header + "\n" + output, function (err) {
                     if (err === null) {
 
-                        dialog.showMessageBox({
+                        dialog.showMessageBox(win,{
                             message: "The file has been saved! :-)",
                             buttons: ["OK"]
                         });
                     } else {
-                        dialog.showErrorBox("File Save Error", err.message); //Not sure if this works
+                        dialog.showErrorBox(err.message); //Not sure if this works
                     }
                 });
             });
@@ -430,7 +430,7 @@ function loadTable($query, callback) {
     // Perform a query
     connection.query($query, function (err, rows, fields) {
         if (err) {
-            ipcRenderer.send('errorMessage', win, err);
+            ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
             console.log("An error ocurred performing the query.");
             console.log(err);
             return;
@@ -500,7 +500,7 @@ function setDB() {
     connection.changeUser({ database: dbDatabase }, function (err) {
         if (err) throw err;
     });
-    dialog.showMessageBox({ message: "Set database as: " + dbDatabase });
+    dialog.showMessageBox(win,{ message: "Set database as: " + dbDatabase });
 }
 
 //Load database from MySql Database into dropdown
@@ -513,7 +513,7 @@ function loadDBSelect() {
     var $query = "SHOW DATABASES"
     connection.query($query, function (err, result, fields) {
         if (err) {
-            ipcRenderer.send('errorMessage', win, err);
+            ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
             console.log("An error ocurred performing the query.");
             console.log(err);
             return;
@@ -551,7 +551,7 @@ function createNewDatabase() {
     var $query = "CREATE DATABASE " + name; //Change to ??
     connection.query($query, function (err, result, fields) {
         if (err) {
-            ipcRenderer.send('errorMessage', win, err);
+            ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
             console.log(err);
         }
         connection.changeUser({ database: name }, function (err) {
@@ -561,14 +561,14 @@ function createNewDatabase() {
         $query = "CREATE TABLE count (id int(5) AUTO_INCREMENT PRIMARY KEY, species varchar(10), type varchar(10))";
         connection.query($query, function (err, result, fields) {
             if (err) {
-                ipcRenderer.send('errorMessage', win, err);
+                ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
             }
             console.log("Query succesfully executed");
         })
         $query = "CREATE TABLE countTypes (type varchar(10) PRIMARY KEY)";
         connection.query($query, function (err, result, fields) {
             if (err) {
-                ipcRenderer.send('errorMessage', win, err);
+                ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
             }
             console.log("Query succesfully executed");
 
@@ -577,7 +577,7 @@ function createNewDatabase() {
         $query = "INSERT INTO `counttypes`(`type`) VALUES ?";
         connection.query($query, [values], function (err, result, fields) {
             if (err) {
-                ipcRenderer.send('errorMessage', win, err);
+                ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
 
             }
             console.log("Query succesfully executed");
@@ -585,28 +585,28 @@ function createNewDatabase() {
         $query = "CREATE TABLE lakes (lakeCode int(4) AUTO_INCREMENT PRIMARY KEY, lakeName varchar(10))";
         connection.query($query, function (err, result, fields) {
             if (err) {
-                ipcRenderer.send('errorMessage', win, err);
+                ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
             }
             console.log("Query succesfully executed");
         })
         $query = "CREATE TABLE measures (id int(5) AUTO_INCREMENT PRIMARY KEY, species varchar(10), length float(10), width float(10), area float(10), volume float(10))";
         connection.query($query, function (err, result, fields) {
             if (err) {
-                ipcRenderer.send('errorMessage', win, err);
+                ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
             }
             console.log("Query succesfully executed");
         })
         $query = "CREATE TABLE species (code int(3) PRIMARY KEY, abbrev varchar(8), name varchar(20), depth int(11))";
         connection.query($query, function (err, result, fields) {
             if (err) {
-                ipcRenderer.send('errorMessage', win, err);
+                ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
             }
             console.log("Query succesfully executed");
         })
         //Load dropdown after new database is created
         loadDBSelect();
     });
-    dialog.showMessageBox({ message: "Succesfully Created New Database" });
+    dialog.showMessageBox(win,{ message: "Succesfully Created New Database" });
 }
 
 //Delete database
@@ -625,7 +625,7 @@ function deleteDatabase() {
             connection.query($query, db, function (err, result, fields) {
                 if (err) {
                     console.log(err);
-                    ipcRenderer.send('errorMessage', win, err);
+                    ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
                 }
                 console.log("Query Succesfully executed");
             });

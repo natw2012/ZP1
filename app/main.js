@@ -6,6 +6,9 @@ const url = require('url')
 const {app, ipcMain, dialog, BrowserWindow } = require('electron')
 
 // Added electron-reload to refresh app on save
+
+// Causes issues when packaging!!
+
 require("electron-reload")(__dirname, {
   electron: require(`../node_modules/electron`)
 });

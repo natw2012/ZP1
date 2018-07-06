@@ -9,8 +9,8 @@ function createMeasureWindow(){
     measureWindow = new BrowserWindow({
       show: false,
       transparent:true,
-      width:600,
-      height:600,
+      width:1000,
+      height:650,
       resizable:true,
       movable:true,
       frame:false,
