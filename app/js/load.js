@@ -13,12 +13,13 @@ const electron = require('electron');
 const win = electron.remote.getCurrentWindow();
 var connection = require('./js/config.js').localConnect();
 
+
 // connect to mysql
 connection.connect(function (err) {
     // in case of error
     if (err) {
 
-        dialog.showErrorBox("Can't connect to database, Check Log In Credentials");
+        dialog.showErrorBox("Can't connect to database" , "Check Log In Credentials");
         console.log(err.code);
         console.log(err.fatal);
     }
@@ -98,7 +99,7 @@ function importData(table) {
                     connection.query(sql, [table, header, output], function (err, result, fields) {
                         if (err) {
                             console.log(win);
-                            ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
+                            ipcRenderer.send('errorMessage', win.id, err.message);
                         }
                         if (table === "species") {
                             loadSpecies(scrollTable);
@@ -157,7 +158,7 @@ function exportData(table) {
                             buttons: ["OK"]
                         });
                     } else {
-                        dialog.showErrorBox(err.message); //Not sure if this works
+                        dialog.showErrorBox("Error", err.message); //Not sure if this works
                     }
                 });
             });
@@ -387,7 +388,7 @@ function loadLakes(callback) {
     var html = '<button class="btn btn-default" id="addLakeWindowBtn" onclick="createAddWindow(\'html/addLake.html\')">Add Lake</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
 
-    $query = 'SELECT `lakeCode`,`lakeName` FROM `lakes` LIMIT 10';
+    $query = 'SELECT `lakeCode`,`lakeName` FROM `lakes`';
     loadTable($query, function (rows) {
         var html = '<thead><th>Lake Code</th><th>Lake Name</th><th>Actions</th><th>Actions</th><th>Actions</th></thead>';
 
@@ -425,12 +426,78 @@ function loadGear() {
     // document.getElementById("content").innerHTML = '<object type="text/html" data="html/gear.html" ></object>';
 }
 
+
+function loadHeaders(table, callback){
+    var html = "";
+    var sql = 'SELECT * FROM ??';
+    connection.query(sql, table, function (err, result, fields) {
+        if (err) {
+            console.log(err)
+        }
+        var headers = [];
+
+        html += '<thead>';
+
+        for (var i = 0; i < fields.length; i++) {
+            headers[i] = fields[i].name;
+            html += '<th>';
+            html += headers[i];
+            html += '</th>';
+        }
+        for (var i = 0; i < 3; i++) {
+            html += '<th>';
+            html += 'Actions';
+            html += '</th>';
+        }
+        console.log(headers);
+        html += '</thead>';
+        
+        console.log(html);
+        // return html;
+        typeof callback === 'function' && callback(html,table,headers);
+    });
+    
+}
+
+function loadSamples(html,table,headers){
+    var btnhtml = '<button class="btn btn-default" id="addSampleBtn" onclick="createAddWindow(\'html/addSample.html\')">Add Sample</button><br></br>';
+    document.querySelector('#buttonSection').innerHTML = btnhtml;
+
+    $query = 'SELECT * FROM `samples`';
+    loadTable($query, function (rows) {
+
+        rows.forEach(function (row) {
+            html += '<tr>';
+            headers.forEach(function (header){
+                html += '<td>';
+                html += row[header];
+                html += '</td>';
+            })
+            html += '<td>';
+            html += '<button class="btn btn-default">Info</button>';
+            html += '</td>';
+            html += '<td>';
+            html += '<button type="button" class="btn btn-default" value="Edit" onclick="makeEditWindow(this,\'lakes\')">Edit</button>';
+            html += '</td>';
+            html += '<td>';
+            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this,\'lakes\',\'code\',\'lakeCode\')">Delete</button>';
+            html += '</td>';
+            html += '</tr>';
+            console.log(row);
+        });
+        document.querySelector('#table').innerHTML = html;
+
+        typeof callback === 'function' && callback();
+    });
+
+}
+
 //Load Table function, used by several other functions
 function loadTable($query, callback) {
     // Perform a query
     connection.query($query, function (err, rows, fields) {
         if (err) {
-            ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
+            ipcRenderer.send('errorMessage', win.id, err.message);
             console.log("An error ocurred performing the query.");
             console.log(err);
             return;
@@ -513,7 +580,7 @@ function loadDBSelect() {
     var $query = "SHOW DATABASES"
     connection.query($query, function (err, result, fields) {
         if (err) {
-            ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
+            ipcRenderer.send('errorMessage', win.id, err.message);
             console.log("An error ocurred performing the query.");
             console.log(err);
             return;
@@ -551,7 +618,7 @@ function createNewDatabase() {
     var $query = "CREATE DATABASE " + name; //Change to ??
     connection.query($query, function (err, result, fields) {
         if (err) {
-            ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
+            ipcRenderer.send('errorMessage', win.id, err.message);
             console.log(err);
         }
         connection.changeUser({ database: name }, function (err) {
@@ -561,14 +628,14 @@ function createNewDatabase() {
         $query = "CREATE TABLE count (id int(5) AUTO_INCREMENT PRIMARY KEY, species varchar(10), type varchar(10))";
         connection.query($query, function (err, result, fields) {
             if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
+                ipcRenderer.send('errorMessage', win.id, err.message);
             }
             console.log("Query succesfully executed");
         })
         $query = "CREATE TABLE countTypes (type varchar(10) PRIMARY KEY)";
         connection.query($query, function (err, result, fields) {
             if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
+                ipcRenderer.send('errorMessage', win.id, err.message);
             }
             console.log("Query succesfully executed");
 
@@ -577,7 +644,7 @@ function createNewDatabase() {
         $query = "INSERT INTO `counttypes`(`type`) VALUES ?";
         connection.query($query, [values], function (err, result, fields) {
             if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
+                ipcRenderer.send('errorMessage', win.id, err.message);
 
             }
             console.log("Query succesfully executed");
@@ -585,21 +652,21 @@ function createNewDatabase() {
         $query = "CREATE TABLE lakes (lakeCode int(4) AUTO_INCREMENT PRIMARY KEY, lakeName varchar(10))";
         connection.query($query, function (err, result, fields) {
             if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
+                ipcRenderer.send('errorMessage', win.id, err.message);
             }
             console.log("Query succesfully executed");
         })
         $query = "CREATE TABLE measures (id int(5) AUTO_INCREMENT PRIMARY KEY, species varchar(10), length float(10), width float(10), area float(10), volume float(10))";
         connection.query($query, function (err, result, fields) {
             if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
+                ipcRenderer.send('errorMessage', win.id, err.message);
             }
             console.log("Query succesfully executed");
         })
         $query = "CREATE TABLE species (code int(3) PRIMARY KEY, abbrev varchar(8), name varchar(20), depth int(11))";
         connection.query($query, function (err, result, fields) {
             if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
+                ipcRenderer.send('errorMessage', win.id, err.message);
             }
             console.log("Query succesfully executed");
         })
@@ -625,7 +692,7 @@ function deleteDatabase() {
             connection.query($query, db, function (err, result, fields) {
                 if (err) {
                     console.log(err);
-                    ipcRenderer.send('errorMessage', win.id, err.sqlMessage);
+                    ipcRenderer.send('errorMessage', win.id, err.message);
                 }
                 console.log("Query Succesfully executed");
             });

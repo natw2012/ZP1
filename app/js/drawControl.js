@@ -161,9 +161,11 @@ function ellipseArea(el) {
 function pixelToDistanceRatio() {
     if (!document.getElementById("calibrateTextBox").value) {
         ipcRenderer.send('errorMessage2', "Please enter a known distance to calibrate");
+        document.getElementById("calibrateTextBox").focus();
     }
     else if (!canvas.getActiveObject()) {
         ipcRenderer.send('errorMessage2', "Please draw and select line object used to measure");
+        document.getElementById("shapeSelect").focus();
     }
     else {
         try {
@@ -313,10 +315,12 @@ function submit() {
         ipcRenderer.send('errorMessage2', "Please enter known distance to calibrate");
     }
     else if (!e.options[e.selectedIndex].value) {
-        ipcRenderer.send('errorMessage2', "Must include species");
+        ipcRenderer.send('errorMessage2', "Please select species");
+        document.getElementById("speciesSelect").focus();
     }
     else if (!document.getElementById("lengthOutput").value) {
-        ipcRenderer.send('errorMessage2', "Must draw shape");
+        ipcRenderer.send('errorMessage2', "Please draw shape");
+        document.getElementById("shapeSelect").focus();
     }
     else {
         //get species depth
