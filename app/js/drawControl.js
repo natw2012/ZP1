@@ -355,7 +355,7 @@ function submit() {
                     con.query(sql, measure, function (err, result, fields) {
                         if (err) throw err;
                         console.log(result);
-                        refreshMeasureTable("measure");
+                        refreshMeasureTable();
                     });
                 });
                 if (document.getElementById("clearOnEnter").checked) {
@@ -373,7 +373,7 @@ function submit() {
 
 //Calls main window to refresh the count table
 function refreshMeasureTable() {
-    ipcRenderer.send('refreshTable', "measure");
+    ipcRenderer.send('refreshTable', "measures");
 }
 
 function changeView() {

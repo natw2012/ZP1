@@ -21,12 +21,13 @@ document.ready = (function () {
 
 
 //Receive call from main
-ipcRenderer.on('loadEdit', function (e, table, info) {
-    loadForm(table, info);
+ipcRenderer.on('loadAdd', function (e, table) {
+    loadForm(table);
 });
 
 //Load html content into edit window
-function loadForm(table, info) {
+function loadForm(table) {
+
     var html = "";
     var sql = 'SELECT * FROM ??';
     connection.query(sql, table, function (err, result, fields) {
@@ -38,47 +39,45 @@ function loadForm(table, info) {
             name = fields[i].name.toUpperCase();
             if (i === 0) {
                 html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
-                html += '<input class="form-control form-control-sm" type="text" id="' + name + '" name="' + name + '" value="' + info[i] + '"readonly></div>';
+                html += '<input class="form-control form-control-sm" type="text" id="' + name + '" name="' + name + '"></div>';
 
             }
             else {
                 html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
-                html += '<input class="form-control form-control-sm" type="text" id="' + name + '" name="' + name + '" value="' + info[i] + '"></div>';
+                html += '<input class="form-control form-control-sm" type="text" id="' + name + '" name="' + name + '"></div>';
 
             }
         }
 
-        html += '<button id="editBtn" type="button" class="btn btn-system btn-primary" onclick="updateDB(\'' + table + '\')">Save</button>';
+        html += '<button id="addBtn" type="button" class="btn btn-system btn-primary" onclick="addToDB(\'' + table + '\')">Add</button>';
 
-        document.getElementById("editForm").innerHTML = html;
+
+        document.getElementById("addForm").innerHTML = html;
     });
 }
 
-//Update Database from form input
-function updateDB(table) {
-    var pKey;
-    var pKeyValue = 1;
+//Add to Database from form input
+function addToDB(table) {
+
     console.log(document.querySelector("form"));
     var formData = new FormData(document.querySelector("form"));
-    var i = 0;
+    var keys = [];
+    var values = [];
+
     for (var [key, value] of formData.entries()) {
-        console.log(key, value);
-        // var sql = 'UPDATE `species` SET `depth` = \'5\' WHERE `species`.`code` = 1';
-        if (i === 0) {
-            pKey = key;
-            pKeyValue = value;
-        }
-        else {
-            var sql = 'UPDATE ?? SET ?? = ? WHERE ??.?? = ?';
-            connection.query(sql, [table, key, value, table, pKey, pKeyValue], function (err, result, fields) {
-                if (err) {
-                    console.log(err)
-                }
-                ipcRenderer.send('refreshTable', table);
-            })
-        }
-        i++;
+        keys.push(key);
+        values.push(value);
     }
 
+    console.log(keys, values);
+    console.log(table);
+    var sql = "INSERT INTO ?? (??) VALUES (?)";
+    connection.query(sql, [table, keys, values], function (err, result, fields) {
+        if (err) {
+            console.log(err)
+            ipcRenderer.send('errMessage2', err);
+        }
+        ipcRenderer.send('refreshTable', table);
+    })
 
 }

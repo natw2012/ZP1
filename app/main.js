@@ -20,8 +20,9 @@ let editWindow
 
 function createWindow() {
   // Create the browser window.
-  mainWindow = new BrowserWindow({ width: 800, height: 600 })
-  editWindow = new BrowserWindow({ width: 300, height: 500, show: false})
+  mainWindow = new BrowserWindow({ width: 800, height: 600})
+  editWindow = new BrowserWindow({ width: 300, height: 500, parent: mainWindow, modal: true, show: false})
+  addWindow = new BrowserWindow({ width: 300, height: 500, /*parent: mainWindow, modal: true,*/ show: false})
 
   // and load the index.html of the app.
   mainWindow.loadURL(url.format({
@@ -32,6 +33,12 @@ function createWindow() {
 
   editWindow.loadURL(url.format({
     pathname: path.join(__dirname, 'html/editWindow.html'),
+    protocol: 'file:',
+    slashes: true
+  }))
+
+  addWindow.loadURL(url.format({
+    pathname: path.join(__dirname, 'html/addWindow.html'),
     protocol: 'file:',
     slashes: true
   }))
@@ -57,6 +64,15 @@ function createWindow() {
     } else {
       e.preventDefault()
       editWindow.hide()
+    }
+  });
+
+  addWindow.on('close', function (e) {
+    if (app.quitting) {
+      addWindow = null
+    } else {
+      e.preventDefault()
+      addWindow.hide()
     }
   });
 }
@@ -125,4 +141,12 @@ ipcMain.on('showEditWindow', function (e, table, info) {
     editWindow.webContents.send('loadEdit', table, info);
   })
 
+})
+
+ipcMain.on('showAddWindow', function (e, table){
+  addWindow.reload((addWindow.show()));
+
+  addWindow.webContents.on('did-finish-load', () => {
+    addWindow.webContents.send('loadAdd', table);
+  })
 })

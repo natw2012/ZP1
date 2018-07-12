@@ -1,6 +1,9 @@
+//Include modules
 const $ = require('jquery');
 window.$ = window.jQuery = require('jquery');
 var mysql = require('mysql');
+var Promise = require('bluebird');
+Promise.promisifyAll(require("mysql/lib/Connection").prototype);
 var photon = require('electron-photon');
 const { ipcRenderer } = require('electron');
 var dialog = require('electron').remote.dialog;
@@ -9,70 +12,24 @@ var stringify = require('csv-stringify');
 var parse = require('csv-parse');
 const settings = require('electron-settings');
 const electron = require('electron');
-
 const win = electron.remote.getCurrentWindow();
+
+//Include global MySql database module
 var connection = require('./js/config.js').localConnect();
 
 
-// connect to mysql
+//Connect to Mysql Database
 connection.connect(function (err) {
     // in case of error
     if (err) {
 
-        dialog.showErrorBox("Can't connect to database" , "Check Log In Credentials");
+        dialog.showErrorBox("Can't connect to database", "Check Log In Credentials");
         console.log(err.code);
         console.log(err.fatal);
     }
 });
 
-function importCount() {
-    dialog.showOpenDialog({
-        filters: [{ name: 'csv', extensions: ['csv'] }
-        ]
-    }, function (fileNames) {
-        if (fileNames === undefined) return;
-
-        var fileName = fileNames[0];
-
-        fs.readFile(fileName, 'utf-8', function (err, data) {
-            console.log(data);
-            parse(data, function (err, output) {
-                console.log(output);
-                var sql = "INSERT INTO `count` (`id`, `species`, `type`) VALUES ?";
-                connection.query(sql, [output], function (err, result, fields) {
-                    if (err) throw err;
-                    loadCounts(scrollTable);
-
-                })
-            });
-
-        })
-    });
-}
-
-function importSpecies() {
-    dialog.showOpenDialog({
-        filters: [{ name: 'csv', extensions: ['csv'] }
-        ]
-    }, function (fileNames) {
-        if (fileNames === undefined) return;
-
-        var fileName = fileNames[0];
-
-        fs.readFile(fileName, 'utf-8', function (err, data) {
-            console.log(data);
-            parse(data, function (err, output) {
-                console.log(output);
-                var sql = "INSERT INTO `species` (`code`,`abbrev`,`name`,`depth`) VALUES ?";
-                connection.query(sql, [output], function (err, result, fields) {
-                    if (err) throw err;
-                    loadSpecies(scrollTable);
-                })
-            })
-        })
-    })
-}
-
+//Import file to table using OS Dialog
 function importData(table) {
     dialog.showOpenDialog({
         filters: [{ name: 'csv', extensions: ['csv'] }
@@ -102,17 +59,18 @@ function importData(table) {
                             ipcRenderer.send('errorMessage', win.id, err.message);
                         }
                         if (table === "species") {
-                            loadSpecies(scrollTable);
+                            loadSpecies(table);
                         }
                         else if (table === "count") {
-                            loadCounts(scrollTable);
+                            loadCounts(table);
                         }
                         else if (table === "measures") {
-                            loadMeasures(scrollTable);
+                            loadMeasures(table);
                         }
                         else {
-                            ipcRenderer.send('errorMessage', win.id, "Error Importing Count");
+                            ipcRenderer.send('errorMessage', win.id, "Error Importing");
                         }
+                        scrollTable();
                     })
                 })
             })
@@ -120,21 +78,8 @@ function importData(table) {
     })
 }
 
-function importMeasure() {
-    importData("measures");
-}
-
-//Export MySql Count Table to csv file
-function exportCount() {
-    exportData("count");
-}
-
-//Export MySql Measure Table to csv file
-function exportMeasure() {
-    exportData("measures");
-}
-
 //Includes Headers
+//Exports a given table using OS Dialog
 function exportData(table) {
     dialog.showSaveDialog({
         filters: [{ name: 'csv', extensions: ['csv'] }
@@ -153,7 +98,7 @@ function exportData(table) {
                 fs.writeFile(fileName, header + "\n" + output, function (err) {
                     if (err === null) {
 
-                        dialog.showMessageBox(win,{
+                        dialog.showMessageBox(win, {
                             message: "The file has been saved! :-)",
                             buttons: ["OK"]
                         });
@@ -166,309 +111,173 @@ function exportData(table) {
     });
 }
 
+function importCount() {
+    importData("count");
+}
+
+function importSpecies() {
+    importData("species");
+}
+
+function importMeasure() {
+    importData("measures");
+}
+
+//Export MySql Count Table to csv file
+function exportCount() {
+    exportData("count");
+}
+
+//Export MySql Measure Table to csv file
+function exportMeasure() {
+    exportData("measures");
+}
+
 
 //Receive call from another window
 ipcRenderer.on('refreshTable', function (e, table) {
     console.log(table);
     if (table === "count") {
-        loadCounts(scrollTable);
+        loadCounts(table, scrollTable);
     }
-    else if (table === "measure") {
-        loadMeasures(scrollTable);
+    else if (table === "measures") {
+        loadMeasures(table, scrollTable);
     }
-    else if (table === "lake") {
-        loadLakes(scrollTable);
+    else if (table === "lakes") {
+        loadLakes(table, scrollTable);
     }
     else if (table === "species") {
-        loadSpecies(scrollTable);
+        loadSpecies(table, scrollTable);
     }
-
+    else {
+        console.log("No table");
+        return;
+    }
 });
 
+//Scrolls table down to the bottom to see new inputted data
 function scrollTable() {
     var tbl = document.getElementById('tableSection');
     tbl.scrollTop = tbl.scrollHeight;
     console.log(tbl, tbl.scrollTop, tbl.scrollHeight);
 }
 
-function loadSpecies() {
-    // document.getElementById("content").innerHTML = '<object type="text/html" data="html/species.html" ></object>';
-    var html = '<button class="btn btn-default" id="addSpeciesWindowBtn" onclick="createAddWindow(\'html/addSpecies.html\')">Add Species</button>';
-    html += '<button class="btn btn-default" id="importSpecies" onclick="importSpecies()">Import Species List</button><br></br>'
-
-    document.querySelector('#buttonSection').innerHTML = html;
-
-    $query = 'SELECT `code` ,`abbrev`, `name`, `depth` FROM `species`';
-
-    loadTable($query, function (rows) {
-        var html = '<thead><th>Species Code</th><th>Species Abbrev</th><th>Species Name</th><th>Depth</th><th>Actions</th><th>Actions</th><th>Actions</th></thead><tbody>';
-
-        rows.forEach(function (row) {
-            html += '<tr>';
-            html += '<td class="code">';
-            html += row.code;
-            html += '</td>';
-            html += '<td>';
-            html += row.abbrev;
-            html += '</td>';
-            html += '<td>';
-            html += row.name;
-            html += '</td>';
-            html += '<td>';
-            html += row.depth;
-            html += '</td>';
-            html += '<td>';
-            html += '<button class="btn btn-default">Info</button>';
-            html += '</td>';
-            html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Edit" onclick="makeEditWindow(this,\'species\')">Edit</button>';
-            html += '</td>';
-            html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this,\'species\',\'code\',\'code\')">Delete</button>';
-            html += '</td>';
-            html += '</tr>';
-            console.log(row);
-        });
-        html += '</tbody>';
-        document.querySelector('#table').innerHTML = html;
-    });
-}
-
+//Make the Edit Window
 function makeEditWindow(btn, table) {
-    console.log("test");
-    console.log(btn);
+
     var row = btn.parentNode.parentNode;
-    console.log(row);
     var info = [];
-    console.log(row.cells.length);
     for (var i = 0; i < row.cells.length - 3; i++) {
-        console.log(i);
-        console.log(row.cells[i].innerHTML);
         info.push(row.cells[i].innerHTML);
-        console.log(info);
     }
-    var id = row.getElementsByClassName('code')[0].innerText;
-    console.log(info);
+    // var id = row.getElementsByClassName('code')[0].innerText;
+    //maybe add a pause to reduce flashing
     ipcRenderer.send('showEditWindow', table, info);
 }
-function loadCounts(callback) {
+
+//Load Species page
+function loadSpecies(table, callback) {
+    var html = '<button class="btn btn-default" id="addSpeciesWindowBtn" onclick="loadAddWindow(\'species\')">Add Species</button>';
+    html += '<button class="btn btn-default" id="importSpecies" onclick="importSpecies()">Import Species List</button><br></br>'
+    document.querySelector('#buttonSection').innerHTML = html;
+
+    loadTable(table, callback);
+}
+
+//Load Count page
+function loadCounts(table, callback) {
     var html = '<button class="btn btn-default" id="startCountBtn" onclick="createCountWindow()">Start Counting</button>'
     html += '<button class="btn btn-default" id="exportCountBtn" onclick="exportCount()">Export Table</button>'
     html += '<button class="btn btn-default" id="importCount" onclick="importCount()">Import Data</button><br></br>'
-
-    // document.getElementById("content").innerHTML = '<object type="text/html" data="html/counts.html" ></object>';
     document.querySelector('#buttonSection').innerHTML = html;
 
-    $query = 'SELECT `id` as speciesID,`species`,`type` as speciesType FROM `count`';
-
-    loadTable($query, function (rows) {
-        var html = '<thead><th>Count ID</th><th>Count Species</th><th>Count Type</th><th>Actions</th><th>Actions</th><th>Actions</th></thead><tbody>';
-
-        rows.forEach(function (row) {
-            html += '<tr>';
-            html += '<td class="code">';
-            html += row.speciesID;
-            html += '</td>';
-            html += '<td>';
-            html += row.species;
-            html += '</td>';
-            html += '<td>';
-            html += row.speciesType;
-            html += '</td>';
-            html += '<td>';
-            html += '<button class="btn btn-default">Info</button>';
-            html += '</td>';
-            html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Edit" onclick="makeEditWindow(this,\'count\')">Edit</button>';
-            html += '</td>';
-            html += '<td>';
-            // html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteConfirm()">Delete</button>';
-            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this,\'count\',\'code\',\'id\')">Delete</button>';
-            html += '</td>';
-            html += '</tr>';
-            console.log(row);
-        });
-        html += '</tbody>';
-        document.querySelector('#table').innerHTML = html;
-
-        typeof callback === 'function' && callback();
-    });
+    loadTable(table, callback);
 
 }
-function loadMeasures(callback) {
+
+//Load Measures page
+function loadMeasures(table, callback) {
+
     var html = '<button class="btn btn-default" id="startMeasureBtn" onclick="createMeasureWindow()">Start Measuring</button>'
     html += '<button class="btn btn-default" id="exportMeasureBtn" onclick="exportMeasure()">Export Data</button>'
     html += '<button class="btn btn-default" id="importMeasureBtn" onclick="importMeasure()">Import Data</button><br></br>'
+    document.querySelector('#buttonSection').innerHTML = html;
+    loadTable(table, callback);
+}
 
-
+//Load Formulas page
+function loadFormulas(table, callback) {
+    var html = '<button class="btn btn-default" id="addFormulaBtn" onclick="loadAddFormula(\'formula\')">Add Formula</button><br></br>'
     document.querySelector('#buttonSection').innerHTML = html;
 
-    $query = 'SELECT `id` as measureID,`species`, `length`, `width`, `area`, `volume` FROM `measures`';
-
-    loadTable($query, function (rows) {
-        var html = '<thead><th>ID</th><th>Species</th><th>Length</th><th>Width</th><th>Area</th><th>Volume</th><th>Actions</th><th>Actions</th><th>Actions</th></thead><tbody>';
-
-        rows.forEach(function (row) {
-            html += '<tr>';
-            html += '<td class="code">';
-            html += row.measureID;
-            html += '</td>';
-            html += '<td>';
-            html += row.species;
-            html += '</td>';
-            html += '<td>';
-            html += row.length;
-            html += '</td>';
-            html += '<td>';
-            html += row.width;
-            html += '</td>';
-            html += '<td>';
-            html += row.area;
-            html += '</td>';
-            html += '<td>';
-            html += row.volume;
-            html += '</td>';
-            html += '<td>';
-            html += '<button class="btn btn-default">Info</button>';
-            html += '</td>';
-            html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Edit" onclick="makeEditWindow(this,\'measures\')">Edit</button>';
-            html += '</td>';
-            html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this,\'measures\',\'code\',\'id\')">Delete</button>';
-            html += '</td>';
-            html += '</tr>';
-            console.log(row);
-        });
-        html += '</tbody>';
-        document.querySelector('#table').innerHTML = html;
-
-        typeof callback === 'function' && callback();
-    });
+    loadTable(table, callback);
 }
-function loadFormulas() {
-    var html = '<button class="btn btn-default" id="addFormulaBtn" onclick="createAddWindow(\'html/addFormula.html\')">Add Formula</button><br></br>'
 
+//Load Lakes page
+function loadLakes(table, callback) {
+    var html = '<button class="btn btn-default" id="addLakeWindowBtn" onclick="loadAddWindow(\'lakes\')">Add Lake</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
 
-    $query = 'SELECT `id` as measureID,`species`,`area` FROM `measures`';
-
-    loadTable($query, function (rows) {
-        var html = '<thead><th>ID</th><th>Species</th><th>Area</th><th>Actions</th><th>Actions</th><th>Actions</th></thead><tbody>';
-
-        // rows.forEach(function (row) {
-        //     html += '<tr>';
-        //     html += '<td class="code">';
-        //     html += row.measureID;
-        //     html += '</td>';
-        //     html += '<td>';
-        //     html += row.species;
-        //     html += '</td>';
-        //     html += '<td>';
-        //     html += row.area;
-        //     html += '</td>';
-        //     html += '<td>';
-        //     html += '<button class="btn btn-default">Info</button>';
-        //     html += '</td>';
-        //     html += '<td>';
-        //     html += '<button class="btn btn-default">Edit</button>';
-        //     html += '</td>';
-        //     html += '<td>';
-        //     html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteMeasuresRow(this)">Delete</button>';
-        //     html += '</td>';
-        //     html += '</tr>';
-        //     console.log(row);
-        // });
-        html += '</tbody>';
-        document.querySelector('#table').innerHTML = html;
-    });
+    loadTable(table, callback);
 }
-function loadLakes(callback) {
-    // document.getElementById("content").innerHTML='<object type="text/html" data="html/lakes.html" style="width:100%; height: 100%;"></object>';
-    var html = '<button class="btn btn-default" id="addLakeWindowBtn" onclick="createAddWindow(\'html/addLake.html\')">Add Lake</button><br></br>';
-    document.querySelector('#buttonSection').innerHTML = html;
 
-    $query = 'SELECT `lakeCode`,`lakeName` FROM `lakes`';
-    loadTable($query, function (rows) {
-        var html = '<thead><th>Lake Code</th><th>Lake Name</th><th>Actions</th><th>Actions</th><th>Actions</th></thead>';
-
-        rows.forEach(function (row) {
-            html += '<tr>';
-            html += '<td class="code">';
-            html += row.lakeCode;
-            html += '</td>';
-            html += '<td>';
-            html += row.lakeName;
-            html += '</td>';
-            html += '<td>';
-            html += '<button class="btn btn-default">Info</button>';
-            html += '</td>';
-            html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Edit" onclick="makeEditWindow(this,\'lakes\')">Edit</button>';
-            html += '</td>';
-            html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this,\'lakes\',\'code\',\'lakeCode\')">Delete</button>';
-            html += '</td>';
-            html += '</tr>';
-            console.log(row);
-        });
-        html += '</tbody>';
-        document.querySelector('#table').innerHTML = html;
-
-        typeof callback === 'function' && callback();
-    });
-
-}
+//Load Attributes page
 function loadAttributes() {
     // document.getElementById("content").innerHTML = '<object type="text/html" data="html/attributes.html" ></object>';
 }
+
+//Load Gear page
 function loadGear() {
     // document.getElementById("content").innerHTML = '<object type="text/html" data="html/gear.html" ></object>';
 }
 
+//Load Samples Page
+function loadSamples(table, callback) {
+    var html = '<button class="btn btn-default" id="addSampleBtn" onclick="loadAddWindow(\'samples\')">Add Sample</button><br></br>';
+    document.querySelector('#buttonSection').innerHTML = html;
 
-function loadHeaders(table, callback){
-    var html = "";
+    loadTable(table, callback);
+}
+
+//Load Add Browser Window 
+function loadAddWindow(table) {
+    ipcRenderer.send('showAddWindow', table);
+}
+
+//Load Table function, used by several other functions
+function loadTable(table, callback) {
+
+    // Perform a query
     var sql = 'SELECT * FROM ??';
-    connection.query(sql, table, function (err, result, fields) {
+    connection.query(sql, table, function (err, rows, fields) {
         if (err) {
-            console.log(err)
+            ipcRenderer.send('errorMessage', win.id, err.message);
+            console.log(err);
         }
+        var html = "";
         var headers = [];
 
+        //Build table headers
         html += '<thead>';
-
         for (var i = 0; i < fields.length; i++) {
             headers[i] = fields[i].name;
             html += '<th>';
-            html += headers[i];
+            html += headers[i].toUpperCase();
             html += '</th>';
         }
         for (var i = 0; i < 3; i++) {
             html += '<th>';
-            html += 'Actions';
+            html += 'ACTIONS';
             html += '</th>';
         }
         console.log(headers);
         html += '</thead>';
-        
-        console.log(html);
-        // return html;
-        typeof callback === 'function' && callback(html,table,headers);
-    });
-    
-}
-
-function loadSamples(html,table,headers){
-    var btnhtml = '<button class="btn btn-default" id="addSampleBtn" onclick="createAddWindow(\'html/addSample.html\')">Add Sample</button><br></br>';
-    document.querySelector('#buttonSection').innerHTML = btnhtml;
-
-    $query = 'SELECT * FROM `samples`';
-    loadTable($query, function (rows) {
 
         rows.forEach(function (row) {
             html += '<tr>';
-            headers.forEach(function (header){
+
+            //Dynamically get row.property from header strings
+            headers.forEach(function (header) {
                 html += '<td>';
                 html += row[header];
                 html += '</td>';
@@ -477,42 +286,33 @@ function loadSamples(html,table,headers){
             html += '<button class="btn btn-default">Info</button>';
             html += '</td>';
             html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Edit" onclick="makeEditWindow(this,\'lakes\')">Edit</button>';
+            html += '<button type="button" class="btn btn-default" value="Edit" onclick="makeEditWindow(this,\'' + table + '\')">Edit</button>';
             html += '</td>';
             html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Delete" onclick="deleteRow(this,\'lakes\',\'code\',\'lakeCode\')">Delete</button>';
+            html += '<button type="button" class="btn btn-default" value="' + row[headers[0]] + '" onclick="deleteRow(this,\'' + table + '\')">Delete</button>'; //Requires primary key to be 1st column
             html += '</td>';
             html += '</tr>';
             console.log(row);
         });
+
+        //Inject html and build table contents
         document.querySelector('#table').innerHTML = html;
 
+        // callback(rows);
+
+        console.log("Query succesfully executed");
         typeof callback === 'function' && callback();
     });
 
-}
 
-//Load Table function, used by several other functions
-function loadTable($query, callback) {
-    // Perform a query
-    connection.query($query, function (err, rows, fields) {
-        if (err) {
-            ipcRenderer.send('errorMessage', win.id, err.message);
-            console.log("An error ocurred performing the query.");
-            console.log(err);
-            return;
-        }
 
-        callback(rows);
 
-        console.log("Query succesfully executed");
-    });
 }
 
 //Remove row from html table and from MySql database
-function deleteRow(btn, table, className, pKey) {
+function deleteRow(btn, table) {
 
-
+    //Confirm delete
     dialog.showMessageBox(win, {
         type: "question",
         buttons: ['Yes', 'No'],
@@ -520,19 +320,23 @@ function deleteRow(btn, table, className, pKey) {
         message: "Are you sure you would like to delete?",
 
     }, function (response) {
-        if (response === 0) {
+        if (response === 0) { //If user clicks yes
             var row = btn.parentNode.parentNode;
-            var code = row.getElementsByClassName(className)[0].innerText;
+            var code = btn.value;
+
             row.parentNode.removeChild(row);
-            console.log(btn, table, className, pKey);
-            $query = 'DELETE FROM ' + table + ' WHERE ' + pKey + ' = ?';
-            connection.query($query, code, function (err, rows, fields) {
+
+            var sql = 'SHOW KEYS FROM ?? WHERE Key_name = \'PRIMARY\'';
+            connection.query(sql, table, function (err, result, fields) {
                 if (err) {
-                    console.log("An error occured performing the query.");
                     console.log(err);
-                    return;
                 }
-                console.log("Query successfuly executed");
+                var sql = 'DELETE FROM ?? WHERE ?? = ?';
+                connection.query(sql, [table, result[0].Column_name, code], function (err, result, fields) {
+                    if (err) {
+                        console.log(err);
+                    }
+                });
             });
         }
     }
@@ -558,7 +362,7 @@ function setUserInfo() {
     loadDBSelect();
 }
 
-//Save Database 
+//Save Database Setting
 function setDB() {
     var dbDatabase = document.getElementById("dbDatabase").value;
     settings.set('database', {
@@ -567,7 +371,7 @@ function setDB() {
     connection.changeUser({ database: dbDatabase }, function (err) {
         if (err) throw err;
     });
-    dialog.showMessageBox(win,{ message: "Set database as: " + dbDatabase });
+    dialog.showMessageBox(win, { message: "Set database as: " + dbDatabase });
 }
 
 //Load database from MySql Database into dropdown
@@ -673,7 +477,7 @@ function createNewDatabase() {
         //Load dropdown after new database is created
         loadDBSelect();
     });
-    dialog.showMessageBox(win,{ message: "Succesfully Created New Database" });
+    dialog.showMessageBox(win, { message: "Succesfully Created New Database" });
 }
 
 //Delete database
@@ -712,9 +516,6 @@ function init() {
 }
 
 window.addEventListener('load', init, false);
-function deleteConfirm(btn, table, className, pKey) {
-
-}
 
 //Should probably figure out where to put this
     // // Close the connection
