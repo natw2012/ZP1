@@ -3,6 +3,8 @@ const electron = require('electron');
 const { ipcRenderer } = electron;
 var mysql = require('mysql');
 var connection = require('../js/config.js').localConnect();
+var dataType = require('../js/sqltohtmldatatype.js');
+
 // connect to mysql
 connection.connect(function (err) {
     // in case of error
@@ -37,20 +39,22 @@ function loadForm(table) {
         var name;
         for (var i = 0; i < fields.length; i++) {
             name = fields[i].name.toUpperCase();
+            type = dataType.getType(fields[i].type);
+
             if (i === 0) {
                 html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
-                html += '<input class="form-control form-control-sm" type="text" id="' + name + '" name="' + name + '"></div>';
+                html += '<input class="form-control form-control-sm" style="width:100%" type="' + type + '" id="' + name + '" name="' + name + '"></div>';
+                
 
             }
             else {
                 html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
-                html += '<input class="form-control form-control-sm" type="text" id="' + name + '" name="' + name + '"></div>';
+                html += '<input class="form-control form-control-sm" style="width:100%" type="' + type + '" id="' + name + '" name="' + name + '"></div>';
 
             }
         }
 
-        html += '<button id="addBtn" type="button" class="btn btn-system btn-primary" onclick="addToDB(\'' + table + '\')">Add</button>';
-
+        html += '<button id="addBtn" type="submit" class="btn btn-system btn-primary" onclick="addToDB(\'' + table + '\')">Add</button>';
 
         document.getElementById("addForm").innerHTML = html;
     });

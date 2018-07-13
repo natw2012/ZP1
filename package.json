@@ -31,6 +31,7 @@
     "electron-settings": "^3.2.0",
     "fabric": "^2.3.1",
     "jquery": "^3.3.1",
+    "moment": "^2.22.2",
     "mysql": "^2.15.0",
     "mysql2": "^1.5.3",
     "popper.js": "^1.14.3",

@@ -9,6 +9,7 @@ const { ipcRenderer } = require('electron');
 var dialog = require('electron').remote.dialog;
 var fs = require('fs');
 var stringify = require('csv-stringify');
+var moment = require('moment');
 var parse = require('csv-parse');
 const settings = require('electron-settings');
 const electron = require('electron');
@@ -61,11 +62,14 @@ function importData(table) {
                         if (table === "species") {
                             loadSpecies(table);
                         }
-                        else if (table === "count") {
+                        else if (table === "counts") {
                             loadCounts(table);
                         }
                         else if (table === "measures") {
                             loadMeasures(table);
+                        }
+                        else if (table === "samples") {
+                            loadSamples(table);
                         }
                         else {
                             ipcRenderer.send('errorMessage', win.id, "Error Importing");
@@ -111,8 +115,62 @@ function exportData(table) {
     });
 }
 
+function exportJoinedData(table1,table2){
+    var sql = "SELECT * FROM `counts` JOIN `samples` ON counts.sampleID = samples.sampleID";
+
+ 
+    dialog.showSaveDialog({
+        filters: [{ name: 'csv', extensions: ['csv'] }
+        ]
+    }, function (fileName) {
+        if (fileName === undefined) return;
+
+        // var sql = "SELECT * FROM ?? JOIN ?? ON ??.sampleID = ??.sampleID";
+        connection.query(sql, function (err, result, fields) {
+            if (err) throw err;
+            var header = [];
+            console.log(result);
+            console.log(fields);
+            for (var i = 0; i < fields.length; i++) {
+                console.log(fields[i]);
+                //Sketchy way of doing it, should replace
+                var flag = 0;
+                for(var j = 0; j < header.length; j++){
+                    if(fields[i].name === header[j]){
+                        flag = 1;
+                    }
+                }
+                if (flag === 0){
+                    header.push(fields[i].name);
+                }
+                
+            }
+            stringify(result, {
+                formatters: {
+                    date: function(value) {
+                        return moment(value).format('YYYY-MM-DD');
+                    }
+                }
+            } ,function (err, output) {
+                console.log(output);
+                fs.writeFile(fileName, header + "\n" + output, function (err) {
+                    if (err === null) {
+
+                        dialog.showMessageBox(win, {
+                            message: "The file has been saved! :-)",
+                            buttons: ["OK"]
+                        });
+                    } else {
+                        dialog.showErrorBox("Error", err.message); //Not sure if this works
+                    }
+                });
+            });
+        });
+    });
+}
+
 function importCount() {
-    importData("count");
+    importData("counts");
 }
 
 function importSpecies() {
@@ -125,7 +183,7 @@ function importMeasure() {
 
 //Export MySql Count Table to csv file
 function exportCount() {
-    exportData("count");
+    exportData("counts");
 }
 
 //Export MySql Measure Table to csv file
@@ -137,7 +195,7 @@ function exportMeasure() {
 //Receive call from another window
 ipcRenderer.on('refreshTable', function (e, table) {
     console.log(table);
-    if (table === "count") {
+    if (table === "counts") {
         loadCounts(table, scrollTable);
     }
     else if (table === "measures") {
@@ -148,6 +206,9 @@ ipcRenderer.on('refreshTable', function (e, table) {
     }
     else if (table === "species") {
         loadSpecies(table, scrollTable);
+    }
+    else if (table === "samples") {
+        loadSamples(table, scrollTable);
     }
     else {
         console.log("No table");
@@ -177,7 +238,7 @@ function makeEditWindow(btn, table) {
 
 //Load Species page
 function loadSpecies(table, callback) {
-    var html = '<button class="btn btn-default" id="addSpeciesWindowBtn" onclick="loadAddWindow(\'species\')">Add Species</button>';
+    var html = '<button class="btn btn-default" id="addSpeciesBtn" onclick="loadAddWindow(\'species\')">Add Species</button>';
     html += '<button class="btn btn-default" id="importSpecies" onclick="importSpecies()">Import Species List</button><br></br>'
     document.querySelector('#buttonSection').innerHTML = html;
 
@@ -187,7 +248,7 @@ function loadSpecies(table, callback) {
 //Load Count page
 function loadCounts(table, callback) {
     var html = '<button class="btn btn-default" id="startCountBtn" onclick="createCountWindow()">Start Counting</button>'
-    html += '<button class="btn btn-default" id="exportCountBtn" onclick="exportCount()">Export Table</button>'
+    html += '<button class="btn btn-default" id="exportCountBtn" onclick="exportCount()">Export Data</button>'
     html += '<button class="btn btn-default" id="importCount" onclick="importCount()">Import Data</button><br></br>'
     document.querySelector('#buttonSection').innerHTML = html;
 
@@ -342,7 +403,34 @@ function deleteRow(btn, table) {
     }
     );
 }
+function loadDBUserInfo() {
+    var x = document.getElementById("DBUserInfo");
+    var y = document.getElementById("DBCreate");
+    var z = document.getElementById("DBDelete");
 
+    x.style.display = "block";
+    y.style.display = "none";
+    z.style.display = "none";
+
+}
+function loadDBCreate() {
+    var x = document.getElementById("DBUserInfo");
+    var y = document.getElementById("DBCreate");
+    var z = document.getElementById("DBDelete");
+    x.style.display = "none";
+    y.style.display = "block";
+    z.style.display = "none";
+}
+function loadDBDelete() {
+    var x = document.getElementById("DBUserInfo");
+    var y = document.getElementById("DBCreate");
+    var z = document.getElementById("DBDelete");
+
+    x.style.display = "none";
+    y.style.display = "none";
+    z.style.display = "block";
+
+}
 
 function loadSettings() {
     // document.getElementById('settingsContent').innerHTML = '<object type="text/html" data="html/dbLogin.html" height=100% width=100%></object>';
@@ -429,14 +517,14 @@ function createNewDatabase() {
             if (err) throw err;
         });
         console.log("Query succesfully executed");
-        $query = "CREATE TABLE count (id int(5) AUTO_INCREMENT PRIMARY KEY, species varchar(10), type varchar(10))";
+        $query = "CREATE TABLE counts (countID int(5) AUTO_INCREMENT PRIMARY KEY, species varchar(10), speciesType varchar(10), sampleID int(5))";
         connection.query($query, function (err, result, fields) {
             if (err) {
                 ipcRenderer.send('errorMessage', win.id, err.message);
             }
             console.log("Query succesfully executed");
         })
-        $query = "CREATE TABLE countTypes (type varchar(10) PRIMARY KEY)";
+        $query = "CREATE TABLE countTypes (countType varchar(10) PRIMARY KEY)";
         connection.query($query, function (err, result, fields) {
             if (err) {
                 ipcRenderer.send('errorMessage', win.id, err.message);
@@ -445,7 +533,7 @@ function createNewDatabase() {
 
         })
         var values = [['Cell'], ['Piece']];
-        $query = "INSERT INTO `counttypes`(`type`) VALUES ?";
+        $query = "INSERT INTO `counttypes`(`countType`) VALUES ?";
         connection.query($query, [values], function (err, result, fields) {
             if (err) {
                 ipcRenderer.send('errorMessage', win.id, err.message);
@@ -460,14 +548,21 @@ function createNewDatabase() {
             }
             console.log("Query succesfully executed");
         })
-        $query = "CREATE TABLE measures (id int(5) AUTO_INCREMENT PRIMARY KEY, species varchar(10), length float(10), width float(10), area float(10), volume float(10))";
+        $query = "CREATE TABLE measures (measureID int(5) AUTO_INCREMENT PRIMARY KEY, species varchar(10), length float(10), width float(10), area float(10), volume float(10), sampleID int(5))";
         connection.query($query, function (err, result, fields) {
             if (err) {
                 ipcRenderer.send('errorMessage', win.id, err.message);
             }
             console.log("Query succesfully executed");
         })
-        $query = "CREATE TABLE species (code int(3) PRIMARY KEY, abbrev varchar(8), name varchar(20), depth int(11))";
+        $query = "CREATE TABLE species (speciesID int(3) PRIMARY KEY, speciesAbbrev varchar(8), speciesName varchar(20), depth int(11))";
+        connection.query($query, function (err, result, fields) {
+            if (err) {
+                ipcRenderer.send('errorMessage', win.id, err.message);
+            }
+            console.log("Query succesfully executed");
+        })
+        $query = "CREATE TABLE samples (sampleID int(5) PRIMARY KEY, type varchar(5), lakeID int(4), date date, crewChief varchar(5), gearID int(3), stationID int(3), numTow int(3), towLength int(5), volume float(5))";
         connection.query($query, function (err, result, fields) {
             if (err) {
                 ipcRenderer.send('errorMessage', win.id, err.message);

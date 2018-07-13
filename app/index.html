@@ -6,12 +6,10 @@
   <title>Plankton Counting Tool</title>
 
   <script type="text/x-template" id="dialog1" src="dialog1.html" data-js="js/dialog1.js"></script>
-  <script type='text/javascript' src='createAddWindow.js'></script>
   <script type='text/javascript' src='createMeasureWindow.js'></script>
   <script type='text/javascript' src='createCountWindow.js'></script>
-  <script type='text/javascript' src='createEditWindow.js'></script>
   <script type='text/javascript' src='js/load.js'></script>
-  <!-- <script type='text/javascript' src='js/loadSettings.js'></script> -->
+
   <!-- <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="../node_modules/bootstrap/dist/js/bootstrap.min.js"> -->
 </head>
@@ -29,7 +27,11 @@
     </tool-bar>
     <window-content>
       <div id="dashboard">
-        
+        <div class="pane-group">
+          <div class="pane">
+            <button class="btn btn-default" onclick="exportJoinedData('counts', 'samples')">Export Everything</button>
+          </div>
+        </div>
       </div>
       <div id="tables">
         <div class="pane-group">
@@ -37,7 +39,7 @@
             <nav-group class="sidebarGroup">
               <h5 class="nav-group-title">Select:</h5>
               <nav-item href="#" onclick="loadSpecies('species')">Species</nav-item>
-              <nav-item href="#" onclick="loadCounts('count')">Counts</nav-item>
+              <nav-item href="#" onclick="loadCounts('counts')">Counts</nav-item>
               <nav-item href="#" onclick="loadMeasures('measures')">Measures</nav-item>
               <nav-item href="#" onclick="loadFormulas('formulas')">Formulas</nav-item>
               <nav-item href="#" onclick="loadLakes('lakes')">Lakes</nav-item>
@@ -59,10 +61,12 @@
             <div class="pane-sm sidebar">
                 <nav-group class="sidebarGroup">
                   <h5 class="nav-group-title">Select:</h5>
-                  <nav-item href="#load_home" onclick="loadSettings()">Database</nav-item>
+                  <nav-item href="#DBUserInfo" onclick="loadDBUserInfo()">Database User Info</nav-item>
+                  <nav-item href="#DBCreate" onclick="loadDBCreate()">Create New Database</nav-item>
+                  <nav-item href="#DBDelete" onclick="loadDBDelete()">Delete Database</nav-item>
                 </nav-group>
               </div>
-              <div class="pane" id="settingsContent" style="padding: 20px">
+              <div class="pane" id="DBUserInfo" style="padding: 20px">
                   <form style="padding: 20px" id="dbSettingsForm">
                       <h3>Manage Database Login Info</h3>
                       <div class="form-group">
@@ -76,6 +80,7 @@
                       <div class="form-actions">
                           <button id="saveUserInfo" type="button" class="btn btn-system btn-primary" onclick="setUserInfo()">Save User Info</button>
                       </div>
+                      <br>
                       <div class="form-group">
                           <label for="dbDatabase">Database:</label>
                           <select class="form-control form-control-sm" type="text" id="dbDatabase" value=""></select>
@@ -84,6 +89,8 @@
                           <button id="saveDB" type="button" class="btn btn-system btn-primary" onclick="setDB()">Save Database</button>
                       </div>
                   </form>
+                </div>
+                <div class="pane" id="DBCreate" style="padding: 20px; display: none;">
                   <form style="padding: 20px" id="dbSettingsForm">
                     <h3>Create New Database</h3>
                     <div class="form-group">
@@ -94,6 +101,8 @@
                           <button id="createDB" type="button" class="btn btn-system btn-primary" onclick="createNewDatabase()">Create New Database</button>
                       </div>
                   </form>
+                </div>
+                <div class="pane" id="DBDelete" style="padding: 20px; display: none">
                   <form style="padding: 20px" id="dbSettingsForm">
                       <h3>Delete Database</h3>
                       <div class="form-group">

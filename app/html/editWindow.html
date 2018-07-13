@@ -3,28 +3,33 @@
 
 <head>
     <title>Edit Window</title>
-    <script>const Photon = require("electron-photon");</script>  
+    <script>const Photon = require("electron-photon");</script>
 
     <!-- Insert this line above script imports  -->
-<script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+    <script>if (typeof module === 'object') { window.module = module; module = undefined; }</script>
 
-<!-- normal script imports etc  -->
-<script src="../../node_modules/jquery/dist/jquery.min.js"></script>    
-<!-- <script src="scripts/vendor.js"></script>     -->
+    <!-- normal script imports etc  -->
+    <script src="../../node_modules/jquery/dist/jquery.min.js"></script>
+    <!-- <script src="scripts/vendor.js"></script>     -->
 
-<!-- Insert this line after script imports -->
-<script>if (window.module) module = window.module;</script>
+    <!-- Insert this line after script imports -->
+    <script>if (window.module) module = window.module;</script>
 </head>
 
 <body>
-    <nav id="nav">
-        <h1 id="title-bar" align="center">Edit</h1>
-    </nav>
-    <form id="editForm" style="margin: 0 25px 25px 25px">
+    <ph-window>
+        <window-content>
+            <nav id="nav">
+                <h1 id="title-bar" align="center">Edit</h1>
+            </nav>
+            <form id="editForm" style="margin: 0 25px 25px 25px">
 
-    </form>
+            </form>
+        </window-content>
+    </ph-window>
 
-<script type="text/javascript" src="../js/editWindow.js"></script>
+
+    <script type="text/javascript" src="../js/editWindow.js"></script>
 </body>
 
 </html>
