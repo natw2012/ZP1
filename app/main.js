@@ -1,9 +1,9 @@
-const electron = require('electron')
-const path = require('path')
-const url = require('url')
+const electron = require('electron');
+const path = require('path');
+const url = require('url');
 
 
-const {app, ipcMain, dialog, BrowserWindow } = require('electron')
+const {app, ipcMain, dialog, BrowserWindow } = require('electron');
 
 // Added electron-reload to refresh app on save
 
@@ -15,33 +15,59 @@ require("electron-reload")(__dirname, {
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-let mainWindow
-let editWindow
+let mainWindow;
+let infoWindow;
+let editWindow;
+let addWindow;
+let countWindow;
+let measureWindow;
 
 function createWindow() {
   // Create the browser window.
-  mainWindow = new BrowserWindow({ width: 800, height: 600})
-  editWindow = new BrowserWindow({ width: 300, height: 500, parent: mainWindow, modal: true, show: false})
-  addWindow = new BrowserWindow({ width: 300, height: 500, /*parent: mainWindow, modal: true,*/ show: false})
+  mainWindow = new BrowserWindow({ width: 800, height: 600});
+  infoWindow = new BrowserWindow({width: 300, height: 500, parent: mainWindow, modal: true, show: false});
+  editWindow = new BrowserWindow({ width: 300, height: 500, parent: mainWindow, modal: true, show: false});
+  addWindow = new BrowserWindow({ width: 300, height: 500, /*parent: mainWindow, modal: true,*/ show: false});
+  countWindow = new BrowserWindow({ width: 1000, height: 650, show: false, transparent: true, frame: false});
+  measureWindow = new BrowserWindow({ width: 1000, height: 650, show: false, transparent: true, frame: false});
+
 
   // and load the index.html of the app.
   mainWindow.loadURL(url.format({
     pathname: path.join(__dirname, 'index.html'),
     protocol: 'file:',
     slashes: true
-  }))
+  }));
+
+  infoWindow.loadURL(url.format({
+    pathname: path.join(__dirname, 'html/infoWindow.html'),
+    protocol: 'file:',
+    slashes: true
+  }));
 
   editWindow.loadURL(url.format({
     pathname: path.join(__dirname, 'html/editWindow.html'),
     protocol: 'file:',
     slashes: true
-  }))
+  }));
 
   addWindow.loadURL(url.format({
     pathname: path.join(__dirname, 'html/addWindow.html'),
     protocol: 'file:',
     slashes: true
-  }))
+  }));
+
+  countWindow.loadURL(url.format({
+    pathname: path.join(__dirname, 'html/countWindow.html'),
+    protocol: 'file:',
+    slashes: true
+  }));
+
+  measureWindow.loadURL(url.format({
+    pathname: path.join(__dirname, 'html/measureWindow.html'),
+    protocol: 'file:',
+    slashes: true
+  }));
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
@@ -58,6 +84,15 @@ function createWindow() {
 
   })
 
+  infoWindow.on('close', function (e) {
+    if (app.quitting) {
+      infoWindow = null
+    } else {
+      e.preventDefault()
+      infoWindow.hide()
+    }
+  });
+
   editWindow.on('close', function (e) {
     if (app.quitting) {
       editWindow = null
@@ -73,6 +108,24 @@ function createWindow() {
     } else {
       e.preventDefault()
       addWindow.hide()
+    }
+  });
+
+  countWindow.on('close', function (e) {
+    if (app.quitting) {
+      countWindow = null
+    } else {
+      e.preventDefault()
+      countWindow.hide()
+    }
+  });
+
+  measureWindow.on('close', function (e) {
+    if (app.quitting) {
+      measureWindow = null
+    } else {
+      e.preventDefault()
+      measureWindow.hide()
     }
   });
 }
@@ -134,6 +187,14 @@ ipcMain.on('errorMessage2', function (e, err) {
   });
 })
 
+ipcMain.on('showInfoWindow', function (e, table, info){
+  infoWindow.reload((infoWindow.show()));
+  console.log(info);
+  infoWindow.webContents.on('did-finish-load', () => {
+    infoWindow.webContents.send('loadInfo', table, info);
+  })
+})
+
 ipcMain.on('showEditWindow', function (e, table, info) {
   editWindow.reload(editWindow.show());
   
@@ -149,4 +210,22 @@ ipcMain.on('showAddWindow', function (e, table){
   addWindow.webContents.on('did-finish-load', () => {
     addWindow.webContents.send('loadAdd', table);
   })
+})
+
+ipcMain.on('showCountWindow', function (e){
+  countWindow.show();
+  countWindow.focus();
+
+  // countWindow.webContents.on('did-finish-load', () => {
+  //   countWindow.webContents.send('loadCount');
+  // })
+})
+
+ipcMain.on('showMeasureWindow', function (e){
+  measureWindow.show();
+  measureWindow.focus();
+
+  // measureWindow.webContents.on('did-finish-load', () => {
+  //   measureWindow.webContents.send('loadMeasure');
+  // })
 })

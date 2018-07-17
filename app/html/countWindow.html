@@ -8,7 +8,7 @@
     <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
         crossorigin="anonymous">; -->
     <script>const Photon = require("electron-photon");</script>
-    <link rel="stylesheet" href="css/measureWindow.css">
+    <link rel="stylesheet" href="../css/measureWindow.css">
 
 </head>
 
@@ -24,6 +24,8 @@
         </nav>
         <window-content>
             <div class="tool-bar">
+                <label id="sampleIDLbl" for="sampleIDSelect">Sample ID:</label>
+                <select id="sampleIDSelect"></select>
                 <label id="typeSelectLbl" for="typeSelect">Type:</label>
                 <select id="typeSelect"></select>
                 <label id="speciesSelectLbl" for="speciesSelect">Species:</label>
@@ -45,8 +47,8 @@
 
 
 
-    <script src="js/titlebar.js"></script>
-    <script src="js/count.js"></script>
+    <script src="../js/titlebar.js"></script>
+    <script src="../js/count.js"></script>
 </body>
 
 </html>

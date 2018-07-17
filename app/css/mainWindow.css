@@ -1,0 +1,19 @@
+label {
+  display: inline;
+}
+
+/* Bootstrap override */
+
+.table-striped-custom tr:nth-child(even) {
+  background-color: #f5f5f4 !important;
+}
+
+tr:active, .table-striped-custom tr:active:nth-child(even) {
+  color: #fff !important;
+  background-color: #116cd6;
+}
+
+#infoDiv {
+  -webkit-user-select: all !important;
+
+}

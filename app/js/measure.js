@@ -10,7 +10,7 @@ var realLength;
 var speciesOption = [];
 
 console.log(window.location.href);
-var con = require('./js/config.js').localConnect();
+var con = require('../js/config.js').localConnect();
 
 //Should implement ability to choose colours in dashboard 
 function random_rgba() {
@@ -37,6 +37,30 @@ function resizeCanvas() {
     canvas.renderAll();
 }
 
+//Load Sample IDs into select
+function loadSampleIDs() {
+    con.connect(function (err) {
+        // in case of error
+        if (err) {
+            console.log(err.code);
+            console.log(err.fatal);
+        }
+        var sql = "SELECT sampleID FROM samples";
+        con.query(sql, function (err, result, fields) {
+            if (err) throw err;
+            console.log(result);
+            var option;
+            for (var i = 0; result[i] != null; i++) {
+                option = document.createElement("option");
+                option.text = result[i].sampleID;
+                option.id = result[i].sampleID;
+                document.getElementById("sampleIDSelect").appendChild(option);
+            }
+
+        });
+    });
+}
+
 //Load dropdown of species
 function loadSpeciesDropdown() {
     con.connect(function (err) {
@@ -46,15 +70,15 @@ function loadSpeciesDropdown() {
             console.log(err.fatal);
         }
         var dropdown = document.getElementById("speciesSelect");
-        var sql = "SELECT name FROM species";
+        var sql = "SELECT speciesName FROM species";
         con.query(sql, function (err, result, fields) {
             if (err) throw err;
             console.log(result);
             var option;
             for (var i = 0; result[i] != null; i++) {
                 option = document.createElement("option");
-                option.text = result[i].name;
-                option.id = result[i].name;
+                option.text = result[i].speciesName;
+                option.id = result[i].speciesName;
                 option.fill = random_rgba();
                 speciesOption.push(option);
                 document.getElementById("speciesSelect").appendChild(option);
@@ -63,6 +87,7 @@ function loadSpeciesDropdown() {
         });
     });
 }
+
 
 //Maintains scaling of shape borders while changing shape size
 function onObjectScaled(e) {
@@ -314,7 +339,11 @@ function submit() {
     if (!calibrationRatio) {
         ipcRenderer.send('errorMessage2', "Please enter known distance to calibrate");
     }
-    else if (!e.options[e.selectedIndex].value) {
+    else if (!document.getElementById("sampleIDSelect").value) {
+        ipcRenderer.send('errorMessage2', "Please select sample ID");
+        document.getElementById("sampleIDSelect").focus();
+    }
+    else if (!document.getElementById("speciesSelect").value) {
         ipcRenderer.send('errorMessage2', "Please select species");
         document.getElementById("speciesSelect").focus();
     }
@@ -330,7 +359,7 @@ function submit() {
                 console.log(err.code);
                 console.log(err.fatal);
             }
-            var sql = "SELECT `depth` FROM `species` WHERE `name` = ?";
+            var sql = "SELECT `depth` FROM `species` WHERE `speciesName` = ?";
             con.query(sql, species, function (err, result, fields) {
                 if (err) {
                     console.log(err.code);
@@ -338,13 +367,15 @@ function submit() {
                 }
 
                 let measure = {
-                    species: e.options[e.selectedIndex].value,
+                    species: document.getElementById("speciesSelect").value,
                     length: document.getElementById("lengthOutput").value,
                     width: document.getElementById("widthOutput").value,
                     area: document.getElementById("totalAreaOutput").value,
                     volume: document.getElementById("totalAreaOutput").value * result[0].depth,
+                    sampleID: document.getElementById("sampleIDSelect").value,
                 }
 
+                //Insert measurement into db
                 con.connect(function (err) {
                     // in case of error
                     if (err) {
@@ -397,6 +428,7 @@ function changeView() {
         document.querySelector('#totalAreaOutput').style.display = 'initial';
         document.querySelector('#totalAreaOutputLbl2').style.display = 'initial';
         document.querySelector('#shapeSelect').disabled = false;
+        document.querySelector('#setManual').disabled = false;
     }
     // else if(view === "manual"){
     //     document.querySelector('#areaOutputLbl').style.display = 'initial';
@@ -415,6 +447,8 @@ function changeView() {
         document.querySelector('#totalAreaOutputLbl2').style.display = 'none';
         document.querySelector('#shapeSelect').selectedIndex = 0;
         document.querySelector('#shapeSelect').disabled = true;
+        document.querySelector('#setManual').checked = false;
+        document.querySelector('#setManual').disabled = true;
     }
 }
 
@@ -430,13 +464,16 @@ function devTest() {
     pixelToDistanceRatio();
     drawRect();
     canvas.setActiveObject(canvas.item(0));
+    document.getElementById("sampleIDSelect").selectedIndex = 1;
     document.getElementById("speciesSelect").selectedIndex = 1;
+    
 }
 
 //Initialize
 function init() {
     canvas = new fabric.Canvas('canvas');
     resizeCanvas();
+    loadSampleIDs();
     loadSpeciesDropdown();
 
     canvas.on('object:scaling', onObjectScaled);

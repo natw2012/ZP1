@@ -14,10 +14,10 @@ var parse = require('csv-parse');
 const settings = require('electron-settings');
 const electron = require('electron');
 const win = electron.remote.getCurrentWindow();
+const chart = require('chart.js');
 
 //Include global MySql database module
 var connection = require('./js/config.js').localConnect();
-
 
 //Connect to Mysql Database
 connection.connect(function (err) {
@@ -30,6 +30,285 @@ connection.connect(function (err) {
     }
 });
 
+/************************************************************
+        DASHBOARD 
+*************************************************************/
+
+var _ = require('underscore');
+
+var speciesChart = null;
+var sizeChart = null;
+var barChart = null;
+var radarChart = null;
+
+var knex = require('knex')({
+    client: 'mysql',
+    connection: {
+        host: "localhost",
+        user: settings.get('userInfo.user'),
+        password: settings.get('userInfo.password'),
+        database: settings.get('database.db')
+    }
+});
+//Load Sample IDs into select
+async function loadSampleIDs() {
+    var sampleIDs = await knex('samples').select('sampleID');
+    var option;
+    for (var i = 0; sampleIDs[i] != null; i++) {
+        option = document.createElement("option");
+        option.text = sampleIDs[i].sampleID;
+        option.id = sampleIDs[i].sampleID;
+        document.getElementById("sampleIDSelect").appendChild(option);
+    }
+
+}
+
+
+function getSampleID() {
+    var e = document.getElementById("sampleIDSelect");
+    var text = e.options[e.selectedIndex].text;
+    console.log(text);
+    return text;
+}
+
+async function loadSpeciesChart() {
+
+    var sampleID = getSampleID();
+    console.log(sampleID);
+    var numSpecies = await knex.raw(`
+    SELECT species, count(*) as count
+    FROM counts
+    WHERE sampleID = ?
+    GROUP BY species
+    `, sampleID);
+
+    var str = JSON.parse(JSON.stringify(numSpecies));
+    console.log(str);
+    var labels = [];
+    var data = [];
+    for (var i = 0; i < numSpecies[0].length; i++) {
+        console.log(numSpecies[0][i].species);
+        console.log(numSpecies[0][i].count);
+        data.push(numSpecies[0][i].count)
+        labels.push(numSpecies[0][i].species);
+    }
+
+    console.log(labels, data);
+
+    var ctx = document.getElementById("speciesChart").getContext('2d');
+    
+    if(speciesChart!=null){
+        speciesChart.destroy();
+        console.log("Destroyed");
+    }
+    speciesChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Species',
+                data: data,
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(255, 159, 64, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255,99,132,1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        }
+    })
+}
+
+async function loadSizeChart() {
+
+    var species = await knex.raw(`
+    SELECT DISTINCT species
+    FROM measures
+    `);
+    var results = [];
+    for (var i = 0; i < species[0].length; i++) {
+        results.push(await knex.raw(`
+        select species, length
+        FROM measures
+        WHERE (length > 0) AND (species = ?)
+        `, species[0][i].species));
+
+    }
+    var species1 = {
+        labels: [],
+        dataset: [],
+    };
+    var species2 = {
+        labels: [],
+        dataset: [],
+    };
+
+    for (var i = 0; i < results[0][0].length; i++) {
+        // species1.dataset.push(results[0][0][i].length);
+        // species1.labels.push(results[0][0][i].species);
+        // species2.dataset.push(results[1][0][i].length);
+        // species2.labels.push(results[1][0][i].species);
+    }
+
+    var ctx = document.getElementById("sizeChart").getContext('2d');
+
+    if(sizeChart!=null){
+        sizeChart.destroy();
+    }
+    sizeChart = new Chart(ctx, {
+        type: 'scatter',
+        // data: {
+            // labels: species1.labels,
+            // datasets: [{
+            //     label: species1.labels[0],
+            //     data: species1.dataset,
+            //     backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            //     borderColor: 'rgba(255,99,132,1)',
+            //     borderWidth: 1,
+            //     lineTension: 0,
+            // }, {
+            //     label: species2.labels[0],
+            //     data: species2.dataset,
+            //     backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            //     borderColor: 'rgba(54, 162, 235, 1)',
+            //     borderWidth: 1,
+            //     lineTension: 0,
+            // }]
+        
+        // }
+        "data": {
+            "labels":["January","February","March","April","May","June","July"],
+            "datasets":[{
+                "label":"My First Dataset",
+                "data":[65,59,80,81,56,55,40],
+                "fill":false,
+                "backgroundColor":["rgba(255, 99, 132, 0.2)",
+                "rgba(255, 159, 64, 0.2)",
+                "rgba(255, 205, 86, 0.2)",
+                "rgba(75, 192, 192, 0.2)",
+                "rgba(54, 162, 235, 0.2)",
+                "rgba(153, 102, 255, 0.2)",
+                "rgba(201, 203, 207, 0.2)"
+            ],
+            "borderColor":[
+                "rgb(255, 99, 132)",
+                "rgb(255, 159, 64)",
+                "rgb(255, 205, 86)",
+                "rgb(75, 192, 192)",
+                "rgb(54, 162, 235)",
+                "rgb(153, 102, 255)",
+                "rgb(201, 203, 207)"
+            ],
+            "borderWidth":1}]},
+            "options":{
+                "scales":{
+                    "yAxes":[{
+                        "ticks":{
+                            "beginAtZero":true
+                        }
+                    }
+                ]
+            }
+        }
+    })
+}
+
+async function loadBarChart(){
+    var ctx = document.getElementById("barChart").getContext('2d');
+    var data = [1,2,3,4];
+    var options = "";
+
+    if(barChart!=null){
+        barChart.destroy();
+    }
+    barChart =  new Chart(ctx, {
+        "type":"bar",
+        "data": {
+            "labels":["January","February","March","April","May","June","July"],
+            "datasets":[{
+                "label":"My First Dataset",
+                "data":[65,59,80,81,56,55,40],
+                "fill":false,
+                "backgroundColor":["rgba(255, 99, 132, 0.2)",
+                "rgba(255, 159, 64, 0.2)",
+                "rgba(255, 205, 86, 0.2)",
+                "rgba(75, 192, 192, 0.2)",
+                "rgba(54, 162, 235, 0.2)",
+                "rgba(153, 102, 255, 0.2)",
+                "rgba(201, 203, 207, 0.2)"
+            ],
+            "borderColor":[
+                "rgb(255, 99, 132)",
+                "rgb(255, 159, 64)",
+                "rgb(255, 205, 86)",
+                "rgb(75, 192, 192)",
+                "rgb(54, 162, 235)",
+                "rgb(153, 102, 255)",
+                "rgb(201, 203, 207)"
+            ],
+            "borderWidth":1}]},
+            "options":{
+                "scales":{
+                    "yAxes":[{
+                        "ticks":{
+                            "beginAtZero":true
+                        }
+                    }
+                ]
+            }
+        }
+    });
+}
+
+async function loadRadarChart(){
+    var ctx = document.getElementById("radarChart").getContext('2d');
+    var data = [1,2,3,4];
+    var options = "";
+
+    if(radarChart!=null){
+        radarChart.destroy();
+    }
+    radarChart = new Chart(ctx,{"type":"radar","data":{"labels":["Eating","Drinking","Sleeping","Designing","Coding","Cycling","Running"],"datasets":[{"label":"My First Dataset","data":[65,59,90,81,56,55,40],"fill":true,"backgroundColor":"rgba(255, 99, 132, 0.2)","borderColor":"rgb(255, 99, 132)","pointBackgroundColor":"rgb(255, 99, 132)","pointBorderColor":"#fff","pointHoverBackgroundColor":"#fff","pointHoverBorderColor":"rgb(255, 99, 132)"},{"label":"My Second Dataset","data":[28,48,40,19,96,27,100],"fill":true,"backgroundColor":"rgba(54, 162, 235, 0.2)","borderColor":"rgb(54, 162, 235)","pointBackgroundColor":"rgb(54, 162, 235)","pointBorderColor":"#fff","pointHoverBackgroundColor":"#fff","pointHoverBorderColor":"rgb(54, 162, 235)"}]},"options":{"elements":{"line":{"tension":0,"borderWidth":3}}}});
+}
+
+function resizeCanvas() {
+    canvas = document.querySelectorAll("canvas");
+    console.log(canvas);
+    canvas.forEach(function (item, index) {
+        console.log(item, index);
+        item.style.width = '100%';
+        item.style.height = '100%';
+        item.width = item.offsetWidth;
+        item.height = item.offsetHeight;
+    })
+
+    loadDashboard();
+}
+
+function loadDashboard() {
+
+    loadSpeciesChart();
+    loadSizeChart();
+    loadBarChart();
+    loadRadarChart();
+}
+
+
+
+/************************************************************
+        TABLES 
+*************************************************************/
 //Import file to table using OS Dialog
 function importData(table) {
     dialog.showOpenDialog({
@@ -115,18 +394,16 @@ function exportData(table) {
     });
 }
 
-function exportJoinedData(table1,table2){
-    var sql = "SELECT * FROM `counts` JOIN `samples` ON counts.sampleID = samples.sampleID";
-
- 
+function exportJoinedData(table1, table2) {
+    
     dialog.showSaveDialog({
         filters: [{ name: 'csv', extensions: ['csv'] }
         ]
     }, function (fileName) {
         if (fileName === undefined) return;
 
-        // var sql = "SELECT * FROM ?? JOIN ?? ON ??.sampleID = ??.sampleID";
-        connection.query(sql, function (err, result, fields) {
+        var sql = "SELECT * FROM ?? JOIN ?? ON ??.sampleID = ??.sampleID";
+        connection.query(sql, [table1,table2,table1,table2], function (err, result, fields) {
             if (err) throw err;
             var header = [];
             console.log(result);
@@ -135,23 +412,23 @@ function exportJoinedData(table1,table2){
                 console.log(fields[i]);
                 //Sketchy way of doing it, should replace
                 var flag = 0;
-                for(var j = 0; j < header.length; j++){
-                    if(fields[i].name === header[j]){
+                for (var j = 0; j < header.length; j++) {
+                    if (fields[i].name === header[j]) {
                         flag = 1;
                     }
                 }
-                if (flag === 0){
+                if (flag === 0) {
                     header.push(fields[i].name);
                 }
-                
+
             }
             stringify(result, {
                 formatters: {
-                    date: function(value) {
+                    date: function (value) {
                         return moment(value).format('YYYY-MM-DD');
                     }
                 }
-            } ,function (err, output) {
+            }, function (err, output) {
                 console.log(output);
                 fs.writeFile(fileName, header + "\n" + output, function (err) {
                     if (err === null) {
@@ -183,12 +460,12 @@ function importMeasure() {
 
 //Export MySql Count Table to csv file
 function exportCount() {
-    exportData("counts");
+    exportJoinedData("counts","samples");
 }
 
 //Export MySql Measure Table to csv file
 function exportMeasure() {
-    exportData("measures");
+    exportJoinedData("measures","samples");
 }
 
 
@@ -236,6 +513,27 @@ function makeEditWindow(btn, table) {
     ipcRenderer.send('showEditWindow', table, info);
 }
 
+
+//Load Info Browser Window 
+function makeInfoWindow(btn, table) {
+    var row = btn.parentNode.parentNode;
+    var info = [];
+    for (var i = 0; i < row.cells.length - 3; i++) {
+        info.push(row.cells[i].innerHTML);
+    }
+    // var id = row.getElementsByClassName('code')[0].innerText;
+    //maybe add a pause to reduce flashing
+    ipcRenderer.send('showInfoWindow', table, info)
+}
+
+function showCountWindow(){
+    ipcRenderer.send('showCountWindow');
+}
+
+function showMeasureWindow(){
+    ipcRenderer.send('showMeasureWindow');
+}
+
 //Load Species page
 function loadSpecies(table, callback) {
     var html = '<button class="btn btn-default" id="addSpeciesBtn" onclick="loadAddWindow(\'species\')">Add Species</button>';
@@ -247,7 +545,7 @@ function loadSpecies(table, callback) {
 
 //Load Count page
 function loadCounts(table, callback) {
-    var html = '<button class="btn btn-default" id="startCountBtn" onclick="createCountWindow()">Start Counting</button>'
+    var html = '<button class="btn btn-default" id="startCountBtn" onclick="showCountWindow()">Start Counting</button>'
     html += '<button class="btn btn-default" id="exportCountBtn" onclick="exportCount()">Export Data</button>'
     html += '<button class="btn btn-default" id="importCount" onclick="importCount()">Import Data</button><br></br>'
     document.querySelector('#buttonSection').innerHTML = html;
@@ -259,7 +557,7 @@ function loadCounts(table, callback) {
 //Load Measures page
 function loadMeasures(table, callback) {
 
-    var html = '<button class="btn btn-default" id="startMeasureBtn" onclick="createMeasureWindow()">Start Measuring</button>'
+    var html = '<button class="btn btn-default" id="startMeasureBtn" onclick="showMeasureWindow()">Start Measuring</button>'
     html += '<button class="btn btn-default" id="exportMeasureBtn" onclick="exportMeasure()">Export Data</button>'
     html += '<button class="btn btn-default" id="importMeasureBtn" onclick="importMeasure()">Import Data</button><br></br>'
     document.querySelector('#buttonSection').innerHTML = html;
@@ -344,7 +642,7 @@ function loadTable(table, callback) {
                 html += '</td>';
             })
             html += '<td>';
-            html += '<button class="btn btn-default">Info</button>';
+            html += '<button type= "button" class="btn btn-default" value="Info" onclick="makeInfoWindow(this,\'' + table + '\')">Info</button>';
             html += '</td>';
             html += '<td>';
             html += '<button type="button" class="btn btn-default" value="Edit" onclick="makeEditWindow(this,\'' + table + '\')">Edit</button>';
@@ -403,6 +701,10 @@ function deleteRow(btn, table) {
     }
     );
 }
+
+/************************************************************
+        SETTINGS 
+*************************************************************/
 function loadDBUserInfo() {
     var x = document.getElementById("DBUserInfo");
     var y = document.getElementById("DBCreate");
@@ -601,13 +903,27 @@ function deleteDatabase() {
     );
 }
 
-function init() {
+
+/************************************************************
+        INITIALIZE 
+*************************************************************/
+async function init() {
+
+    //Initial loadCount as default
+    loadCounts('counts');
+
     //Load saved User Settings for Database Login
     document.getElementById("dbUser").value = settings.get('userInfo.user');
     document.getElementById("dbPassword").value = settings.get('userInfo.password');
 
     //Currently getting non passive event listener warning
     loadDBSelect();
+    await loadSampleIDs();
+    loadDashboard();
+    document.getElementById("sampleIDSelect").addEventListener('change', loadDashboard);
+    window.addEventListener('resize', resizeCanvas, false);
+
+    
 }
 
 window.addEventListener('load', init, false);

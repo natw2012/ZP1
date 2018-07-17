@@ -5,13 +5,16 @@
   <meta charset="utf-8">
   <title>Plankton Counting Tool</title>
 
+  <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../node_modules/bootstrap/dist/js/bootstrap.min.js">
+
   <script type="text/x-template" id="dialog1" src="dialog1.html" data-js="js/dialog1.js"></script>
-  <script type='text/javascript' src='createMeasureWindow.js'></script>
-  <script type='text/javascript' src='createCountWindow.js'></script>
   <script type='text/javascript' src='js/load.js'></script>
 
-  <!-- <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="../node_modules/bootstrap/dist/js/bootstrap.min.js"> -->
+  <link rel="stylesheet" href="./css/mainWindow.css">
+
+
+
 </head>
 
 <body>
@@ -26,10 +29,39 @@
       </div>
     </tool-bar>
     <window-content>
-      <div id="dashboard">
+      <div id="dashboard" style="display:none">
         <div class="pane-group">
           <div class="pane">
-            <button class="btn btn-default" onclick="exportJoinedData('counts', 'samples')">Export Everything</button>
+            <div class="container">
+              <div class="row" style="margin:30px">
+                <div class="col-sm">
+                  <div class="form-group" align="center">
+                    <label id="sampleIDLbl" for="sampleIDSelect">Sample ID:</label>
+                    <select id="sampleIDSelect">
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="row" style="margin:30px">
+
+                <div class="col-sm" id="speciesChartCol">
+                  <canvas id="speciesChart" width="200" height="200"></canvas>
+                </div>
+                <div class="col-sm" id="sizeChartCol">
+                  <canvas id="sizeChart" width="200" height="200"></canvas>
+                </div>
+              </div>
+              <div class="row" style="margin:30px">
+                <div class="col-sm" id="barChartCol">
+                  <canvas id="barChart" width="200" height="200"></canvas>
+                </div>
+                <div class="col-sm" id="radarChartCol">
+                  <canvas id="radarChart" width="200" height="200"></canvas>
+                </div>
+              </div>
+
+            </div>
+
           </div>
         </div>
       </div>
@@ -38,181 +70,88 @@
           <div class="pane-sm sidebar">
             <nav-group class="sidebarGroup">
               <h5 class="nav-group-title">Select:</h5>
-              <nav-item href="#" onclick="loadSpecies('species')">Species</nav-item>
-              <nav-item href="#" onclick="loadCounts('counts')">Counts</nav-item>
+              <nav-item class="active" href="#" onclick="loadCounts('counts')">Counts</nav-item>
               <nav-item href="#" onclick="loadMeasures('measures')">Measures</nav-item>
-              <nav-item href="#" onclick="loadFormulas('formulas')">Formulas</nav-item>
-              <nav-item href="#" onclick="loadLakes('lakes')">Lakes</nav-item>
-              <nav-item href="#" onclick="loadAttributes('attributes')">Attributes</nav-item>
-              <nav-item href="#" onclick="loadGear('gear')">Gear</nav-item>
+              <nav-item href="#" onclick="loadSpecies('species')">Species</nav-item>
               <nav-item href="#" onclick="loadSamples('samples')">Samples</nav-item>
+              <nav-item href="#" onclick="loadLakes('lakes')">Lakes</nav-item>
+              <nav-item href="#" onclick="loadGear('gear')">Gear</nav-item>
+              <nav-item href="#" onclick="loadFormulas('formulas')">Formulas</nav-item>
             </nav-group>
           </div>
           <div class="pane" id="content" style="padding: 20px">
             <div id="buttonSection"></div>
-            <div id="tableSection" style="max-height: 50%; overflow: auto">
-              <table class="table-striped" id="table"></table>
+            <div id="tableSection" style="max-height: 75%; overflow: auto">
+              <table class="table-striped-custom" id="table"></table>
             </div>
           </div>
         </div>
       </div>
       <div id="settings" style="display: none;">
         <div class="pane-group">
-            <div class="pane-sm sidebar">
-                <nav-group class="sidebarGroup">
-                  <h5 class="nav-group-title">Select:</h5>
-                  <nav-item href="#DBUserInfo" onclick="loadDBUserInfo()">Database User Info</nav-item>
-                  <nav-item href="#DBCreate" onclick="loadDBCreate()">Create New Database</nav-item>
-                  <nav-item href="#DBDelete" onclick="loadDBDelete()">Delete Database</nav-item>
-                </nav-group>
+          <div class="pane-sm sidebar">
+            <nav-group class="sidebarGroup">
+              <h5 class="nav-group-title">Select:</h5>
+              <nav-item href="#DBUserInfo" onclick="loadDBUserInfo()">Database User Info</nav-item>
+              <nav-item href="#DBCreate" onclick="loadDBCreate()">Create New Database</nav-item>
+              <nav-item href="#DBDelete" onclick="loadDBDelete()">Delete Database</nav-item>
+            </nav-group>
+          </div>
+          <div class="pane" id="DBUserInfo" style="padding: 20px">
+            <form style="padding: 20px" id="dbSettingsForm">
+              <h3>Manage Database Login Info</h3>
+              <div class="form-group">
+                <label for="dbUser">User:</label>
+                <input class="form-control form-control-sm" type="text" id="dbUser" value="">
               </div>
-              <div class="pane" id="DBUserInfo" style="padding: 20px">
-                  <form style="padding: 20px" id="dbSettingsForm">
-                      <h3>Manage Database Login Info</h3>
-                      <div class="form-group">
-                          <label for="dbUser">User:</label>
-                          <input class="form-control form-control-sm" type="text" id="dbUser" value="">
-                      </div>
-                      <div class="form-group">
-                          <label for="dbPassword">Password:</label>
-                          <input class="form-control form-control-sm" type="text" id="dbPassword" value="">
-                      </div>
-                      <div class="form-actions">
-                          <button id="saveUserInfo" type="button" class="btn btn-system btn-primary" onclick="setUserInfo()">Save User Info</button>
-                      </div>
-                      <br>
-                      <div class="form-group">
-                          <label for="dbDatabase">Database:</label>
-                          <select class="form-control form-control-sm" type="text" id="dbDatabase" value=""></select>
-                      </div>
-                      <div class="form-actions">
-                          <button id="saveDB" type="button" class="btn btn-system btn-primary" onclick="setDB()">Save Database</button>
-                      </div>
-                  </form>
-                </div>
-                <div class="pane" id="DBCreate" style="padding: 20px; display: none;">
-                  <form style="padding: 20px" id="dbSettingsForm">
-                    <h3>Create New Database</h3>
-                    <div class="form-group">
-                        <label for="newDatabaseName">Database:</label>
-                        <input class="form-control form-control-sm" type="text" id="newDatabaseName" value=""></input>
-                    </div>
-                      <div class="form-actions">
-                          <button id="createDB" type="button" class="btn btn-system btn-primary" onclick="createNewDatabase()">Create New Database</button>
-                      </div>
-                  </form>
-                </div>
-                <div class="pane" id="DBDelete" style="padding: 20px; display: none">
-                  <form style="padding: 20px" id="dbSettingsForm">
-                      <h3>Delete Database</h3>
-                      <div class="form-group">
-                          <label for="deleteDatabaseName">Database:</label>
-                          <select class="form-control form-control-sm" type="text" id="deleteDatabaseSelect" value=""></select>
-                      </div>
-                        <div class="form-actions">
-                            <button id="createDB" type="button" class="btn btn-system btn-primary" onclick="deleteDatabase()">Delete Database</button>
-                        </div>
-                    </form>
+              <div class="form-group">
+                <label for="dbPassword">Password:</label>
+                <input class="form-control form-control-sm" type="text" id="dbPassword" value="">
               </div>
-            </div>
+              <div class="form-actions">
+                <button id="saveUserInfo" type="button" class="btn btn-system btn-primary" onclick="setUserInfo()">Save User Info</button>
+              </div>
+              <br>
+              <div class="form-group">
+                <label for="dbDatabase">Database:</label>
+                <select class="form-control form-control-sm" type="text" id="dbDatabase" value=""></select>
+              </div>
+              <div class="form-actions">
+                <button id="saveDB" type="button" class="btn btn-system btn-primary" onclick="setDB()">Save Database</button>
+              </div>
+            </form>
+          </div>
+          <div class="pane" id="DBCreate" style="padding: 20px; display: none;">
+            <form style="padding: 20px" id="dbSettingsForm">
+              <h3>Create New Database</h3>
+              <div class="form-group">
+                <label for="newDatabaseName">Database:</label>
+                <input class="form-control form-control-sm" type="text" id="newDatabaseName" value=""></input>
+              </div>
+              <div class="form-actions">
+                <button id="createDB" type="button" class="btn btn-system btn-primary" onclick="createNewDatabase()">Create New Database</button>
+              </div>
+            </form>
+          </div>
+          <div class="pane" id="DBDelete" style="padding: 20px; display: none">
+            <form style="padding: 20px" id="dbSettingsForm">
+              <h3>Delete Database</h3>
+              <div class="form-group">
+                <label for="deleteDatabaseName">Database:</label>
+                <select class="form-control form-control-sm" type="text" id="deleteDatabaseSelect" value=""></select>
+              </div>
+              <div class="form-actions">
+                <button id="createDB" type="button" class="btn btn-system btn-primary" onclick="deleteDatabase()">Delete Database</button>
+              </div>
+            </form>
+          </div>
         </div>
+      </div>
       </div>
 
     </window-content>
   </ph-window>
   <script type="text/javascript" src="js/app.js"></script>
-  <!-- 
-  <ph-window data-vibrancy="menu">
-    <tool-bar type="header">
-      <h1 class="title" style="-webkit-app-region: drag;">Show Real</h1>
-      <div class="toolbar-actions" style="text-align: center;">
-        <btn-group class="component-groups" type="absolute">
-          <button class="btn btn-default" data-view="#dashboard">Dashboard</button>
-          <button class="btn btn-default active" data-view="#tables">Tables</button>
-          <button class="btn btn-default" data-view="#defaults">Defaults</button>
-        </btn-group>
-      </div>
-    </tool-bar>
-
-    <div class="window">
-      <div id="dashboard" style="display: none;">
-        <h1>Graphs will go Here</h1>
-      </div>
-      <div id="tables">
-        <div class="pane-group">
-          <div class="pane-sm sidebar">
-            Still need to figure out how to navigate between nav items
-            <nav class="nav-group">
-              <h5 class="nav-group-title">Select:</h5>
-              <a class="nav-group-item-active">
-                Samples
-              </a>
-              <span class="nav-group-item">
-                Counts
-              </span>
-              <nav-item data-view="#counts">Counts</nav-item>
-              <nav-item data-view="#attributes">Attributes</nav-item>
-              <nav-item class="active" data-view="#lakes">Lakes</nav-item>
-              <nav-item data-view "#gear">Gear</nav-item>
-            </nav-group>
-          </div>
-          <div id="lakes">
-            <body>
-              <br>
-              <input class="btn btn-primary" id="action-btn" value="Retrieve 10 first rows" />
-              <table id="table" border="1">
-                <tbody>
-
-                </tbody>
-              </table>
-              <button class="btn btn-primary" id="addLakeWindowBtn" onclick="createAddLakeWindow()">Add Lake</button>
-              <button class="btn btn-primary" id="startMeasureBtn" onclick="createMeasureWindow()">Start Measuring</button>
-              <button class="btn btn-primary" id="startCountBtn" onclick="createCountWindow()">Start Counting</button>
-            </body>
-          </div>    
-          
-
-        </div>
-      </div>
-      <div id="defaults" style="display: none;">
-        <div class="pane-group">
-          <div class="pane">
-            <form>
-              <div class="form-group">
-                <label>Protocol</label>
-                <select class="form-control">
-                  <option>Protocol 1</option>
-                  <option>Protocol 2</option>
-            Ability to Add New Protocol
-            </select>
-              </div>
-              <div class="form-group">
-                <label>Hardware</label>
-                <input type="text" name="hardware" id="hardware" placeholder="Hardware"></input>
-              </div>
-              <div class="form-group">
-                <label>Count Type</label>
-                <input type="text" name="countType" id="Count Type">
-              </div>
-              <div class="form-group">
-                <label for="phylum">Phylum</label>
-                <input type="text" name="phylum" value="Phylum">
-              </div>
-              <br> Calibration:
-              <br>
-              <input type="text" name="calibration" value="Calibration">
-              <br>
-              <br>
-              <button type="submit" value="Save">Save</button>
-            </form>
-          </div>
-        </div>
-    </window-content>
-    <tool-bar type="footer">
-
-    </tool-bar>
-  </ph-window> -->
-
 </body>
 
 </html>

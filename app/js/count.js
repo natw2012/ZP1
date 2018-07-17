@@ -8,13 +8,36 @@ const { ipcRenderer } = electron;
 var markerID;
 var speciesOption = [];
 
-var con = require('./js/config.js').localConnect();
+var con = require('../js/config.js').localConnect();
 
 
 
 //Should implement ability to choose colours in dashboard 
 function random_rgba() {
     return randomColor(); //Random Color Library
+}
+
+function loadSampleIDs() {
+    con.connect(function (err) {
+        // in case of error
+        if (err) {
+            console.log(err.code);
+            console.log(err.fatal);
+        }
+        var sql = "SELECT sampleID FROM samples";
+        con.query(sql, function (err, result, fields) {
+            if (err) throw err;
+            console.log(result);
+            var option;
+            for (var i = 0; result[i] != null; i++) {
+                option = document.createElement("option");
+                option.text = result[i].sampleID;
+                option.id = result[i].sampleID;
+                document.getElementById("sampleIDSelect").appendChild(option);
+            }
+
+        });
+    });
 }
 
 function loadCountingTypes() {
@@ -24,15 +47,15 @@ function loadCountingTypes() {
             console.log(err.code);
             console.log(err.fatal);
         }
-        var sql = "SELECT type FROM counttypes";
+        var sql = "SELECT countType FROM counttypes";
         con.query(sql, function (err, result, fields) {
             if (err) throw err;
             console.log(result);
             var option;
             for (var i = 0; result[i] != null; i++) {
                 option = document.createElement("option");
-                option.text = result[i].type;
-                option.id = result[i].type;
+                option.text = result[i].countType;
+                option.id = result[i].countType;
                 document.getElementById("typeSelect").appendChild(option);
             }
 
@@ -48,15 +71,15 @@ function loadSpeciesDropdown() {
             console.log(err.fatal);
         }
         var dropdown = document.getElementById("speciesSelect");
-        var sql = "SELECT name FROM species";
+        var sql = "SELECT speciesName FROM species";
         con.query(sql, function (err, result, fields) {
             if (err) throw err;
             console.log(result);
             var option;
             for (var i = 0; result[i] != null; i++) {
                 option = document.createElement("option");
-                option.text = result[i].name;
-                option.id = result[i].name;
+                option.text = result[i].speciesName;
+                option.id = result[i].speciesName;
                 option.fill = random_rgba();
                 speciesOption.push(option);
                 document.getElementById("speciesSelect").appendChild(option);
@@ -94,6 +117,11 @@ function getType() {
     var text = e.options[e.selectedIndex].value;
     return text;
 }
+function getSampleID() {
+    var e = document.getElementById("sampleIDSelect");
+    var text = e.options[e.selectedIndex].value;
+    return text;
+}
 
 function addCount() {
     con.connect(function (err) {
@@ -104,10 +132,11 @@ function addCount() {
         }
         //Prevent DB insert if select is on default message
         var species = getSpecies();
+        var sampleID = getSampleID();
         var type = getType();
-        if (species != "") {
-            var sql = "INSERT INTO count SET species = ?, type = ?";
-            con.query(sql, [species, type], function (err, result) {
+        if (species != "" && sampleID != "") {
+            var sql = "INSERT INTO counts SET species = ?, speciesType = ?, sampleID = ?";
+            con.query(sql, [species, type, sampleID], function (err, result) {
                 if (err) throw err;
                 console.log(result);
                 markerID = result.insertId;
@@ -122,7 +151,7 @@ function addCount() {
 
 //Calls main window to refresh the count table
 function refreshCountTable() {
-    ipcRenderer.send('refreshTable', "count");
+    ipcRenderer.send('refreshTable', "counts");
 }
 
 
@@ -154,7 +183,7 @@ function getCount() {
             console.log(err.fatal);
         }
         var speciesDropdown = getSpecies();
-        var sql = "SELECT species, COUNT(*) as total FROM count GROUP BY species";
+        var sql = "SELECT species, COUNT(*) as total FROM counts GROUP BY species";
         con.query(sql, function (err, result, fields) {
             if (err) throw err;
             // console.log(result);
@@ -226,6 +255,7 @@ function init() {
     resizeCanvas();
     loadSpeciesDropdown();
     loadCountingTypes();
+    loadSampleIDs();
     getCount();
     window.addEventListener('resize', resizeCanvas, false);
     document.getElementById("clear").addEventListener('click', clearCanvas, false);

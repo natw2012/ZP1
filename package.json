@@ -18,24 +18,28 @@
   "homepage": "https://github.com/natw2012/ZP1#readme",
   "devDependencies": {
     "devtron": "^1.4.0",
-    "electron": "^2.0.3",
+    "electron": "^2.0.5",
     "electron-packager": "^12.1.0"
   },
   "dependencies": {
     "bluebird": "^3.5.1",
-    "bootstrap": "^4.1.1",
+    "bootstrap": "^4.1.2",
     "canvas": "^1.6.11",
+    "chart.js": "^2.7.2",
     "csv": "^3.1.0",
     "electron-photon": "^1.1.6",
     "electron-reload": "^1.2.5",
     "electron-settings": "^3.2.0",
-    "fabric": "^2.3.1",
+    "fabric": "^2.3.3",
     "jquery": "^3.3.1",
+    "knex": "^0.15.1",
     "moment": "^2.22.2",
     "mysql": "^2.15.0",
     "mysql2": "^1.5.3",
     "popper.js": "^1.14.3",
     "randomcolor": "^0.5.3",
+    "sqlite3": "^4.0.2",
+    "underscore": "^1.9.1",
     "vex-js": "^4.1.0"
   }
 }
