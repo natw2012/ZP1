@@ -36,6 +36,7 @@
               <div class="row" style="margin:30px">
                 <div class="col-sm">
                   <div class="form-group" align="center">
+                    <button class="btn btn-default" id="refreshDashboardBtn" onclick="refreshDashboard()">Refresh</button>
                     <label id="sampleIDLbl" for="sampleIDSelect">Sample ID:</label>
                     <select id="sampleIDSelect">
                     </select>
@@ -44,9 +45,15 @@
               </div>
               <div class="row" style="margin:30px">
 
-                <div class="col-sm" id="speciesChartCol">
-                  <canvas id="speciesChart" width="200" height="200"></canvas>
+                <div class="col-sm" id="speciesCountChartCol">
+                  <canvas id="speciesCountChart" width="200" height="200"></canvas>
                 </div>
+                <div class="col-sm" id="speciesMeasureChartCol">
+                    <canvas id="speciesMeasureChart" width="200" height="200"></canvas>
+                  </div>
+                  <div class="col-sm" id="biomassSampleSumChartCol">
+                      <canvas id="biomassSampleSumChart" width="200" height="200"></canvas>
+                    </div>
                 <div class="col-sm" id="sizeChartCol">
                   <canvas id="sizeChart" width="200" height="200"></canvas>
                 </div>
@@ -73,6 +80,7 @@
               <nav-item class="active" href="#" onclick="loadCounts('counts')">Counts</nav-item>
               <nav-item href="#" onclick="loadMeasures('measures')">Measures</nav-item>
               <nav-item href="#" onclick="loadSpecies('species')">Species</nav-item>
+              <nav-item href="#" onclick="loadGroups('groups')">Groups</nav-item>
               <nav-item href="#" onclick="loadSamples('samples')">Samples</nav-item>
               <nav-item href="#" onclick="loadLakes('lakes')">Lakes</nav-item>
               <nav-item href="#" onclick="loadGear('gear')">Gear</nav-item>

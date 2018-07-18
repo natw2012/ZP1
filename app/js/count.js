@@ -71,15 +71,15 @@ function loadSpeciesDropdown() {
             console.log(err.fatal);
         }
         var dropdown = document.getElementById("speciesSelect");
-        var sql = "SELECT speciesName FROM species";
+        var sql = "SELECT speciesID, speciesAbbrev FROM species";
         con.query(sql, function (err, result, fields) {
             if (err) throw err;
             console.log(result);
             var option;
             for (var i = 0; result[i] != null; i++) {
                 option = document.createElement("option");
-                option.text = result[i].speciesName;
-                option.id = result[i].speciesName;
+                option.text = result[i].speciesID + " " + result[i].speciesAbbrev;
+                option.id = result[i].speciesID;
                 option.fill = random_rgba();
                 speciesOption.push(option);
                 document.getElementById("speciesSelect").appendChild(option);
@@ -101,12 +101,12 @@ function resizeCanvas() {
     canvas.setHeight(window.innerHeight);
     canvas.renderAll();
 }
-function getSpecies() {
+function getSpeciesID() {
     var e = document.getElementById("speciesSelect");
     // console.log(e);
     // console.log(e.selectedIndex);
     // console.log(e.options[e.selectedIndex]);
-    var text = e.options[e.selectedIndex].value;
+    var text = e.options[e.selectedIndex].id;
     return text;
 }
 function getType() {
@@ -131,12 +131,12 @@ function addCount() {
             console.log(err.fatal);
         }
         //Prevent DB insert if select is on default message
-        var species = getSpecies();
+        var speciesID = getSpeciesID();
         var sampleID = getSampleID();
         var type = getType();
-        if (species != "" && sampleID != "") {
-            var sql = "INSERT INTO counts SET species = ?, speciesType = ?, sampleID = ?";
-            con.query(sql, [species, type, sampleID], function (err, result) {
+        if (speciesID != "" && sampleID != "") {
+            var sql = "INSERT INTO counts SET speciesID = ?, speciesType = ?, sampleID = ?";
+            con.query(sql, [speciesID, type, sampleID], function (err, result) {
                 if (err) throw err;
                 console.log(result);
                 markerID = result.insertId;
@@ -182,20 +182,20 @@ function getCount() {
             console.log(err.code);
             console.log(err.fatal);
         }
-        var speciesDropdown = getSpecies();
-        var sql = "SELECT species, COUNT(*) as total FROM counts GROUP BY species";
+        var species = getSpeciesID();
+        var sql = "SELECT speciesID, COUNT(*) as total FROM counts GROUP BY speciesID";
         con.query(sql, function (err, result, fields) {
             if (err) throw err;
-            // console.log(result);
-            // console.log(result[i]);
+            console.log(result);
+            console.log(result[i]);
             if (result[i] === null) {
                 document.getElementById("count").innerHTML = "0";
             }
             for (var i = 0; result[i] != null; i++) {
-                // console.log(result[i].species);
-                // console.log(speciesDropdown);
+                console.log(result[i].speciesID);
+                console.log(species);
                 console.log("Inside getCount");
-                if (result[i].species === speciesDropdown) {
+                if (result[i].speciesID === species) {
                     document.getElementById("count").innerHTML = result[i].total;
                     break;
                 }
@@ -211,7 +211,7 @@ function drawDot() {
     var pointer = canvas.getPointer(event.e);
     var speciesColor;
     for (var i = 0; speciesOption[i] != null; i++) {
-        if (getSpecies() === speciesOption[i].id)
+        if (getSpeciesID() === speciesOption[i].id)
             speciesColor = speciesOption[i].fill;
 
     }

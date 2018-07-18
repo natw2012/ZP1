@@ -36,7 +36,9 @@ connection.connect(function (err) {
 
 var _ = require('underscore');
 
-var speciesChart = null;
+var speciesCountChart = null;
+var speciesMeasureChart = null;
+var biomassSampleSumChart = null;
 var sizeChart = null;
 var barChart = null;
 var radarChart = null;
@@ -50,8 +52,21 @@ var knex = require('knex')({
         database: settings.get('database.db')
     }
 });
+
+//Refresh Dashboard
+async function refreshDashboard(){
+    await loadSampleIDs();
+    loadDashboard();
+    document.getElementById("sampleIDSelect").addEventListener('change', loadDashboard);
+    window.addEventListener('resize', resizeCanvas, false);
+
+}
 //Load Sample IDs into select
 async function loadSampleIDs() {
+
+    //Clear options 
+    removeOptions(document.getElementById("sampleIDSelect"));
+
     var sampleIDs = await knex('samples').select('sampleID');
     var option;
     for (var i = 0; sampleIDs[i] != null; i++) {
@@ -71,38 +86,109 @@ function getSampleID() {
     return text;
 }
 
-async function loadSpeciesChart() {
+async function loadSpeciesCountChart() {
 
     var sampleID = getSampleID();
     console.log(sampleID);
     var numSpecies = await knex.raw(`
-    SELECT species, count(*) as count
-    FROM counts
-    WHERE sampleID = ?
-    GROUP BY species
-    `, sampleID);
+    SELECT speciesName, T1.speciesID, count1
+    FROM (
+        SELECT counts.speciesID, COUNT(*) as count1 
+        FROM counts 
+        WHERE sampleID = ?
+        GROUP BY speciesID) AS T1
+    JOIN (
+        SELECT species.speciesID, speciesName 
+        FROM species) AS T2
+    ON T1.speciesID = T2.speciesID
+    `,sampleID);
 
     var str = JSON.parse(JSON.stringify(numSpecies));
     console.log(str);
     var labels = [];
     var data = [];
     for (var i = 0; i < numSpecies[0].length; i++) {
-        console.log(numSpecies[0][i].species);
-        console.log(numSpecies[0][i].count);
-        data.push(numSpecies[0][i].count)
-        labels.push(numSpecies[0][i].species);
+        console.log(numSpecies[0][i].speciesName);
+        console.log(numSpecies[0][i].count1);
+        data.push(numSpecies[0][i].count1)
+        labels.push(numSpecies[0][i].speciesName);
     }
 
     console.log(labels, data);
 
-    var ctx = document.getElementById("speciesChart").getContext('2d');
+    var ctx = document.getElementById("speciesCountChart").getContext('2d');
     
-    if(speciesChart!=null){
-        speciesChart.destroy();
+    if(speciesCountChart!=null){
+        speciesCountChart.destroy();
         console.log("Destroyed");
     }
-    speciesChart = new Chart(ctx, {
+    speciesCountChart = new Chart(ctx, {
         type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Species',
+                data: data,
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(255, 159, 64, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255,99,132,1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        }
+    })
+}
+
+async function loadSpeciesMeasureChart() {
+
+    var sampleID = getSampleID();
+    console.log(sampleID);
+    var numSpecies = await knex.raw(`
+    SELECT speciesName, T1.speciesID, count1
+    FROM (
+        SELECT measures.speciesID, COUNT(*) as count1 
+        FROM measures 
+        WHERE sampleID = ?
+        GROUP BY speciesID) AS T1
+    JOIN (
+        SELECT species.speciesID, speciesName 
+        FROM species) AS T2
+    ON T1.speciesID = T2.speciesID
+    `,sampleID);
+
+    var str = JSON.parse(JSON.stringify(numSpecies));
+    console.log(str);
+    var labels = [];
+    var data = [];
+    for (var i = 0; i < numSpecies[0].length; i++) {
+        console.log(numSpecies[0][i].speciesName);
+        console.log(numSpecies[0][i].count1);
+        data.push(numSpecies[0][i].count1)
+        labels.push(numSpecies[0][i].speciesName);
+    }
+
+    console.log(labels, data);
+
+    var ctx = document.getElementById("speciesMeasureChart").getContext('2d');
+    
+    if(speciesMeasureChart!=null){
+        speciesMeasureChart.destroy();
+        console.log("Destroyed");
+    }
+    speciesMeasureChart = new Chart(ctx, {
+        type: 'pie',
         data: {
             labels: labels,
             datasets: [{
@@ -133,16 +219,16 @@ async function loadSpeciesChart() {
 async function loadSizeChart() {
 
     var species = await knex.raw(`
-    SELECT DISTINCT species
+    SELECT DISTINCT speciesID
     FROM measures
     `);
     var results = [];
     for (var i = 0; i < species[0].length; i++) {
         results.push(await knex.raw(`
-        select species, length
+        select speciesID, length
         FROM measures
-        WHERE (length > 0) AND (species = ?)
-        `, species[0][i].species));
+        WHERE (length > 0) AND (speciesID = ?)
+        `, species[0][i].speciesID));
 
     }
     var species1 = {
@@ -154,12 +240,12 @@ async function loadSizeChart() {
         dataset: [],
     };
 
-    for (var i = 0; i < results[0][0].length; i++) {
+    // for (var i = 0; i < results[0][0].length; i++) {
         // species1.dataset.push(results[0][0][i].length);
         // species1.labels.push(results[0][0][i].species);
         // species2.dataset.push(results[1][0][i].length);
         // species2.labels.push(results[1][0][i].species);
-    }
+    // }
 
     var ctx = document.getElementById("sizeChart").getContext('2d');
 
@@ -224,10 +310,89 @@ async function loadSizeChart() {
     })
 }
 
+async function loadBiomassSampleSumChart(){
+    var sampleID = getSampleID();
+    console.log(sampleID);
+    var numSpecies = await knex.raw(`
+    SELECT speciesAbbrev, T1.speciesID, sum1
+    FROM (
+        SELECT speciesID, SUM(volume) as sum1 
+        FROM measures 
+        WHERE sampleID = ?
+        GROUP BY speciesID) AS T1
+    JOIN (
+        SELECT species.speciesID, speciesAbbrev 
+        FROM species) AS T2
+    ON T1.speciesID = T2.speciesID
+    `,sampleID);
+
+    var str = JSON.parse(JSON.stringify(numSpecies));
+    console.log(str);
+    var labels = [];
+    var data = [];
+    for (var i = 0; i < numSpecies[0].length; i++) {
+        console.log(numSpecies[0][i].speciesAbbrev);
+        console.log(numSpecies[0][i].sum1);
+        data.push(numSpecies[0][i].sum1)
+        labels.push(numSpecies[0][i].speciesAbbrev);
+    }
+
+    console.log(labels, data);
+
+    var ctx = document.getElementById("biomassSampleSumChart").getContext('2d');
+    
+    if(biomassSampleSumChart!=null){
+        biomassSampleSumChart.destroy();
+        console.log("Destroyed");
+    }
+    biomassSampleSumChart =  new Chart(ctx, {
+        "type":"bar",
+        "data": {
+            "labels": labels,
+            "datasets":[{
+                "label":"Biomass Sum",
+                "data": data,
+                "fill":false,
+                "backgroundColor":["rgba(255, 99, 132, 0.2)",
+                "rgba(255, 159, 64, 0.2)",
+                "rgba(255, 205, 86, 0.2)",
+                "rgba(75, 192, 192, 0.2)",
+                "rgba(54, 162, 235, 0.2)",
+                "rgba(153, 102, 255, 0.2)",
+                "rgba(201, 203, 207, 0.2)"
+            ],
+            "borderColor":[
+                "rgb(255, 99, 132)",
+                "rgb(255, 159, 64)",
+                "rgb(255, 205, 86)",
+                "rgb(75, 192, 192)",
+                "rgb(54, 162, 235)",
+                "rgb(153, 102, 255)",
+                "rgb(201, 203, 207)"
+            ],
+            "borderWidth":1}]},
+            "options":{
+                "scales":{
+                    "yAxes":[{
+                        "ticks":{
+                            "beginAtZero":true
+                        }
+                    }
+                ]
+            }
+        }
+    });
+}
+
 async function loadBarChart(){
     var ctx = document.getElementById("barChart").getContext('2d');
     var data = [1,2,3,4];
     var options = "";
+
+    var species = await knex.raw(`
+    SELECT DISTINCT speciesID
+    FROM measures
+    `);
 
     if(barChart!=null){
         barChart.destroy();
@@ -298,7 +463,9 @@ function resizeCanvas() {
 
 function loadDashboard() {
 
-    loadSpeciesChart();
+    loadSpeciesCountChart();
+    loadSpeciesMeasureChart();
+    loadBiomassSampleSumChart();
     loadSizeChart();
     loadBarChart();
     loadRadarChart();
@@ -341,6 +508,9 @@ function importData(table) {
                         if (table === "species") {
                             loadSpecies(table);
                         }
+                        else if (table === "groups") {
+                            loadGroups(table);
+                        }
                         else if (table === "counts") {
                             loadCounts(table);
                         }
@@ -349,6 +519,12 @@ function importData(table) {
                         }
                         else if (table === "samples") {
                             loadSamples(table);
+                        }
+                        else if (table === "formulas") {
+                            loadFormulas(table);
+                        }
+                        else if (table === "lakes") {
+                            loadLakes(table);
                         }
                         else {
                             ipcRenderer.send('errorMessage', win.id, "Error Importing");
@@ -454,8 +630,24 @@ function importSpecies() {
     importData("species");
 }
 
+function importGroups() {
+    importData("groups");
+}
+
 function importMeasure() {
     importData("measures");
+}
+
+function importSamples() {
+    importData("samples");
+}
+
+function importFormulas() {
+    importData("formulas");
+}
+
+function importLakes() {
+    importData("lakes");
 }
 
 //Export MySql Count Table to csv file
@@ -483,6 +675,9 @@ ipcRenderer.on('refreshTable', function (e, table) {
     }
     else if (table === "species") {
         loadSpecies(table, scrollTable);
+    }
+    else if (table === "groups") {
+        loadGroups(table, scrollTable);
     }
     else if (table === "samples") {
         loadSamples(table, scrollTable);
@@ -537,7 +732,16 @@ function showMeasureWindow(){
 //Load Species page
 function loadSpecies(table, callback) {
     var html = '<button class="btn btn-default" id="addSpeciesBtn" onclick="loadAddWindow(\'species\')">Add Species</button>';
-    html += '<button class="btn btn-default" id="importSpecies" onclick="importSpecies()">Import Species List</button><br></br>'
+    html += '<button class="btn btn-default" id="importSpecies" onclick="importSpecies()">Import Species List</button><br></br>';
+    document.querySelector('#buttonSection').innerHTML = html;
+
+    loadTable(table, callback);
+}
+
+//Load Groups page
+function loadGroups(table, callback) {
+    var html = '<button class="btn btn-default" id="addGroupBtn" onclick="loadAddWindow(\'group\')">Add Group</button>';
+    html += '<button class="btn btn-default" id="importGroups" onclick="importGroups()">Import Group List</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
 
     loadTable(table, callback);
@@ -545,9 +749,9 @@ function loadSpecies(table, callback) {
 
 //Load Count page
 function loadCounts(table, callback) {
-    var html = '<button class="btn btn-default" id="startCountBtn" onclick="showCountWindow()">Start Counting</button>'
-    html += '<button class="btn btn-default" id="exportCountBtn" onclick="exportCount()">Export Data</button>'
-    html += '<button class="btn btn-default" id="importCount" onclick="importCount()">Import Data</button><br></br>'
+    var html = '<button class="btn btn-default" id="startCountBtn" onclick="showCountWindow()">Start Counting</button>';
+    html += '<button class="btn btn-default" id="exportCountBtn" onclick="exportCount()">Export Data</button>';
+    html += '<button class="btn btn-default" id="importCount" onclick="importCount()">Import Data</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
 
     loadTable(table, callback);
@@ -557,16 +761,18 @@ function loadCounts(table, callback) {
 //Load Measures page
 function loadMeasures(table, callback) {
 
-    var html = '<button class="btn btn-default" id="startMeasureBtn" onclick="showMeasureWindow()">Start Measuring</button>'
-    html += '<button class="btn btn-default" id="exportMeasureBtn" onclick="exportMeasure()">Export Data</button>'
-    html += '<button class="btn btn-default" id="importMeasureBtn" onclick="importMeasure()">Import Data</button><br></br>'
+    var html = '<button class="btn btn-default" id="startMeasureBtn" onclick="showMeasureWindow()">Start Measuring</button>';
+    html += '<button class="btn btn-default" id="exportMeasureBtn" onclick="exportMeasure()">Export Data</button>';
+    html += '<button class="btn btn-default" id="importMeasureBtn" onclick="importMeasure()">Import Data</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
     loadTable(table, callback);
 }
 
 //Load Formulas page
 function loadFormulas(table, callback) {
-    var html = '<button class="btn btn-default" id="addFormulaBtn" onclick="loadAddFormula(\'formula\')">Add Formula</button><br></br>'
+    var html = '<button class="btn btn-default" id="addFormulaBtn" onclick="loadAddFormula(\'formula\')">Add Formula</button>';
+    html += '<button class="btn btn-default" id="importFormulasBtn" onclick="importFormulas()">Import Formulas</button><br></br>';
+
     document.querySelector('#buttonSection').innerHTML = html;
 
     loadTable(table, callback);
@@ -574,7 +780,9 @@ function loadFormulas(table, callback) {
 
 //Load Lakes page
 function loadLakes(table, callback) {
-    var html = '<button class="btn btn-default" id="addLakeWindowBtn" onclick="loadAddWindow(\'lakes\')">Add Lake</button><br></br>';
+    var html = '<button class="btn btn-default" id="addLakeBtn" onclick="loadAddWindow(\'lakes\')">Add Lake</button>';
+    html += '<button class="btn btn-default" id="importLakesBtn" onclick="importLakes()">Import Lakes</button><br></br>';
+
     document.querySelector('#buttonSection').innerHTML = html;
 
     loadTable(table, callback);
@@ -592,7 +800,9 @@ function loadGear() {
 
 //Load Samples Page
 function loadSamples(table, callback) {
-    var html = '<button class="btn btn-default" id="addSampleBtn" onclick="loadAddWindow(\'samples\')">Add Sample</button><br></br>';
+    var html = '<button class="btn btn-default" id="addSampleBtn" onclick="loadAddWindow(\'samples\')">Add Sample</button>';
+    html += '<button class="btn btn-default" id="importSamplesBtn" onclick="importSamples()">Import Samples</button><br></br>';
+
     document.querySelector('#buttonSection').innerHTML = html;
 
     loadTable(table, callback);
@@ -819,7 +1029,7 @@ function createNewDatabase() {
             if (err) throw err;
         });
         console.log("Query succesfully executed");
-        $query = "CREATE TABLE counts (countID int(5) AUTO_INCREMENT PRIMARY KEY, species varchar(10), speciesType varchar(10), sampleID int(5))";
+        $query = "CREATE TABLE counts (countID int(5) AUTO_INCREMENT PRIMARY KEY, speciesID int(3), speciesType varchar(10), sampleID int(5))";
         connection.query($query, function (err, result, fields) {
             if (err) {
                 ipcRenderer.send('errorMessage', win.id, err.message);
@@ -850,14 +1060,21 @@ function createNewDatabase() {
             }
             console.log("Query succesfully executed");
         })
-        $query = "CREATE TABLE measures (measureID int(5) AUTO_INCREMENT PRIMARY KEY, species varchar(10), length float(10), width float(10), area float(10), volume float(10), sampleID int(5))";
+        $query = "CREATE TABLE measures (measureID int(5) AUTO_INCREMENT PRIMARY KEY, speciesID int(3), length float(10), width float(10), area float(10), volume float(10), sampleID int(5))";
         connection.query($query, function (err, result, fields) {
             if (err) {
                 ipcRenderer.send('errorMessage', win.id, err.message);
             }
             console.log("Query succesfully executed");
         })
-        $query = "CREATE TABLE species (speciesID int(3) PRIMARY KEY, speciesAbbrev varchar(8), speciesName varchar(20), depth int(11))";
+        $query = "CREATE TABLE species (speciesID int(3) PRIMARY KEY, speciesAbbrev varchar(8), speciesName varchar(20), depth int(11), groupID varchar(5))";
+        connection.query($query, function (err, result, fields) {
+            if (err) {
+                ipcRenderer.send('errorMessage', win.id, err.message);
+            }
+            console.log("Query succesfully executed");
+        })
+        $query = "CREATE TABLE groups (groupID varchar(5) PRIMARY KEY, groupName varchar(50))";
         connection.query($query, function (err, result, fields) {
             if (err) {
                 ipcRenderer.send('errorMessage', win.id, err.message);
@@ -865,6 +1082,14 @@ function createNewDatabase() {
             console.log("Query succesfully executed");
         })
         $query = "CREATE TABLE samples (sampleID int(5) PRIMARY KEY, type varchar(5), lakeID int(4), date date, crewChief varchar(5), gearID int(3), stationID int(3), numTow int(3), towLength int(5), volume float(5))";
+        connection.query($query, function (err, result, fields) {
+            if (err) {
+                ipcRenderer.send('errorMessage', win.id, err.message);
+            }
+            console.log("Query succesfully executed");
+        })
+        //Not finished
+        $query = "CREATE TABLE formulas (formulaID int(5) PRIMARY KEY, formulaName varchar(20))";
         connection.query($query, function (err, result, fields) {
             if (err) {
                 ipcRenderer.send('errorMessage', win.id, err.message);
@@ -918,6 +1143,7 @@ async function init() {
 
     //Currently getting non passive event listener warning
     loadDBSelect();
+
     await loadSampleIDs();
     loadDashboard();
     document.getElementById("sampleIDSelect").addEventListener('change', loadDashboard);

@@ -39,7 +39,7 @@
             <label id="pdRatioLbl" for="pdRatio">Px-&microm Ratio:</label>
             <input type="textbox" id="pdRatio" style="width: 75px" readonly></input>
             <br>
-            
+
           </div>
 
           <div class="tool-bar" id="settings-tool-bar">
@@ -53,8 +53,12 @@
               <input type="checkBox" id="lengthOnly"></input>
             </div>
             <div class="form-group">
-                <label id="setManualLbl" for="setManual">Manual Area:</label>
-                <input type="checkBox" id="setManual"></input>
+              <label id="setManualLbl" for="setManual">Manual Area:</label>
+              <input type="checkBox" id="setManual"></input>
+            </div>
+            <div class="form-group">
+                <label id="customFormulaLbl" for="customFormula">Custom Formula:</label>
+                <input type="checkBox" id="customFormula"></input>
               </div>
           </div>
           <div class="tool-bar" id="draw-tool-bar">
@@ -70,6 +74,26 @@
               <button id="drawShapeBtn">Draw</button>
             </div>
           </div>
+          <div class="tool-bar" id="manual-tool-bar">
+              <h1 class="title">Select</h1>
+              <div class="form-group">
+                <label id="shapeSelectManualLbl" for="shapeSelectManual">Shape:</label>
+                <select id="shapeSelectManual">
+                  <option>Select Shape:</option>
+                  <option>Triangle</option>
+                  <option>Rectangle</option>
+                  <option>Ellipse</option>
+                </select>
+              </div>
+            </div>
+            <div class="tool-bar" id="manual-custom-tool-bar">
+                <h1 class="title">Select</h1>
+                <div class="form-group">
+                  <label id="formulaSelectLbl" for="formulaSelect">Formula:</label>
+                  <select id="formulaSelect">
+                  </select>
+                </div>
+              </div>
           <div class="tool-bar" id="select-tool-bar">
             <h1 class="title">Select</h1>
             <label id="sampleIDSelectLbl" for="sampleIDSelect">Sample:</label>
@@ -97,19 +121,23 @@
             <div class="form-group">
               <label id="areaOutputLbl" for="areaOutput">Area:</label>
               <input type="textbox" id="areaOutput" style="width: 75px" readonly></input>
-              <label id="areaOutputLbl2" for="areaOutput">&microm<sup>2</sup></label>
+              <label id="areaOutputLbl2" for="areaOutput">&microm
+                <sup>2</sup>
+              </label>
             </div>
             <div class="form-group">
               <label id="totalAreaOutputLbl" for="totalAreaOutput">Tot. Area:</label>
-                <input type="textbox" id="totalAreaOutput" style="width: 75px" readonly></input>
-                <label id="totalAreaOutputLbl2" for="totalAreaOutput">&microm<sup>2</sup></label>
-              </div>
+              <input type="textbox" id="totalAreaOutput" style="width: 75px" readonly></input>
+              <label id="totalAreaOutputLbl2" for="totalAreaOutput">&microm
+                <sup>2</sup>
+              </label>
+            </div>
             <div class="form-group">
               <button type="submit" id="enterBtn">Enter</button>
               <button type="button" id="deleteObjectBtn">Delete</button>
               <button type="submit" id="clearBtn">Clear</button>
               <button type="button" id="devBtn">Dev</button>
-              
+
             </div>
           </div>
 
@@ -123,14 +151,8 @@
     </window-content>
   </ph-window>
 
-
-
-
-  <!-- <canvas id="canvas"></canvas> -->
-
   <script src="../js/titlebar.js"></script>
   <script src="../js/measure.js"></script>
-  <!-- <script src="js/measure.js"></script> -->
 </body>
 
 </html>
