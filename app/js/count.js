@@ -3,14 +3,13 @@ var mysql = require('mysql');
 var randomColor = require('randomcolor');
 const electron = require('electron');
 const { ipcRenderer } = electron;
-
+var win = electron.remote.getCurrentWindow();
+console.log(win, win.id);
 
 var markerID;
 var speciesOption = [];
 
 var con = require('../js/config.js').localConnect();
-
-
 
 //Should implement ability to choose colours in dashboard 
 function random_rgba() {
@@ -119,7 +118,9 @@ function getType() {
 }
 function getSampleID() {
     var e = document.getElementById("sampleIDSelect");
+    console.log(e);
     var text = e.options[e.selectedIndex].value;
+    console.log(text)
     return text;
 }
 
@@ -182,22 +183,23 @@ function getCount() {
             console.log(err.code);
             console.log(err.fatal);
         }
-        var species = getSpeciesID();
-        var sql = "SELECT speciesID, COUNT(*) as total FROM counts GROUP BY speciesID";
-        con.query(sql, function (err, result, fields) {
+        var speciesID = getSpeciesID();
+        var sampledID = getSampleID();
+        var sql = "SELECT speciesID, COUNT(*) as total FROM counts WHERE sampleID = ? GROUP BY speciesID";
+        con.query(sql, sampledID, function (err, result, fields) {
             if (err) throw err;
             console.log(result);
             console.log(result[i]);
-            if (result[i] === null) {
+            if (result.length == 0) {
                 document.getElementById("count").innerHTML = "0";
             }
             for (var i = 0; result[i] != null; i++) {
-                console.log(result[i].speciesID);
-                console.log(species);
-                console.log("Inside getCount");
-                if (result[i].speciesID === species) {
+                // console.log(result[i].speciesID);
+                // console.log(speciesID);
+                // console.log("Inside getCount");
+                if (result[i].speciesID == speciesID) {
                     document.getElementById("count").innerHTML = result[i].total;
-                    break;
+                    return;
                 }
                 else {
                     document.getElementById("count").innerHTML = "0";
@@ -219,7 +221,9 @@ function drawDot() {
         left: pointer.x,
         top: pointer.y,
         fill: speciesColor,
-        radius: 5,
+        radius: 6,
+        strokeWidth: 2,
+        stroke: "white",
         lockMovementX: true,
         lockMovementY: true,
         lockRotation: true,
@@ -261,10 +265,14 @@ function init() {
     document.getElementById("clear").addEventListener('click', clearCanvas, false);
     document.getElementById("delete").addEventListener('click', deleteCircle, false);
     document.getElementById("speciesSelect").addEventListener('change', getCount);
+    document.getElementById("sampleIDSelect").addEventListener('change', getCount);
     canvas.on('mouse:dblclick', function (options) {
         //Alert user to input species
-        if(document.getElementById("speciesSelect").value === "Select Species"){
-            ipcRenderer.send('errorMessage2', "Must Select Species");
+        if(document.getElementById("sampleIDSelect").value === "Select Sample"){
+            ipcRenderer.send('errorMessage', win.id, "Must Select Sample");
+        }
+        else if(document.getElementById("speciesSelect").value === "Select Species"){
+            ipcRenderer.send('errorMessage', win.id, "Must Select Species");
         }
         else{
             drawDot();

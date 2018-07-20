@@ -3,7 +3,7 @@ const path = require('path');
 const url = require('url');
 
 
-const {app, ipcMain, dialog, BrowserWindow } = require('electron');
+const { app, ipcMain, dialog, BrowserWindow } = require('electron');
 
 // Added electron-reload to refresh app on save
 
@@ -24,12 +24,12 @@ let measureWindow;
 
 function createWindow() {
   // Create the browser window.
-  mainWindow = new BrowserWindow({ width: 800, height: 600});
-  infoWindow = new BrowserWindow({width: 300, height: 500, parent: mainWindow, modal: true, show: false});
-  editWindow = new BrowserWindow({ width: 300, height: 500, parent: mainWindow, modal: true, show: false});
-  addWindow = new BrowserWindow({ width: 300, height: 500, /*parent: mainWindow, modal: true,*/ show: false});
-  countWindow = new BrowserWindow({ width: 1000, height: 650, show: false, transparent: true, frame: false});
-  measureWindow = new BrowserWindow({ width: 1000, height: 650, show: false, transparent: true, frame: false});
+  mainWindow = new BrowserWindow({ width: 800, height: 600 });
+  infoWindow = new BrowserWindow({ width: 300, height: 500, parent: mainWindow, modal: true, show: false });
+  editWindow = new BrowserWindow({ width: 300, height: 500, parent: mainWindow, modal: true, show: false });
+  addWindow = new BrowserWindow({ width: 300, height: 500, /*parent: mainWindow, modal: true,*/ show: false });
+  countWindow = new BrowserWindow({ width: 1000, height: 650, show: false, transparent: true, frame: false });
+  measureWindow = new BrowserWindow({ width: 1000, height: 650, show: false, transparent: true, frame: false });
 
 
   // and load the index.html of the app.
@@ -165,13 +165,28 @@ ipcMain.on('refreshTable', function (e, table) {
 //Display Error Message in Dialog
 ipcMain.on('errorMessage', function (e, currWindow, err) {
   var win;
-  if(currWindow === 1){
-    win = mainWindow;
-  }
-  else if(currWindow === 2){
-    win = editWindow;
-  }
-  dialog.showMessageBox(win,{
+  switch (currWindow) {
+    case 1:
+      win = mainWindow;
+      break;
+    case 2:
+      win = infoWindow;
+      break;
+    case 3:
+      win = editWindow;
+      break;
+    case 4:
+      win = addWindow;
+      break;
+    case 5:
+      win = countWindow;
+      break;
+    case 6:
+      win = measureWindow;
+      break;
+    }
+
+  dialog.showMessageBox(win, {
     type: "error",
     title: "Error",
     message: err,
@@ -187,7 +202,7 @@ ipcMain.on('errorMessage2', function (e, err) {
   });
 })
 
-ipcMain.on('showInfoWindow', function (e, table, info){
+ipcMain.on('showInfoWindow', function (e, table, info) {
   infoWindow.reload((infoWindow.show()));
   console.log(info);
   infoWindow.webContents.on('did-finish-load', () => {
@@ -197,14 +212,14 @@ ipcMain.on('showInfoWindow', function (e, table, info){
 
 ipcMain.on('showEditWindow', function (e, table, info) {
   editWindow.reload(editWindow.show());
-  
+
   editWindow.webContents.on('did-finish-load', () => {
     editWindow.webContents.send('loadEdit', table, info);
   })
 
 })
 
-ipcMain.on('showAddWindow', function (e, table){
+ipcMain.on('showAddWindow', function (e, table) {
   addWindow.reload((addWindow.show()));
 
   addWindow.webContents.on('did-finish-load', () => {
@@ -212,7 +227,7 @@ ipcMain.on('showAddWindow', function (e, table){
   })
 })
 
-ipcMain.on('showCountWindow', function (e){
+ipcMain.on('showCountWindow', function (e) {
   countWindow.show();
   countWindow.focus();
 
@@ -221,11 +236,20 @@ ipcMain.on('showCountWindow', function (e){
   // })
 })
 
-ipcMain.on('showMeasureWindow', function (e){
+ipcMain.on('showMeasureWindow', function (e) {
   measureWindow.show();
   measureWindow.focus();
 
   // measureWindow.webContents.on('did-finish-load', () => {
   //   measureWindow.webContents.send('loadMeasure');
   // })
+})
+
+ipcMain.on('refreshOnDBChange', function (e) {
+  mainWindow.reload();
+  addWindow.reload();
+  editWindow.reload();
+  infoWindow.reload();
+  countWindow.reload();
+  measureWindow.reload();
 })

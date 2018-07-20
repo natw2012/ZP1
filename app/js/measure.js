@@ -2,6 +2,7 @@ var fabric = require('fabric').fabric;
 var randomColor = require('randomcolor');
 const electron = require('electron');
 const { ipcRenderer } = electron;
+var win = electron.remote.getCurrentWindow();
 
 
 var calibrationRatio;
@@ -170,11 +171,11 @@ function calcTotalArea() {
 //Calculate the pixel to measurement ratio eg. cm/pix
 function pixelToDistanceRatio() {
     if (!document.getElementById("calibrateTextBox").value) {
-        ipcRenderer.send('errorMessage2', "Please enter a known distance to calibrate");
+        ipcRenderer.send('errorMessage', win.id, "Please enter a known distance to calibrate");
         document.getElementById("calibrateTextBox").focus();
     }
     else if (!canvas.getActiveObject()) {
-        ipcRenderer.send('errorMessage2', "Please draw and select line object used to measure");
+        ipcRenderer.send('errorMessage', win.id, "Please draw and select line object used to measure");
         document.getElementById("shapeSelect").focus();
     }
     else {
@@ -241,23 +242,23 @@ function submit() {
 
     //Must have proper input
     if (!calibrationRatio) {
-        ipcRenderer.send('errorMessage2', "Please enter known distance to calibrate");
+        ipcRenderer.send('errorMessage', win.id, "Please enter known distance to calibrate");
     }
     else if (!document.getElementById("sampleIDSelect").value) {
-        ipcRenderer.send('errorMessage2', "Please select sample ID");
+        ipcRenderer.send('errorMessage', win.id, "Please select sample ID");
         document.getElementById("sampleIDSelect").focus();
     }
     else if (!document.getElementById("speciesSelect").value) {
-        ipcRenderer.send('errorMessage2', "Please select species");
+        ipcRenderer.send('errorMessage', win.id, "Please select species");
         document.getElementById("speciesSelect").focus();
     }
     else if (!document.getElementById("lengthOutput").value) {
-        ipcRenderer.send('errorMessage2', "Please draw shape");
+        ipcRenderer.send('errorMessage', win.id, "Please draw shape");
         document.getElementById("shapeSelect").focus();
     }
     //Should clean up this logic
     else if((mode === "manual" || mode === "manual-custom") && document.getElementById("shapeSelectManual").value === "Select Shape:"){
-        ipcRenderer.send('errorMessage2', "Please select shape");
+        ipcRenderer.send('errorMessage', win.id, "Please select shape");
         document.getElementById("shapeSelectManual").focus();
     }
     else {

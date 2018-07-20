@@ -54,7 +54,7 @@ var knex = require('knex')({
 });
 
 //Refresh Dashboard
-async function refreshDashboard(){
+async function refreshDashboard() {
     await loadSampleIDs();
     loadDashboard();
     document.getElementById("sampleIDSelect").addEventListener('change', loadDashboard);
@@ -91,39 +91,45 @@ async function loadSpeciesCountChart() {
     var sampleID = getSampleID();
     console.log(sampleID);
     var numSpecies = await knex.raw(`
-    SELECT speciesName, T1.speciesID, count1
+    SELECT speciesAbbrev, T1.speciesID, count1
     FROM (
         SELECT counts.speciesID, COUNT(*) as count1 
         FROM counts 
         WHERE sampleID = ?
         GROUP BY speciesID) AS T1
     JOIN (
-        SELECT species.speciesID, speciesName 
+        SELECT species.speciesID, speciesAbbrev 
         FROM species) AS T2
     ON T1.speciesID = T2.speciesID
-    `,sampleID);
+    `, sampleID);
 
     var str = JSON.parse(JSON.stringify(numSpecies));
     console.log(str);
     var labels = [];
     var data = [];
     for (var i = 0; i < numSpecies[0].length; i++) {
-        console.log(numSpecies[0][i].speciesName);
+        console.log(numSpecies[0][i].speciesAbbrev);
         console.log(numSpecies[0][i].count1);
         data.push(numSpecies[0][i].count1)
-        labels.push(numSpecies[0][i].speciesName);
+        labels.push(numSpecies[0][i].speciesAbbrev);
     }
 
     console.log(labels, data);
 
     var ctx = document.getElementById("speciesCountChart").getContext('2d');
-    
-    if(speciesCountChart!=null){
+
+    if (speciesCountChart != null) {
         speciesCountChart.destroy();
         console.log("Destroyed");
     }
     speciesCountChart = new Chart(ctx, {
         type: 'doughnut',
+        options: {
+            title: {
+                display: true,
+                text: "# Species Counted In Sample",
+            },
+        },
         data: {
             labels: labels,
             datasets: [{
@@ -156,39 +162,45 @@ async function loadSpeciesMeasureChart() {
     var sampleID = getSampleID();
     console.log(sampleID);
     var numSpecies = await knex.raw(`
-    SELECT speciesName, T1.speciesID, count1
+    SELECT speciesAbbrev, T1.speciesID, count1
     FROM (
         SELECT measures.speciesID, COUNT(*) as count1 
         FROM measures 
         WHERE sampleID = ?
         GROUP BY speciesID) AS T1
     JOIN (
-        SELECT species.speciesID, speciesName 
+        SELECT species.speciesID, speciesAbbrev 
         FROM species) AS T2
     ON T1.speciesID = T2.speciesID
-    `,sampleID);
+    `, sampleID);
 
     var str = JSON.parse(JSON.stringify(numSpecies));
     console.log(str);
     var labels = [];
     var data = [];
     for (var i = 0; i < numSpecies[0].length; i++) {
-        console.log(numSpecies[0][i].speciesName);
+        console.log(numSpecies[0][i].speciesAbbrev);
         console.log(numSpecies[0][i].count1);
         data.push(numSpecies[0][i].count1)
-        labels.push(numSpecies[0][i].speciesName);
+        labels.push(numSpecies[0][i].speciesAbbrev);
     }
 
     console.log(labels, data);
 
     var ctx = document.getElementById("speciesMeasureChart").getContext('2d');
-    
-    if(speciesMeasureChart!=null){
+
+    if (speciesMeasureChart != null) {
         speciesMeasureChart.destroy();
         console.log("Destroyed");
     }
     speciesMeasureChart = new Chart(ctx, {
         type: 'pie',
+        options: {
+            title: {
+                display: true,
+                text: "# Species Measured In Sample",
+            },
+        },
         data: {
             labels: labels,
             datasets: [{
@@ -241,76 +253,78 @@ async function loadSizeChart() {
     };
 
     // for (var i = 0; i < results[0][0].length; i++) {
-        // species1.dataset.push(results[0][0][i].length);
-        // species1.labels.push(results[0][0][i].species);
-        // species2.dataset.push(results[1][0][i].length);
-        // species2.labels.push(results[1][0][i].species);
+    // species1.dataset.push(results[0][0][i].length);
+    // species1.labels.push(results[0][0][i].species);
+    // species2.dataset.push(results[1][0][i].length);
+    // species2.labels.push(results[1][0][i].species);
     // }
 
     var ctx = document.getElementById("sizeChart").getContext('2d');
 
-    if(sizeChart!=null){
+    if (sizeChart != null) {
         sizeChart.destroy();
     }
     sizeChart = new Chart(ctx, {
         type: 'scatter',
         // data: {
-            // labels: species1.labels,
-            // datasets: [{
-            //     label: species1.labels[0],
-            //     data: species1.dataset,
-            //     backgroundColor: 'rgba(255, 99, 132, 0.2)',
-            //     borderColor: 'rgba(255,99,132,1)',
-            //     borderWidth: 1,
-            //     lineTension: 0,
-            // }, {
-            //     label: species2.labels[0],
-            //     data: species2.dataset,
-            //     backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            //     borderColor: 'rgba(54, 162, 235, 1)',
-            //     borderWidth: 1,
-            //     lineTension: 0,
-            // }]
-        
+        // labels: species1.labels,
+        // datasets: [{
+        //     label: species1.labels[0],
+        //     data: species1.dataset,
+        //     backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        //     borderColor: 'rgba(255,99,132,1)',
+        //     borderWidth: 1,
+        //     lineTension: 0,
+        // }, {
+        //     label: species2.labels[0],
+        //     data: species2.dataset,
+        //     backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        //     borderColor: 'rgba(54, 162, 235, 1)',
+        //     borderWidth: 1,
+        //     lineTension: 0,
+        // }]
+
         // }
         "data": {
-            "labels":["January","February","March","April","May","June","July"],
-            "datasets":[{
-                "label":"My First Dataset",
-                "data":[65,59,80,81,56,55,40],
-                "fill":false,
-                "backgroundColor":["rgba(255, 99, 132, 0.2)",
-                "rgba(255, 159, 64, 0.2)",
-                "rgba(255, 205, 86, 0.2)",
-                "rgba(75, 192, 192, 0.2)",
-                "rgba(54, 162, 235, 0.2)",
-                "rgba(153, 102, 255, 0.2)",
-                "rgba(201, 203, 207, 0.2)"
-            ],
-            "borderColor":[
-                "rgb(255, 99, 132)",
-                "rgb(255, 159, 64)",
-                "rgb(255, 205, 86)",
-                "rgb(75, 192, 192)",
-                "rgb(54, 162, 235)",
-                "rgb(153, 102, 255)",
-                "rgb(201, 203, 207)"
-            ],
-            "borderWidth":1}]},
-            "options":{
-                "scales":{
-                    "yAxes":[{
-                        "ticks":{
-                            "beginAtZero":true
-                        }
+            "labels": ["January", "February", "March", "April", "May", "June", "July"],
+            "datasets": [{
+                "label": "My First Dataset",
+                "data": [65, 59, 80, 81, 56, 55, 40],
+                "fill": false,
+                "backgroundColor": ["rgba(255, 99, 132, 0.2)",
+                    "rgba(255, 159, 64, 0.2)",
+                    "rgba(255, 205, 86, 0.2)",
+                    "rgba(75, 192, 192, 0.2)",
+                    "rgba(54, 162, 235, 0.2)",
+                    "rgba(153, 102, 255, 0.2)",
+                    "rgba(201, 203, 207, 0.2)"
+                ],
+                "borderColor": [
+                    "rgb(255, 99, 132)",
+                    "rgb(255, 159, 64)",
+                    "rgb(255, 205, 86)",
+                    "rgb(75, 192, 192)",
+                    "rgb(54, 162, 235)",
+                    "rgb(153, 102, 255)",
+                    "rgb(201, 203, 207)"
+                ],
+                "borderWidth": 1
+            }]
+        },
+        "options": {
+            "scales": {
+                "yAxes": [{
+                    "ticks": {
+                        "beginAtZero": true
                     }
+                }
                 ]
             }
         }
     })
 }
 
-async function loadBiomassSampleSumChart(){
+async function loadBiomassSampleSumChart() {
     var sampleID = getSampleID();
     console.log(sampleID);
     var numSpecies = await knex.raw(`
@@ -324,7 +338,7 @@ async function loadBiomassSampleSumChart(){
         SELECT species.speciesID, speciesAbbrev 
         FROM species) AS T2
     ON T1.speciesID = T2.speciesID
-    `,sampleID);
+    `, sampleID);
 
     var str = JSON.parse(JSON.stringify(numSpecies));
     console.log(str);
@@ -340,53 +354,59 @@ async function loadBiomassSampleSumChart(){
     console.log(labels, data);
 
     var ctx = document.getElementById("biomassSampleSumChart").getContext('2d');
-    
-    if(biomassSampleSumChart!=null){
+
+    if (biomassSampleSumChart != null) {
         biomassSampleSumChart.destroy();
         console.log("Destroyed");
     }
-    biomassSampleSumChart =  new Chart(ctx, {
-        "type":"bar",
-        "data": {
-            "labels": labels,
-            "datasets":[{
-                "label":"Biomass Sum",
-                "data": data,
-                "fill":false,
-                "backgroundColor":["rgba(255, 99, 132, 0.2)",
-                "rgba(255, 159, 64, 0.2)",
-                "rgba(255, 205, 86, 0.2)",
-                "rgba(75, 192, 192, 0.2)",
-                "rgba(54, 162, 235, 0.2)",
-                "rgba(153, 102, 255, 0.2)",
-                "rgba(201, 203, 207, 0.2)"
-            ],
-            "borderColor":[
-                "rgb(255, 99, 132)",
-                "rgb(255, 159, 64)",
-                "rgb(255, 205, 86)",
-                "rgb(75, 192, 192)",
-                "rgb(54, 162, 235)",
-                "rgb(153, 102, 255)",
-                "rgb(201, 203, 207)"
-            ],
-            "borderWidth":1}]},
-            "options":{
-                "scales":{
-                    "yAxes":[{
-                        "ticks":{
-                            "beginAtZero":true
-                        }
+    biomassSampleSumChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Dataset",
+                data: data,
+                fill: false,
+                backgroundColor: ["rgba(255, 99, 132, 0.2)",
+                    "rgba(255, 159, 64, 0.2)",
+                    "rgba(255, 205, 86, 0.2)",
+                    "rgba(75, 192, 192, 0.2)",
+                    "rgba(54, 162, 235, 0.2)",
+                    "rgba(153, 102, 255, 0.2)",
+                    "rgba(201, 203, 207, 0.2)"
+                ],
+                borderColor: [
+                    "rgb(255, 99, 132)",
+                    "rgb(255, 159, 64)",
+                    "rgb(255, 205, 86)",
+                    "rgb(75, 192, 192)",
+                    "rgb(54, 162, 235)",
+                    "rgb(153, 102, 255)",
+                    "rgb(201, 203, 207)"
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            title: {
+                display: true,
+                text: "Biomass in Sample",
+            },
+            "scales": {
+                "yAxes": [{
+                    "ticks": {
+                        "beginAtZero": true
                     }
+                }
                 ]
             }
         }
     });
 }
 
-async function loadBarChart(){
+async function loadBarChart() {
     var ctx = document.getElementById("barChart").getContext('2d');
-    var data = [1,2,3,4];
+    var data = [1, 2, 3, 4];
     var options = "";
 
     var species = await knex.raw(`
@@ -394,57 +414,59 @@ async function loadBarChart(){
     FROM measures
     `);
 
-    if(barChart!=null){
+    if (barChart != null) {
         barChart.destroy();
     }
-    barChart =  new Chart(ctx, {
-        "type":"bar",
+    barChart = new Chart(ctx, {
+        "type": "bar",
         "data": {
-            "labels":["January","February","March","April","May","June","July"],
-            "datasets":[{
-                "label":"My First Dataset",
-                "data":[65,59,80,81,56,55,40],
-                "fill":false,
-                "backgroundColor":["rgba(255, 99, 132, 0.2)",
-                "rgba(255, 159, 64, 0.2)",
-                "rgba(255, 205, 86, 0.2)",
-                "rgba(75, 192, 192, 0.2)",
-                "rgba(54, 162, 235, 0.2)",
-                "rgba(153, 102, 255, 0.2)",
-                "rgba(201, 203, 207, 0.2)"
-            ],
-            "borderColor":[
-                "rgb(255, 99, 132)",
-                "rgb(255, 159, 64)",
-                "rgb(255, 205, 86)",
-                "rgb(75, 192, 192)",
-                "rgb(54, 162, 235)",
-                "rgb(153, 102, 255)",
-                "rgb(201, 203, 207)"
-            ],
-            "borderWidth":1}]},
-            "options":{
-                "scales":{
-                    "yAxes":[{
-                        "ticks":{
-                            "beginAtZero":true
-                        }
+            "labels": ["January", "February", "March", "April", "May", "June", "July"],
+            "datasets": [{
+                "label": "My First Dataset",
+                "data": [65, 59, 80, 81, 56, 55, 40],
+                "fill": false,
+                "backgroundColor": ["rgba(255, 99, 132, 0.2)",
+                    "rgba(255, 159, 64, 0.2)",
+                    "rgba(255, 205, 86, 0.2)",
+                    "rgba(75, 192, 192, 0.2)",
+                    "rgba(54, 162, 235, 0.2)",
+                    "rgba(153, 102, 255, 0.2)",
+                    "rgba(201, 203, 207, 0.2)"
+                ],
+                "borderColor": [
+                    "rgb(255, 99, 132)",
+                    "rgb(255, 159, 64)",
+                    "rgb(255, 205, 86)",
+                    "rgb(75, 192, 192)",
+                    "rgb(54, 162, 235)",
+                    "rgb(153, 102, 255)",
+                    "rgb(201, 203, 207)"
+                ],
+                "borderWidth": 1
+            }]
+        },
+        "options": {
+            "scales": {
+                "yAxes": [{
+                    "ticks": {
+                        "beginAtZero": true
                     }
+                }
                 ]
             }
         }
     });
 }
 
-async function loadRadarChart(){
+async function loadRadarChart() {
     var ctx = document.getElementById("radarChart").getContext('2d');
-    var data = [1,2,3,4];
+    var data = [1, 2, 3, 4];
     var options = "";
 
-    if(radarChart!=null){
+    if (radarChart != null) {
         radarChart.destroy();
     }
-    radarChart = new Chart(ctx,{"type":"radar","data":{"labels":["Eating","Drinking","Sleeping","Designing","Coding","Cycling","Running"],"datasets":[{"label":"My First Dataset","data":[65,59,90,81,56,55,40],"fill":true,"backgroundColor":"rgba(255, 99, 132, 0.2)","borderColor":"rgb(255, 99, 132)","pointBackgroundColor":"rgb(255, 99, 132)","pointBorderColor":"#fff","pointHoverBackgroundColor":"#fff","pointHoverBorderColor":"rgb(255, 99, 132)"},{"label":"My Second Dataset","data":[28,48,40,19,96,27,100],"fill":true,"backgroundColor":"rgba(54, 162, 235, 0.2)","borderColor":"rgb(54, 162, 235)","pointBackgroundColor":"rgb(54, 162, 235)","pointBorderColor":"#fff","pointHoverBackgroundColor":"#fff","pointHoverBorderColor":"rgb(54, 162, 235)"}]},"options":{"elements":{"line":{"tension":0,"borderWidth":3}}}});
+    radarChart = new Chart(ctx, { "type": "radar", "data": { "labels": ["Eating", "Drinking", "Sleeping", "Designing", "Coding", "Cycling", "Running"], "datasets": [{ "label": "My First Dataset", "data": [65, 59, 90, 81, 56, 55, 40], "fill": true, "backgroundColor": "rgba(255, 99, 132, 0.2)", "borderColor": "rgb(255, 99, 132)", "pointBackgroundColor": "rgb(255, 99, 132)", "pointBorderColor": "#fff", "pointHoverBackgroundColor": "#fff", "pointHoverBorderColor": "rgb(255, 99, 132)" }, { "label": "My Second Dataset", "data": [28, 48, 40, 19, 96, 27, 100], "fill": true, "backgroundColor": "rgba(54, 162, 235, 0.2)", "borderColor": "rgb(54, 162, 235)", "pointBackgroundColor": "rgb(54, 162, 235)", "pointBorderColor": "#fff", "pointHoverBackgroundColor": "#fff", "pointHoverBorderColor": "rgb(54, 162, 235)" }] }, "options": { "elements": { "line": { "tension": 0, "borderWidth": 3 } } } });
 }
 
 function resizeCanvas() {
@@ -466,7 +488,7 @@ function loadDashboard() {
     loadSpeciesCountChart();
     loadSpeciesMeasureChart();
     loadBiomassSampleSumChart();
-    loadSizeChart();
+    // loadSizeChart();
     loadBarChart();
     loadRadarChart();
 }
@@ -570,8 +592,9 @@ function exportData(table) {
     });
 }
 
-function exportJoinedData(table1, table2) {
-    
+//Change to join counts/measures with samples by sampleID, species by speciesID, samples with lakes by lakeID and with gear by gearID
+function exportJoinedData(table1, table2, table3, table4, table5) {
+
     dialog.showSaveDialog({
         filters: [{ name: 'csv', extensions: ['csv'] }
         ]
@@ -579,7 +602,7 @@ function exportJoinedData(table1, table2) {
         if (fileName === undefined) return;
 
         var sql = "SELECT * FROM ?? JOIN ?? ON ??.sampleID = ??.sampleID";
-        connection.query(sql, [table1,table2,table1,table2], function (err, result, fields) {
+        connection.query(sql, [table1, table2, table1, table2], function (err, result, fields) {
             if (err) throw err;
             var header = [];
             console.log(result);
@@ -652,12 +675,12 @@ function importLakes() {
 
 //Export MySql Count Table to csv file
 function exportCount() {
-    exportJoinedData("counts","samples");
+    exportJoinedData("counts", "samples");
 }
 
 //Export MySql Measure Table to csv file
 function exportMeasure() {
-    exportJoinedData("measures","samples");
+    exportJoinedData("measures", "samples");
 }
 
 
@@ -721,11 +744,11 @@ function makeInfoWindow(btn, table) {
     ipcRenderer.send('showInfoWindow', table, info)
 }
 
-function showCountWindow(){
+function showCountWindow() {
     ipcRenderer.send('showCountWindow');
 }
 
-function showMeasureWindow(){
+function showMeasureWindow() {
     ipcRenderer.send('showMeasureWindow');
 }
 
@@ -949,7 +972,7 @@ function loadSettings() {
 }
 
 //Save UserInfo Settings
-function setUserInfo() {
+async function setUserInfo() {
     var dbUser = document.getElementById("dbUser").value;
     var dbPassword = document.getElementById("dbPassword").value;
     settings.set('userInfo', {
@@ -960,6 +983,7 @@ function setUserInfo() {
         if (err) throw err;
     });
     loadDBSelect();
+    ipcRenderer.send('refreshOnDBChange');
 }
 
 //Save Database Setting
@@ -972,6 +996,7 @@ function setDB() {
         if (err) throw err;
     });
     dialog.showMessageBox(win, { message: "Set database as: " + dbDatabase });
+    ipcRenderer.send('refreshOnDBChange');
 }
 
 //Load database from MySql Database into dropdown
@@ -1149,7 +1174,7 @@ async function init() {
     document.getElementById("sampleIDSelect").addEventListener('change', loadDashboard);
     window.addEventListener('resize', resizeCanvas, false);
 
-    
+
 }
 
 window.addEventListener('load', init, false);
