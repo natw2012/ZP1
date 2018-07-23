@@ -14,6 +14,7 @@ var mode = "automatic"; //Default set to automatic
 
 console.log(window.location.href);
 var con = require('../js/config.js').localConnect();
+var knex = require('../js/config.js').connect();
 
 /************************************************************
         GENERAL FUNCTIONS 
@@ -133,21 +134,25 @@ function onObjectScaled(e) {
     fabric.Object.prototype.objectCaching = false;
     console.log(e); //Something here
     console.log(e.target);
-    var shape = e.target;
-    shape.width = shape.scaleX * shape.width;
-    shape.height = shape.scaleY * shape.height;
-    shape.radius = shape.radius * shape.scaleX;
-    shape.rx = shape.rx * shape.scaleX;
-    shape.ry = shape.ry * shape.scaleY;
-    shape.scaleX = 1;
-    shape.scaleY = 1;
+    var allShapes = e.target;
+    allShapes.width = allShapes.scaleX * allShapes.width;
+    allShapes.height = allShapes.scaleY * allShapes.height;
+    allShapes.radius = allShapes.radius * allShapes.scaleX;
+    allShapes.rx = allShapes.rx * allShapes.scaleX;
+    allShapes.ry = allShapes.ry * allShapes.scaleY;
+    allShapes.scaleX = 1;
+    allShapes.scaleY = 1;
 
+    var oneShape = e.target.canvas._objects;
+    console.log(oneShape);
+    shape = canvas.getActiveObject();
     if (mode === "automatic") {
         if (shape.type === "line") {
             lineLength(shape);
         }
         else {
             console.log(shape);
+            console.log(shape.type);
             calcArea(shape);
         }
         calcTotalArea();
@@ -161,34 +166,48 @@ function onObjectScaled(e) {
 //Calculate area of all objects on canvas
 function calcTotalArea() {
     var totalArea = 0;
+    var maxLength = 0;
+    var maxWidth = 0;
     var objects = canvas.getObjects();
     objects.forEach(object => {
         totalArea = totalArea + calcArea(object);
+        //If multiple shapes, output shows largest length and width
+        if(object.width > maxLength){
+            maxLength = object.width;
+        }
+        if(object.height > maxWidth){
+            maxWidth = object.height;
+        }
     });
-    document.getElementById("totalAreaOutput").value = totalArea.toFixed(4);
+    document.getElementById("lengthOutput").value = (maxLength * calibrationRatio).toFixed(4);
+    document.getElementById("widthOutput").value = (maxWidth * calibrationRatio).toFixed(4);
+    document.getElementById("totalAreaOutput").value = (totalArea * calibrationRatio).toFixed(4);
 }
 
 //Calculate the pixel to measurement ratio eg. cm/pix
-function pixelToDistanceRatio() {
-    if (!document.getElementById("calibrateTextBox").value) {
-        ipcRenderer.send('errorMessage', win.id, "Please enter a known distance to calibrate");
-        document.getElementById("calibrateTextBox").focus();
-    }
-    else if (!canvas.getActiveObject()) {
-        ipcRenderer.send('errorMessage', win.id, "Please draw and select line object used to measure");
-        document.getElementById("shapeSelect").focus();
-    }
-    else {
-        try {
-            calibrationRatio = Number(document.getElementById("calibrateTextBox").value) / canvas.getActiveObject().width;
-            document.getElementById("pdRatio").value = calibrationRatio.toFixed(4);
-            clearCanvas();
-            clearOutputs();
+async function pixelToDistanceRatio() {
+
+        if (!document.getElementById("knownDistanceTextBox").value) {
+            ipcRenderer.send('errorMessage', win.id, "Please enter a known distance to calibrate");
+            document.getElementById("knownDistanceTextBox").focus();
         }
-        catch (err) {
-            // ipcRenderer.send('errorMessage', err.message);
+        else if (!canvas.getActiveObject()) {
+            ipcRenderer.send('errorMessage', win.id, "Please draw and select line object used to measure");
+            document.getElementById("shapeSelect").focus();
         }
-    }
+        else {
+            try {
+                calibrationRatio = Number(document.getElementById("knownDistanceTextBox").value) / canvas.getActiveObject().width;
+                document.getElementById("pdRatio").value = calibrationRatio.toFixed(4);
+                clearCanvas();
+                clearOutputs();
+            }
+            catch (err) {
+                // ipcRenderer.send('errorMessage', err.message);
+            }
+        }
+    
+
 }
 
 //Find pixel length of beginning and end position of line, convert to real length by ratio and output
@@ -208,6 +227,13 @@ function getShape() {
 
 function getSpecies() {
     var e = document.getElementById("speciesSelect");
+    var text = e.options[e.selectedIndex].id;
+    console.log(text);
+    return text;
+}
+
+function getCalibration() {
+    var e = document.getElementById("calibrationSelect");
     var text = e.options[e.selectedIndex].id;
     console.log(text);
     return text;
@@ -257,7 +283,7 @@ function submit() {
         document.getElementById("shapeSelect").focus();
     }
     //Should clean up this logic
-    else if((mode === "manual" || mode === "manual-custom") && document.getElementById("shapeSelectManual").value === "Select Shape:"){
+    else if ((mode === "manual" || mode === "manual-custom") && document.getElementById("shapeSelectManual").value === "Select Shape:") {
         ipcRenderer.send('errorMessage', win.id, "Please select shape");
         document.getElementById("shapeSelectManual").focus();
     }
@@ -322,7 +348,7 @@ function refreshMeasureTable() {
 //Calls area calc function depending on shape
 function calcArea(obj) {
     var type = obj.type;
-
+    console.log(type);
     if (type === "rect") {
         return rectArea(obj);
     }
@@ -344,6 +370,7 @@ function calcArea(obj) {
 //Calc Area of Rectangle
 function rectArea(rect) {
     console.log("rect");
+    console.log(rect);
     //Slight measuring issue with rect.width = inside perimeter while line.width = outside
     var area = rect.width * rect.height * Math.pow(calibrationRatio, 2);
     document.getElementById("lengthOutput").value = (rect.width * calibrationRatio).toFixed(4);
@@ -502,35 +529,35 @@ function manualMode() {
     canvas.add(widthLine);
 }
 
-async function manualModeOutput(){
+async function manualModeOutput() {
     var lengthLine;
     var widthLine;
 
-    await canvas.getObjects().forEach(function(o) {
-        if(o.id === "lengthLine"){
+    await canvas.getObjects().forEach(function (o) {
+        if (o.id === "lengthLine") {
             lengthLine = o.width;
         }
-        else if(o.id === "widthLine"){
+        else if (o.id === "widthLine") {
             widthLine = o.width;
         }
-    });   
+    });
 
-    var realLength = Number(calibrationRatio) * Number(lengthLine); 
+    var realLength = Number(calibrationRatio) * Number(lengthLine);
     document.getElementById("lengthOutput").value = realLength.toFixed(4);
-    var realWidth = Number(calibrationRatio) * Number(widthLine); 
+    var realWidth = Number(calibrationRatio) * Number(widthLine);
     document.getElementById("widthOutput").value = realWidth.toFixed(4);
-    
+
     var shape = document.getElementById("shapeSelectManual").value;
     var area;
-    
-    if(shape === "Rectangle"){
+
+    if (shape === "Rectangle") {
         //Slight measuring issue with rect.width = inside perimeter while line.width = outside
         area = lengthLine * widthLine * Math.pow(calibrationRatio, 2);
     }
-    else if (shape === "Triangle"){
+    else if (shape === "Triangle") {
         area = lengthLine * widthLine / 2 * Math.pow(calibrationRatio, 2);
     }
-    else if(shape === "Ellipse") {
+    else if (shape === "Ellipse") {
         area = lengthLine / 2 * widthLine / 2 * Math.PI * Math.pow(calibrationRatio, 2);
     }
     else {
@@ -587,11 +614,11 @@ function changeView() {
         document.querySelector('#deleteObjectBtn').style.display = 'none';
         manualMode();
 
-        if(mode === "manual-custom"){
+        if (mode === "manual-custom") {
             document.querySelector('#manual-tool-bar').style.display = 'none';
             document.querySelector('#manual-custom-tool-bar').style.display = 'block';
         }
-        else{
+        else {
             document.querySelector('#manual-tool-bar').style.display = 'block';
             document.querySelector('#manual-custom-tool-bar').style.display = 'none';
         }
@@ -615,7 +642,7 @@ function changeView() {
 
 //Calibrate and create shape for testing 
 function devTest() {
-    document.getElementById("calibrateTextBox").value = 10;
+    document.getElementById("knownDistanceTextBox").value = 10;
     drawLine();
     canvas.setActiveObject(canvas.item(0));
     pixelToDistanceRatio();
@@ -626,6 +653,78 @@ function devTest() {
 
 }
 
+/************************************************************
+        CALIBRATION FUNCTIONS 
+*************************************************************/
+
+//Load Calibrations Dropdown
+async function loadCalibrationSelect() {
+    var result = await knex('calibrations').select("calibrationID", "calibrationName");
+    console.log(result);
+
+    //Clear options 
+    removeOptions(document.getElementById("calibrationSelect"));
+
+    var option;
+    for (var i = 0; result[i] != null; i++) {
+        option = document.createElement("option");
+        option.text = result[i].calibrationName;
+        option.id = result[i].calibrationID;
+        document.getElementById("calibrationSelect").appendChild(option);
+    }
+}
+
+//Display inputs for new calibration and draw measuring line
+function newCalibration() {
+    document.querySelector('#newCalibrationBtn').style.display = 'none';
+    document.querySelector('#newCalibrationDiv').style.display = 'initial';
+    clearCanvas();
+    drawLine();
+    canvas.setActiveObject(canvas.item(canvas.getObjects().length - 1));
+    document.getElementById("knownDistanceTextBox").focus();
+}
+
+//Save new calibration into database, reload dropdown, clear canvas
+async function saveCalibration() {
+    document.querySelector('#newCalibrationBtn').style.display = 'initial';
+    document.querySelector('#newCalibrationDiv').style.display = 'none';
+    
+    pixelToDistanceRatio();
+    pdRatio = document.getElementById("pdRatio").value;
+
+    name = document.getElementById("newCalibrationTextBox").value;
+    var result = await knex('calibrations').insert({calibrationName: name, pixelToDistanceRatio: pdRatio});
+    loadCalibrationSelect();
+    clearCanvas();
+}
+
+//Cancel Calibration
+function cancelCalibration() {
+    document.querySelector('#newCalibrationBtn').style.display = 'initial';
+    document.querySelector('#newCalibrationDiv').style.display = 'none';
+    clearCanvas();
+}
+
+//Using dropdown, sets calibration setting
+async function setCalibrationFromDB() {
+    calibrationID = getCalibration();
+    var result = await knex('calibrations').select('pixelToDistanceRatio').where('calibrationID', calibrationID);
+    console.log(result[0].pixelToDistanceRatio);
+    calibrationRatio = result[0].pixelToDistanceRatio;
+    document.getElementById("pdRatio").value = calibrationRatio;
+}
+
+//Clear options from select dropdown
+function removeOptions(selectBox) {
+    console.log(selectBox);
+    if (selectBox) {
+        for (var i = selectBox.options.length - 1; i >= 0; i--) {
+            selectBox.remove(i);
+        }
+    }
+
+}
+
 //Initialize
 function init() {
     canvas = new fabric.Canvas('canvas');
@@ -633,6 +732,7 @@ function init() {
     loadSampleIDs();
     loadSpeciesDropdown();
     loadCustomFormulas();
+    loadCalibrationSelect()
     changeView();
 
     canvas.on('object:scaling', onObjectScaled);
@@ -642,6 +742,10 @@ function init() {
     document.getElementById("drawShapeBtn").addEventListener('click', draw, false);
     window.addEventListener('resize', resizeCanvas, false);
     document.getElementById("enterBtn").addEventListener('click', submit, false);
+    document.getElementById("newCalibrationBtn").addEventListener('click', newCalibration, false);
+    document.getElementById("saveCalibrationBtn").addEventListener('click', saveCalibration, false);
+    document.getElementById("cancelCalibrationBtn").addEventListener('click', cancelCalibration, false);
+    document.getElementById("calibrationSelect").addEventListener('change', setCalibrationFromDB, false);
     document.getElementById("calibrateBtn").addEventListener('click', pixelToDistanceRatio, false);
     document.getElementById("pdRatio").innerHTML = "Need to Calibrate";
     document.getElementById("lengthOnly").addEventListener('click', changeView, false);

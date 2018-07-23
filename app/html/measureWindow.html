@@ -32,16 +32,30 @@
         <div class="pane-sm sidebar">
           <div class="tool-bar" id="calibrate-tool-bar">
             <h1 class="title">Calibrate</h1>
+            <div class="form-group">
+              <label for="calibrationSelect">Calibration Setting: </label>
+              <select id="calibrationSelect">
+                <!-- Loaded through saved settings -->
+              </select>
+              <div class="form-group">
+                <label id="pdRatioLbl" for="pdRatio">Px-&microm Ratio:</label>
+                <input type="textbox" id="pdRatio" style="width: 75px" readonly></input>
+              </div>
+            </div>
+            <button id="newCalibrationBtn">New Calibration</button>
 
-            <input type="textbox" id="calibrateTextBox" style="width: 75px"></input>
-            <button id="calibrateBtn">Calibrate</button>
-            <br>
-            <label id="pdRatioLbl" for="pdRatio">Px-&microm Ratio:</label>
-            <input type="textbox" id="pdRatio" style="width: 75px" readonly></input>
-            <br>
-
+            
+            <div class="form-group" id="newCalibrationDiv" style="display: none">
+                <h1 class="title">New Calibration</h1>
+              <label id="knownDistanceLbl" for="knownDistanceTextBox" style="display:inline">Known Distance: </label>
+              <input type="textbox" id="knownDistanceTextBox" style="width: 75px"></input>
+              <label for="newCalibrationTextBox" style="display:inline">Name:</label>
+              <input type="textbox" id="newCalibrationTextBox" style="width: 75px"></input>
+              <button id="saveCalibrationBtn">Save New Calibration</button>
+              <button id="calibrateBtn">Calibrate</button>
+              <button id="cancelCalibrationBtn">Cancel</button>
+            </div>
           </div>
-
           <div class="tool-bar" id="settings-tool-bar">
             <h1 class="title">Settings</h1>
             <div class="form-group">
@@ -57,9 +71,9 @@
               <input type="checkBox" id="setManual"></input>
             </div>
             <div class="form-group">
-                <label id="customFormulaLbl" for="customFormula">Custom Formula:</label>
-                <input type="checkBox" id="customFormula"></input>
-              </div>
+              <label id="customFormulaLbl" for="customFormula">Custom Formula:</label>
+              <input type="checkBox" id="customFormula"></input>
+            </div>
           </div>
           <div class="tool-bar" id="draw-tool-bar">
             <h1 class="title">Draw</h1>
@@ -75,25 +89,25 @@
             </div>
           </div>
           <div class="tool-bar" id="manual-tool-bar">
-              <h1 class="title">Select</h1>
-              <div class="form-group">
-                <label id="shapeSelectManualLbl" for="shapeSelectManual">Shape:</label>
-                <select id="shapeSelectManual">
-                  <option>Select Shape:</option>
-                  <option>Triangle</option>
-                  <option>Rectangle</option>
-                  <option>Ellipse</option>
-                </select>
-              </div>
+            <h1 class="title">Select</h1>
+            <div class="form-group">
+              <label id="shapeSelectManualLbl" for="shapeSelectManual">Shape:</label>
+              <select id="shapeSelectManual">
+                <option>Select Shape:</option>
+                <option>Triangle</option>
+                <option>Rectangle</option>
+                <option>Ellipse</option>
+              </select>
             </div>
-            <div class="tool-bar" id="manual-custom-tool-bar">
-                <h1 class="title">Select</h1>
-                <div class="form-group">
-                  <label id="formulaSelectLbl" for="formulaSelect">Formula:</label>
-                  <select id="formulaSelect">
-                  </select>
-                </div>
-              </div>
+          </div>
+          <div class="tool-bar" id="manual-custom-tool-bar">
+            <h1 class="title">Select</h1>
+            <div class="form-group">
+              <label id="formulaSelectLbl" for="formulaSelect">Formula:</label>
+              <select id="formulaSelect">
+              </select>
+            </div>
+          </div>
           <div class="tool-bar" id="select-tool-bar">
             <h1 class="title">Select</h1>
             <label id="sampleIDSelectLbl" for="sampleIDSelect">Sample:</label>

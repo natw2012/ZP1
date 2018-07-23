@@ -81,9 +81,16 @@ async function loadSampleIDs() {
 
 function getSampleID() {
     var e = document.getElementById("sampleIDSelect");
-    var text = e.options[e.selectedIndex].text;
-    console.log(text);
-    return text;
+    if (e.options[e.selectedIndex]) {
+        var text = e.options[e.selectedIndex].text;
+        console.log(text);
+        return text;
+    }
+    else {
+        //When database has no samples, return -1
+        console.log("Error in sampleID");
+        return(-1);
+    }
 }
 
 async function loadSpeciesCountChart() {
@@ -548,6 +555,9 @@ function importData(table) {
                         else if (table === "lakes") {
                             loadLakes(table);
                         }
+                        else if (table === "calibrations") {
+                            loadCalibrations(table);
+                        }
                         else {
                             ipcRenderer.send('errorMessage', win.id, "Error Importing");
                         }
@@ -673,6 +683,10 @@ function importLakes() {
     importData("lakes");
 }
 
+function importCalibrations() {
+    importData("calibrations");
+}
+
 //Export MySql Count Table to csv file
 function exportCount() {
     exportJoinedData("counts", "samples");
@@ -704,6 +718,9 @@ ipcRenderer.on('refreshTable', function (e, table) {
     }
     else if (table === "samples") {
         loadSamples(table, scrollTable);
+    }
+    else if (table === "calibrations") {
+        loadCalibrations(table, scrollTable);
     }
     else {
         console.log("No table");
@@ -825,6 +842,16 @@ function loadGear() {
 function loadSamples(table, callback) {
     var html = '<button class="btn btn-default" id="addSampleBtn" onclick="loadAddWindow(\'samples\')">Add Sample</button>';
     html += '<button class="btn btn-default" id="importSamplesBtn" onclick="importSamples()">Import Samples</button><br></br>';
+
+    document.querySelector('#buttonSection').innerHTML = html;
+
+    loadTable(table, callback);
+}
+
+//Load Calibrations Page
+function loadCalibrations(table, callback) {
+    var html = '<button class="btn btn-default" id="addCalibrationBtn" onclick="loadAddWindow(\'calibrations\')">Add Calibration</button>';
+    html += '<button class="btn btn-default" id="importCalibrationsBtn" onclick="importCalibrations()">Import Calibrations</button><br></br>';
 
     document.querySelector('#buttonSection').innerHTML = html;
 
@@ -1113,6 +1140,13 @@ function createNewDatabase() {
             }
             console.log("Query succesfully executed");
         })
+        $query = "CREATE TABLE calibrations (calibrationID int(5) PRIMARY KEY AUTO_INCREMENT, calibrationName varchar(10), pixelToDistanceRatio float(25))";
+        connection.query($query, function (err, result, fields) {
+            if (err) {
+                ipcRenderer.send('errorMessage', win.id, err.message);
+            }
+            console.log("Query succesfully executed");
+        })
         //Not finished
         $query = "CREATE TABLE formulas (formulaID int(5) PRIMARY KEY, formulaName varchar(20))";
         connection.query($query, function (err, result, fields) {
@@ -1124,7 +1158,27 @@ function createNewDatabase() {
         //Load dropdown after new database is created
         loadDBSelect();
     });
-    dialog.showMessageBox(win, { message: "Succesfully Created New Database" });
+
+    //Set new database
+    dialog.showMessageBox(win, {
+        type: "question",
+        buttons: ['Yes', 'No'],
+        defaultId: 0,
+        message: "Succesfully Created New Database. Would you like to use this database now?",
+
+    }, function (response) {
+        if (response === 0) { //If user clicks 'Yes'
+            settings.set('database', {
+                db: name
+            });
+            connection.changeUser({ database: name }, function (err) {
+                if (err) throw err;
+            });
+            dialog.showMessageBox(win, { message: "Set database as: " + name });
+            ipcRenderer.send('refreshOnDBChange');
+        }
+    }
+    );
 }
 
 //Delete database
@@ -1154,25 +1208,41 @@ function deleteDatabase() {
 }
 
 
+//Ensure connection to database
+function checkDBConnection() {
+
+}
+
+
 /************************************************************
         INITIALIZE 
 *************************************************************/
 async function init() {
 
-    //Initial loadCount as default
-    loadCounts('counts');
 
-    //Load saved User Settings for Database Login
-    document.getElementById("dbUser").value = settings.get('userInfo.user');
-    document.getElementById("dbPassword").value = settings.get('userInfo.password');
 
-    //Currently getting non passive event listener warning
-    loadDBSelect();
+    try {
+        //Load saved User Settings for Database Login
+        document.getElementById("dbUser").value = settings.get('userInfo.user');
+        document.getElementById("dbPassword").value = settings.get('userInfo.password');
 
-    await loadSampleIDs();
-    loadDashboard();
-    document.getElementById("sampleIDSelect").addEventListener('change', loadDashboard);
-    window.addEventListener('resize', resizeCanvas, false);
+        //Initial loadCount as default
+        loadCounts('counts');
+
+        //Currently getting non passive event listener warning
+        loadDBSelect();
+
+        await loadSampleIDs();
+        loadDashboard();
+        document.getElementById("sampleIDSelect").addEventListener('change', loadDashboard);
+        window.addEventListener('resize', resizeCanvas, false);
+    }
+    catch (err) {
+        console.log("error");
+        console.log(err.message);
+        ipcRenderer.send('errorMessage', win.id, err.message);
+    }
+
 
 
 }
