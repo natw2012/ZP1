@@ -28,3 +28,17 @@ var mysql = function localConnect() {
     });
 }
 module.exports.localConnect = mysql;
+
+var knex = function connect() {
+    return knex = require('knex')({
+        client: 'mysql',
+        connection: {
+            host: "localhost",
+            user: settings.get('userInfo.user'),
+            password: settings.get('userInfo.password'),
+            database: settings.get('database.db')
+        }
+    });
+}
+
+module.exports.connect = knex;
