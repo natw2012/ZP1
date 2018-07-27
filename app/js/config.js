@@ -1,5 +1,5 @@
 const settings = require('electron-settings');
-
+var sqlite3 = require('sqlite3').verbose();
 
 
 // function getUserInfo() {
@@ -18,27 +18,29 @@ const settings = require('electron-settings');
 //     database: 'ZP1'
 // }
 
-var mysql = function localConnect() {
-    // Add the credentials to access your database
-    return require('mysql').createConnection({
-        host: "localhost",
-        user: settings.get('userInfo.user'),
-        password: settings.get('userInfo.password'),
-        database: settings.get('database.db')
-    });
-}
-module.exports.localConnect = mysql;
+// var mysql = function localConnect() {
+//     // Add the credentials to access your database
+//     return require('mysql').createConnection({
+//         host: "localhost",
+//         user: settings.get('userInfo.user'),
+//         password: settings.get('userInfo.password'),
+//         database: settings.get('database.db')
+//     });
+// }
+// module.exports.localConnect = mysql;
+
+
+
 
 var knex = function connect() {
     return knex = require('knex')({
-        client: 'mysql',
+        client: 'sqlite3',
         connection: {
-            host: "localhost",
-            user: settings.get('userInfo.user'),
-            password: settings.get('userInfo.password'),
-            database: settings.get('database.db')
-        }
+            filename: "zp1.db"
+        },
+        useNullAsDefault: true
     });
 }
 
 module.exports.connect = knex;
+

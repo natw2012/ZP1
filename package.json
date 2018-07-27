@@ -4,7 +4,10 @@
   "description": "Plankton counting tool",
   "main": "app/main.js",
   "scripts": {
-    "start": "electron app/main.js"
+    "start": "electron app/main.js",
+    "postinstall": "electron-builder install-app-deps",
+    "dist": "build",
+    "package-win": "electron-packager . ZP1 --overwrite --asar=true --platform=win32 --arch=ia32 --icon=assets/icons/plankton.ico --prune=true --out=release-builds"
   },
   "repository": {
     "type": "git",
@@ -19,6 +22,7 @@
   "devDependencies": {
     "devtron": "^1.4.0",
     "electron": "^2.0.5",
+    "electron-builder": "^20.25.0",
     "electron-packager": "^12.1.0"
   },
   "dependencies": {

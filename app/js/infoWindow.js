@@ -1,18 +1,8 @@
 window.$ = window.jQuery = require("../../node_modules/jquery/dist/jquery.min.js");
 const electron = require('electron');
 const { ipcRenderer } = electron;
-var mysql = require('mysql');
-var connection = require('../js/config.js').localConnect();
 var dataType = require('../js/sqltohtmldatatype.js');
-
-// connect to mysql
-connection.connect(function (err) {
-    // in case of error
-    if (err) {
-        console.log(err.code);
-        console.log(err.fatal);
-    }
-});
+var knex = require('../js/config.js').connect();
 
 ipcRenderer.on('onload-user', function (data) {
     console.log(data);
@@ -28,21 +18,20 @@ ipcRenderer.on('loadInfo', function (e, table, info) {
 });
 
 //Load html content into info window
-function loadForm(table, info) {
+async function loadForm(table, info) {
     var html = "";
-    var sql = 'SELECT * FROM ??';
-    connection.query(sql, table, function (err, result, fields) {
-        if (err) {
-            console.log(err)
-        }
-        var name;
-        for (var i = 0; i < fields.length; i++) {
-            name = fields[i].name.toUpperCase();
-            type = dataType.getType(fields[i].type);
+    var result = await knex.raw(`PRAGMA TABLE_INFO(??)`,table);
+    var fields = [];
+    for (var i =0;i<result.length;i++){
+        fields.push(result[i].name);
+    }
+    var result = await knex(table).columnInfo();
+    var name;
+    for (var i = 0; i < fields.length; i++) {
+        name = fields[i].toUpperCase();
+        type = dataType.getType(fields[i].type);
 
-                html += '<div>' + name + ': ' + info[i] + '</div>';
-        }
-
-        document.getElementById("infoDiv").innerHTML = html;
-    });
+            html += '<div>' + name + ': ' + info[i] + '</div>';
+    }
+    document.getElementById("infoDiv").innerHTML = html;
 }

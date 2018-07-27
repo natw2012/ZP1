@@ -8,12 +8,10 @@ var win = electron.remote.getCurrentWindow();
 var calibrationRatio;
 var pixelLength;
 var realLength;
-var speciesOption = [];
 
 var mode = "automatic"; //Default set to automatic
 
 console.log(window.location.href);
-var con = require('../js/config.js').localConnect();
 var knex = require('../js/config.js').connect();
 
 /************************************************************
@@ -53,79 +51,42 @@ function deleteObject() {
 }
 
 //Load Sample IDs into select
-function loadSampleIDs() {
-    con.connect(function (err) {
-        // in case of error
-        if (err) {
-            console.log(err.code);
-            console.log(err.fatal);
-        }
-        var sql = "SELECT sampleID FROM samples";
-        con.query(sql, function (err, result, fields) {
-            if (err) throw err;
-            console.log(result);
-            var option;
-            for (var i = 0; result[i] != null; i++) {
-                option = document.createElement("option");
-                option.text = result[i].sampleID;
-                option.id = result[i].sampleID;
-                document.getElementById("sampleIDSelect").appendChild(option);
-            }
-
-        });
-    });
+async function loadSampleIDs() {
+    var option;
+    var result = await knex('samples').select("sampleID");
+    console.log(result);
+    for (var i = 0; result[i] != null; i++) {
+        option = document.createElement("option");
+        option.text = result[i].sampleID;
+        option.id = result[i].sampleID;
+        document.getElementById("sampleIDSelect").appendChild(option);
+    }
 }
 
 //Load dropdown of species
-function loadSpeciesDropdown() {
-    con.connect(function (err) {
-        // in case of error
-        if (err) {
-            console.log(err.code);
-            console.log(err.fatal);
-        }
-        var sql = "SELECT speciesID, speciesAbbrev FROM species";
-        con.query(sql, function (err, result, fields) {
-            if (err) throw err;
-            console.log(result);
-            var option;
-            for (var i = 0; result[i] != null; i++) {
-                option = document.createElement("option");
-                option.text = result[i].speciesID + " " + result[i].speciesAbbrev;
-                option.id = result[i].speciesID;
-                option.fill = random_rgba();
-                speciesOption.push(option);
-                document.getElementById("speciesSelect").appendChild(option);
-            }
-
-        });
-    });
+async function loadSpeciesDropdown() {
+    var option;
+    var result = await knex('species').select("speciesID", "speciesAbbrev");
+    console.log(result);
+    for (var i = 0; result[i] != null; i++) {
+        option = document.createElement("option");
+        option.text = result[i].speciesID + " " + result[i].speciesAbbrev;
+        option.id = result[i].speciesID;
+        document.getElementById("speciesSelect").appendChild(option);
+    }
 }
 
 //Load dropdown of custom formulas
-function loadCustomFormulas() {
-    con.connect(function (err) {
-        // in case of error
-        if (err) {
-            console.log(err.code);
-            console.log(err.fatal);
-        }
-        var sql = "SELECT formulaName FROM formulas";
-        con.query(sql, function (err, result, fields) {
-            if (err) throw err;
-            console.log(result);
-            var option;
-            for (var i = 0; result[i] != null; i++) {
-                option = document.createElement("option");
-                option.text = result[i].speciesName;
-                option.id = result[i].speciesName;
-                option.fill = random_rgba();
-                speciesOption.push(option);
-                document.getElementById("formulaSelect").appendChild(option);
-            }
-
-        });
-    });
+async function loadCustomFormulas() {
+    var option;
+    var result = await knex('formulas').select("formulaName");
+    console.log(result);
+    for (var i = 0; result[i] != null; i++) {
+        option = document.createElement("option");
+        option.text = result[i].speciesName;
+        option.id = result[i].speciesName;
+        document.getElementById("formulaSelect").appendChild(option);
+    }
 }
 
 //Maintains scaling of shape borders while changing shape size
@@ -172,10 +133,10 @@ function calcTotalArea() {
     objects.forEach(object => {
         totalArea = totalArea + calcArea(object);
         //If multiple shapes, output shows largest length and width
-        if(object.width > maxLength){
+        if (object.width > maxLength) {
             maxLength = object.width;
         }
-        if(object.height > maxWidth){
+        if (object.height > maxWidth) {
             maxWidth = object.height;
         }
     });
@@ -187,26 +148,26 @@ function calcTotalArea() {
 //Calculate the pixel to measurement ratio eg. cm/pix
 async function pixelToDistanceRatio() {
 
-        if (!document.getElementById("knownDistanceTextBox").value) {
-            ipcRenderer.send('errorMessage', win.id, "Please enter a known distance to calibrate");
-            document.getElementById("knownDistanceTextBox").focus();
+    if (!document.getElementById("knownDistanceTextBox").value) {
+        ipcRenderer.send('errorMessage', win.id, "Please enter a known distance to calibrate");
+        document.getElementById("knownDistanceTextBox").focus();
+    }
+    else if (!canvas.getActiveObject()) {
+        ipcRenderer.send('errorMessage', win.id, "Please draw and select line object used to measure");
+        document.getElementById("shapeSelect").focus();
+    }
+    else {
+        try {
+            calibrationRatio = Number(document.getElementById("knownDistanceTextBox").value) / canvas.getActiveObject().width;
+            document.getElementById("pdRatio").value = calibrationRatio.toFixed(4);
+            clearCanvas();
+            clearOutputs();
         }
-        else if (!canvas.getActiveObject()) {
-            ipcRenderer.send('errorMessage', win.id, "Please draw and select line object used to measure");
-            document.getElementById("shapeSelect").focus();
+        catch (err) {
+            // ipcRenderer.send('errorMessage', err.message);
         }
-        else {
-            try {
-                calibrationRatio = Number(document.getElementById("knownDistanceTextBox").value) / canvas.getActiveObject().width;
-                document.getElementById("pdRatio").value = calibrationRatio.toFixed(4);
-                clearCanvas();
-                clearOutputs();
-            }
-            catch (err) {
-                // ipcRenderer.send('errorMessage', err.message);
-            }
-        }
-    
+    }
+
 
 }
 
@@ -262,7 +223,7 @@ function select(e) {
     onObjectScaled(e);
 }
 
-function submit() {
+async function submit() {
     var species = getSpecies();
     var e = document.getElementById("speciesSelect");
 
@@ -289,49 +250,26 @@ function submit() {
     }
     else {
         //get species depth
-        con.connect(function (err) {
-            // in case of error
-            if (err) {
-                console.log(err.code);
-                console.log(err.fatal);
-            }
-            var sql = "SELECT `depth` FROM `species` WHERE `speciesID` = ?";
-            con.query(sql, species, function (err, result, fields) {
-                if (err) {
-                    console.log(err.code);
-                    console.log(err.fatal);
-                }
+        var result = await knex('species').select("depth").where('speciesID',species);
+        console.log(result);
 
-                let measure = {
-                    speciesID: species,
-                    length: document.getElementById("lengthOutput").value,
-                    width: document.getElementById("widthOutput").value,
-                    area: document.getElementById("totalAreaOutput").value,
-                    volume: document.getElementById("totalAreaOutput").value * result[0].depth,
-                    sampleID: document.getElementById("sampleIDSelect").value,
-                }
+        let measure = {
+            speciesID: species,
+            length: document.getElementById("lengthOutput").value,
+            width: document.getElementById("widthOutput").value,
+            area: document.getElementById("totalAreaOutput").value,
+            volume: document.getElementById("totalAreaOutput").value * result[0].depth,
+            sampleID: document.getElementById("sampleIDSelect").value,
+        }
+        //Insert measurement into db
+        var result = await knex('measures').insert(measure);
+        console.log(result);
+        refreshMeasureTable();
 
-                //Insert measurement into db
-                con.connect(function (err) {
-                    // in case of error
-                    if (err) {
-                        console.log(err.code);
-                        console.log(err.fatal);
-                    }
-                    var sql = "INSERT INTO measures SET ?";
-                    con.query(sql, measure, function (err, result, fields) {
-                        if (err) throw err;
-                        console.log(result);
-                        refreshMeasureTable();
-                    });
-                });
-                if (document.getElementById("clearOnEnter").checked) {
-                    clearOutputs();
-                    clearCanvas();
-                }
-
-            });
-        });
+        if (document.getElementById("clearOnEnter").checked) {
+            clearOutputs();
+            clearCanvas();
+        }
     }
 }
 
@@ -688,12 +626,22 @@ function newCalibration() {
 async function saveCalibration() {
     document.querySelector('#newCalibrationBtn').style.display = 'initial';
     document.querySelector('#newCalibrationDiv').style.display = 'none';
-    
+
     pixelToDistanceRatio();
     pdRatio = document.getElementById("pdRatio").value;
 
     name = document.getElementById("newCalibrationTextBox").value;
-    var result = await knex('calibrations').insert({calibrationName: name, pixelToDistanceRatio: pdRatio});
+    var result = await knex('calibrations').insert({ calibrationName: name, pixelToDistanceRatio: pdRatio });
+    loadCalibrationSelect();
+    clearCanvas();
+}
+
+//Save new calibration into database, reload dropdown, clear canvas
+async function calibrate() {
+    document.querySelector('#newCalibrationBtn').style.display = 'initial';
+    document.querySelector('#newCalibrationDiv').style.display = 'none';
+
+    pixelToDistanceRatio();
     loadCalibrationSelect();
     clearCanvas();
 }
@@ -746,7 +694,7 @@ function init() {
     document.getElementById("saveCalibrationBtn").addEventListener('click', saveCalibration, false);
     document.getElementById("cancelCalibrationBtn").addEventListener('click', cancelCalibration, false);
     document.getElementById("calibrationSelect").addEventListener('change', setCalibrationFromDB, false);
-    document.getElementById("calibrateBtn").addEventListener('click', pixelToDistanceRatio, false);
+    document.getElementById("calibrateBtn").addEventListener('click', calibrate, false);
     document.getElementById("pdRatio").innerHTML = "Need to Calibrate";
     document.getElementById("lengthOnly").addEventListener('click', changeView, false);
     document.getElementById("setManual").addEventListener('click', changeView, false);

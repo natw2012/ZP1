@@ -1,18 +1,9 @@
 window.$ = window.jQuery = require("../../node_modules/jquery/dist/jquery.min.js");
 const electron = require('electron');
 const { ipcRenderer } = electron;
-var mysql = require('mysql');
-var connection = require('../js/config.js').localConnect();
+var knex = require('../js/config.js').connect();
 var dataType = require('../js/sqltohtmldatatype.js');
 
-// connect to mysql
-connection.connect(function (err) {
-    // in case of error
-    if (err) {
-        console.log(err.code);
-        console.log(err.fatal);
-    }
-});
 
 ipcRenderer.on('onload-user', function (data) {
     console.log(data);
@@ -28,38 +19,38 @@ ipcRenderer.on('loadEdit', function (e, table, info) {
 });
 
 //Load html content into edit window
-function loadForm(table, info) {
+async function loadForm(table, info) {
     var html = "";
-    var sql = 'SELECT * FROM ??';
-    connection.query(sql, table, function (err, result, fields) {
-        if (err) {
-            console.log(err)
+    var result = await knex.raw(`PRAGMA TABLE_INFO(??)`,table);
+    var fields = [];
+    for (var i =0;i<result.length;i++){
+        fields.push(result[i].name);
+    }
+    var result = await knex(table).columnInfo();
+    var name;
+    for (var i = 0; i < fields.length; i++) {
+        name = fields[i].toUpperCase();
+        type = dataType.getType(Object.values(result)[i].type);
+
+        if (i === 0) {
+            html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
+            html += '<input class="form-control form-control-sm" style="width:100%" type="' + type + 'id="' + name + '" name="' + name + '" value="' + info[i] + '"readonly></div>';
+
         }
-        var name;
-        for (var i = 0; i < fields.length; i++) {
-            name = fields[i].name.toUpperCase();
-            type = dataType.getType(fields[i].type);
+        else {
+            html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
+            html += '<input class="form-control form-control-sm" style="width:100%" type="' + type + 'id="' + name + '" name="' + name + '" value="' + info[i] + '"></div>';
 
-            if (i === 0) {
-                html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
-                html += '<input class="form-control form-control-sm" style="width:100%" type="' + type + 'id="' + name + '" name="' + name + '" value="' + info[i] + '"readonly></div>';
-
-            }
-            else {
-                html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
-                html += '<input class="form-control form-control-sm" style="width:100%" type="' + type + 'id="' + name + '" name="' + name + '" value="' + info[i] + '"></div>';
-
-            }
         }
+    }
 
-        html += '<button id="editBtn" type="button" class="btn btn-system btn-primary" onclick="updateDB(\'' + table + '\')">Save</button>';
+    html += '<button id="editBtn" type="button" class="btn btn-system btn-primary" onclick="updateDB(\'' + table + '\')">Save</button>';
 
-        document.getElementById("editForm").innerHTML = html;
-    });
+    document.getElementById("editForm").innerHTML = html;
 }
 
 //Update Database from form input
-function updateDB(table) {
+async function updateDB(table) {
     var pKey;
     var pKeyValue = 1;
     console.log(document.querySelector("form"));
@@ -67,19 +58,15 @@ function updateDB(table) {
     var i = 0;
     for (var [key, value] of formData.entries()) {
         console.log(key, value);
-        // var sql = 'UPDATE `species` SET `depth` = \'5\' WHERE `species`.`code` = 1';
         if (i === 0) {
             pKey = key;
             pKeyValue = value;
         }
         else {
+
+            var result = knex.raw('UPDATE ?? SET ?? = ? WHERE ??.?? = ?',[table, key, value, table, pKey, pKeyValue]);
             var sql = 'UPDATE ?? SET ?? = ? WHERE ??.?? = ?';
-            connection.query(sql, [table, key, value, table, pKey, pKeyValue], function (err, result, fields) {
-                if (err) {
-                    console.log(err)
-                }
-                ipcRenderer.send('refreshTable', table);
-            })
+            ipcRenderer.send('refreshTable', table);
         }
         i++;
     }

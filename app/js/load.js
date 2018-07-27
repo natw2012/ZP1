@@ -1,7 +1,6 @@
 //Include modules
 const $ = require('jquery');
 window.$ = window.jQuery = require('jquery');
-var mysql = require('mysql');
 var Promise = require('bluebird');
 Promise.promisifyAll(require("mysql/lib/Connection").prototype);
 var photon = require('electron-photon');
@@ -15,26 +14,14 @@ const settings = require('electron-settings');
 const electron = require('electron');
 const win = electron.remote.getCurrentWindow();
 const chart = require('chart.js');
-
-//Include global MySql database module
-var connection = require('./js/config.js').localConnect();
-
-//Connect to Mysql Database
-connection.connect(function (err) {
-    // in case of error
-    if (err) {
-
-        dialog.showErrorBox("Can't connect to database", "Check Log In Credentials");
-        console.log(err.code);
-        console.log(err.fatal);
-    }
-});
+var sqlite3 = require('sqlite3');
+var db = new sqlite3.Database('zp1.db');
+var _ = require('underscore');
+var knex = require('./js/config.js').connect();
 
 /************************************************************
         DASHBOARD 
 *************************************************************/
-
-var _ = require('underscore');
 
 var speciesCountChart = null;
 var speciesMeasureChart = null;
@@ -43,15 +30,7 @@ var sizeChart = null;
 var barChart = null;
 var radarChart = null;
 
-var knex = require('knex')({
-    client: 'mysql',
-    connection: {
-        host: "localhost",
-        user: settings.get('userInfo.user'),
-        password: settings.get('userInfo.password'),
-        database: settings.get('database.db')
-    }
-});
+
 
 //Refresh Dashboard
 async function refreshDashboard() {
@@ -89,7 +68,7 @@ function getSampleID() {
     else {
         //When database has no samples, return -1
         console.log("Error in sampleID");
-        return(-1);
+        return (-1);
     }
 }
 
@@ -110,15 +89,37 @@ async function loadSpeciesCountChart() {
     ON T1.speciesID = T2.speciesID
     `, sampleID);
 
+
+    // var numSpecies = await knex.select('speciesAbbrev,T1.speciesID, count1')
+    // .from(knex('counts')
+    //     .select('counts.speciesID', 'COUNT(*) as count1')
+    //     .where('sampleID',sampleID)
+    //     .groupBy('speciesID')
+    //     .as('T1'))
+    // .join(knex('species')
+    //     .select('species.speciesID', 'speciesAbbrev')
+    //     .as('T2'))
+    // .on('T1.speciesID = T2.speciesID');
+    
+    // var test1 = await knex('counts')
+    // .select('counts.speciesID', knex('counts').count('*').as('count1'))
+    // .where('sampleID',sampleID)
+    // .groupBy('speciesID')
+    // .as('T1');
+
+    // console.log(test1);
+
+
+    console.log(numSpecies);
     var str = JSON.parse(JSON.stringify(numSpecies));
     console.log(str);
     var labels = [];
     var data = [];
-    for (var i = 0; i < numSpecies[0].length; i++) {
-        console.log(numSpecies[0][i].speciesAbbrev);
-        console.log(numSpecies[0][i].count1);
-        data.push(numSpecies[0][i].count1)
-        labels.push(numSpecies[0][i].speciesAbbrev);
+    for (var i = 0; i < numSpecies.length; i++) {
+        console.log(numSpecies[i].speciesAbbrev);
+        console.log(numSpecies[i].count1);
+        data.push(numSpecies[i].count1)
+        labels.push(numSpecies[i].speciesAbbrev);
     }
 
     console.log(labels, data);
@@ -166,6 +167,7 @@ async function loadSpeciesCountChart() {
 
 async function loadSpeciesMeasureChart() {
 
+
     var sampleID = getSampleID();
     console.log(sampleID);
     var numSpecies = await knex.raw(`
@@ -181,15 +183,17 @@ async function loadSpeciesMeasureChart() {
     ON T1.speciesID = T2.speciesID
     `, sampleID);
 
+    console.log(numSpecies);
+
     var str = JSON.parse(JSON.stringify(numSpecies));
     console.log(str);
     var labels = [];
     var data = [];
-    for (var i = 0; i < numSpecies[0].length; i++) {
-        console.log(numSpecies[0][i].speciesAbbrev);
-        console.log(numSpecies[0][i].count1);
-        data.push(numSpecies[0][i].count1)
-        labels.push(numSpecies[0][i].speciesAbbrev);
+    for (var i = 0; i < numSpecies.length; i++) {
+        console.log(numSpecies[i].speciesAbbrev);
+        console.log(numSpecies[i].count1);
+        data.push(numSpecies[i].count1)
+        labels.push(numSpecies[i].speciesAbbrev);
     }
 
     console.log(labels, data);
@@ -250,6 +254,7 @@ async function loadSizeChart() {
         `, species[0][i].speciesID));
 
     }
+    console.log(result);
     var species1 = {
         labels: [],
         dataset: [],
@@ -346,16 +351,17 @@ async function loadBiomassSampleSumChart() {
         FROM species) AS T2
     ON T1.speciesID = T2.speciesID
     `, sampleID);
+    console.log(numSpecies);
 
     var str = JSON.parse(JSON.stringify(numSpecies));
     console.log(str);
     var labels = [];
     var data = [];
-    for (var i = 0; i < numSpecies[0].length; i++) {
-        console.log(numSpecies[0][i].speciesAbbrev);
-        console.log(numSpecies[0][i].sum1);
-        data.push(numSpecies[0][i].sum1)
-        labels.push(numSpecies[0][i].speciesAbbrev);
+    for (var i = 0; i < numSpecies.length; i++) {
+        console.log(numSpecies[i].speciesAbbrev);
+        console.log(numSpecies[i].sum1);
+        data.push(numSpecies[i].sum1)
+        labels.push(numSpecies[i].speciesAbbrev);
     }
 
     console.log(labels, data);
@@ -496,8 +502,8 @@ function loadDashboard() {
     loadSpeciesMeasureChart();
     loadBiomassSampleSumChart();
     // loadSizeChart();
-    loadBarChart();
-    loadRadarChart();
+    // loadBarChart();
+    // loadRadarChart();
 }
 
 
@@ -517,53 +523,45 @@ function importData(table) {
 
         fs.readFile(fileName, 'utf-8', function (err, data) {
             console.log(data);
-            parse(data, function (err, output) {
+            parse(data, async function (err, output) {
                 console.log(output);
 
-                var sql = "SELECT * FROM ??";
-                connection.query(sql, table, function (err, result, fields) {
-                    if (err) throw err;
-                    var header = [];
-                    for (var i = 0; i < fields.length; i++) {
-                        header.push(fields[i].name);
-                    }
-                    console.log(header);
-                    var sql = "INSERT INTO ?? (??) VALUES ?";
-                    connection.query(sql, [table, header, output], function (err, result, fields) {
-                        if (err) {
-                            console.log(win);
-                            ipcRenderer.send('errorMessage', win.id, err.message);
-                        }
-                        if (table === "species") {
-                            loadSpecies(table);
-                        }
-                        else if (table === "groups") {
-                            loadGroups(table);
-                        }
-                        else if (table === "counts") {
-                            loadCounts(table);
-                        }
-                        else if (table === "measures") {
-                            loadMeasures(table);
-                        }
-                        else if (table === "samples") {
-                            loadSamples(table);
-                        }
-                        else if (table === "formulas") {
-                            loadFormulas(table);
-                        }
-                        else if (table === "lakes") {
-                            loadLakes(table);
-                        }
-                        else if (table === "calibrations") {
-                            loadCalibrations(table);
-                        }
-                        else {
-                            ipcRenderer.send('errorMessage', win.id, "Error Importing");
-                        }
-                        scrollTable();
-                    })
-                })
+                for(var i =0;i<output.length;i++){
+                    //Raw parameter binding
+                    var result = await knex.raw('INSERT INTO ?? VALUES (' + output[i].map(_ => '?').join(',') + ')' , [table,...output[i]]);
+                }
+                // var result = await knex.raw('INSERT INTO ?? (' + header.map(_ => '?').join(',') + ') VALUES (' + output.map(_=> '?').join(',') + ')' , [table, header, output1]);
+                // console.log(result);
+                if (table === "species") {
+                    loadSpecies(table);
+                }
+                else if (table === "groups") {
+                    loadGroups(table);
+                }
+                else if (table === "counts") {
+                    loadCounts(table);
+                }
+                else if (table === "measures") {
+                    loadMeasures(table);
+                }
+                else if (table === "samples") {
+                    loadSamples(table);
+                }
+                else if (table === "formulas") {
+                    loadFormulas(table);
+                }
+                else if (table === "lakes") {
+                    loadLakes(table);
+                }
+                else if (table === "calibrations") {
+                    loadCalibrations(table);
+                }
+                else {
+                    ipcRenderer.send('errorMessage', win.id, "Error Importing");
+                }
+                //Callback issue again
+                scrollTable();
+
             })
         })
     })
@@ -575,28 +573,24 @@ function exportData(table) {
     dialog.showSaveDialog({
         filters: [{ name: 'csv', extensions: ['csv'] }
         ]
-    }, function (fileName) {
+    }, async function (fileName) {
         if (fileName === undefined) return;
+        var result = await knex(table).columnInfo();
+        console.log(result);
+        var header = Object.keys(result);
+        console.log(header)
 
-        var sql = "SELECT * FROM ??";
-        connection.query(sql, table, function (err, result, fields) {
-            if (err) throw err;
-            var header = [];
-            for (var i = 0; i < fields.length; i++) {
-                header.push(fields[i].name);
-            }
-            stringify(result, function (err, output) {
-                fs.writeFile(fileName, header + "\n" + output, function (err) {
-                    if (err === null) {
+        stringify(result, function (err, output) {
+            fs.writeFile(fileName, header + "\n" + output, function (err) {
+                if (err === null) {
 
-                        dialog.showMessageBox(win, {
-                            message: "The file has been saved! :-)",
-                            buttons: ["OK"]
-                        });
-                    } else {
-                        dialog.showErrorBox("Error", err.message); //Not sure if this works
-                    }
-                });
+                    dialog.showMessageBox(win, {
+                        message: "The file has been saved! :-)",
+                        buttons: ["OK"]
+                    });
+                } else {
+                    dialog.showErrorBox("Error", err.message); //Not sure if this works
+                }
             });
         });
     });
@@ -608,48 +602,48 @@ function exportJoinedData(table1, table2, table3, table4, table5) {
     dialog.showSaveDialog({
         filters: [{ name: 'csv', extensions: ['csv'] }
         ]
-    }, function (fileName) {
+    }, async function (fileName) {
         if (fileName === undefined) return;
 
-        var sql = "SELECT * FROM ?? JOIN ?? ON ??.sampleID = ??.sampleID";
-        connection.query(sql, [table1, table2, table1, table2], function (err, result, fields) {
-            if (err) throw err;
-            var header = [];
-            console.log(result);
-            console.log(fields);
-            for (var i = 0; i < fields.length; i++) {
-                console.log(fields[i]);
-                //Sketchy way of doing it, should replace
-                var flag = 0;
-                for (var j = 0; j < header.length; j++) {
-                    if (fields[i].name === header[j]) {
-                        flag = 1;
-                    }
-                }
-                if (flag === 0) {
-                    header.push(fields[i].name);
-                }
+        var result = await knex.raw(`SELECT * FROM ?? LEFT JOIN ?? ON ??.sampleID = ??.sampleID`,
+            [table1, table2, table1, table2]);
+        console.log(result);
+        var header = [];
+        console.log(header)
+        var fields = result[1];
 
+        for (var i = 0; i < fields.length; i++) {
+            console.log(fields[i]);
+            //Sketchy way of doing it, should replace
+            var flag = 0;
+            for (var j = 0; j < header.length; j++) {
+                if (fields[i].name === header[j]) {
+                    flag = 1;
+                }
             }
-            stringify(result, {
-                formatters: {
-                    date: function (value) {
-                        return moment(value).format('YYYY-MM-DD');
-                    }
-                }
-            }, function (err, output) {
-                console.log(output);
-                fs.writeFile(fileName, header + "\n" + output, function (err) {
-                    if (err === null) {
+            if (flag === 0) {
+                header.push(fields[i].name);
+            }
 
-                        dialog.showMessageBox(win, {
-                            message: "The file has been saved! :-)",
-                            buttons: ["OK"]
-                        });
-                    } else {
-                        dialog.showErrorBox("Error", err.message); //Not sure if this works
-                    }
-                });
+        }
+        stringify(result[0], {
+            formatters: {
+                date: function (value) {
+                    return moment(value).format('YYYY-MM-DD');
+                }
+            }
+        }, function (err, output) {
+            console.log(output);
+            fs.writeFile(fileName, header + "\n" + output, function (err) {
+                if (err === null) {
+
+                    dialog.showMessageBox(win, {
+                        message: "The file has been saved! :-)",
+                        buttons: ["OK"]
+                    });
+                } else {
+                    dialog.showErrorBox("Error", err.message); //Not sure if this works
+                }
             });
         });
     });
@@ -864,68 +858,62 @@ function loadAddWindow(table) {
 }
 
 //Load Table function, used by several other functions
-function loadTable(table, callback) {
+async function loadTable(table, callback) {
 
-    // Perform a query
-    var sql = 'SELECT * FROM ??';
-    connection.query(sql, table, function (err, rows, fields) {
-        if (err) {
-            ipcRenderer.send('errorMessage', win.id, err.message);
-            console.log(err);
-        }
-        var html = "";
-        var headers = [];
+    var fields = await knex.raw('PRAGMA TABLE_INFO(??)', table);
+    console.log(fields);
+    var html = "";
+    var headers = [];
+    for (var i =0;i<fields.length;i++){
+        headers.push(fields[i].name);
+    }
+    var result = await knex.raw('SELECT * FROM ??', table);
+    console.log(result);
 
-        //Build table headers
-        html += '<thead>';
-        for (var i = 0; i < fields.length; i++) {
-            headers[i] = fields[i].name;
-            html += '<th>';
-            html += headers[i].toUpperCase();
-            html += '</th>';
-        }
-        for (var i = 0; i < 3; i++) {
-            html += '<th>';
-            html += 'ACTIONS';
-            html += '</th>';
-        }
-        console.log(headers);
-        html += '</thead>';
+    //Build table headers
+    html += '<thead>';
+    for (var i = 0; i < headers.length; i++) {
+        html += '<th>';
+        html += headers[i].toUpperCase();
+        html += '</th>';
+    }
+    for (var i = 0; i < 3; i++) {
+        html += '<th>';
+        html += 'ACTIONS';
+        html += '</th>';
+    }
+    console.log(headers);
+    html += '</thead>';
 
-        rows.forEach(function (row) {
-            html += '<tr>';
+    result.forEach(function (row) {
+        html += '<tr>';
 
-            //Dynamically get row.property from header strings
-            headers.forEach(function (header) {
-                html += '<td>';
-                html += row[header];
-                html += '</td>';
-            })
+        //Dynamically get row.property from header strings
+        headers.forEach(function (header) {
             html += '<td>';
-            html += '<button type= "button" class="btn btn-default" value="Info" onclick="makeInfoWindow(this,\'' + table + '\')">Info</button>';
+            html += row[header];
             html += '</td>';
-            html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="Edit" onclick="makeEditWindow(this,\'' + table + '\')">Edit</button>';
-            html += '</td>';
-            html += '<td>';
-            html += '<button type="button" class="btn btn-default" value="' + row[headers[0]] + '" onclick="deleteRow(this,\'' + table + '\')">Delete</button>'; //Requires primary key to be 1st column
-            html += '</td>';
-            html += '</tr>';
-            console.log(row);
-        });
-
-        //Inject html and build table contents
-        document.querySelector('#table').innerHTML = html;
-
-        // callback(rows);
-
-        console.log("Query succesfully executed");
-        typeof callback === 'function' && callback();
+        })
+        html += '<td>';
+        html += '<button type= "button" class="btn btn-default" value="Info" onclick="makeInfoWindow(this,\'' + table + '\')">Info</button>';
+        html += '</td>';
+        html += '<td>';
+        html += '<button type="button" class="btn btn-default" value="Edit" onclick="makeEditWindow(this,\'' + table + '\')">Edit</button>';
+        html += '</td>';
+        html += '<td>';
+        html += '<button type="button" class="btn btn-default" value="' + row[headers[0]] + '" onclick="deleteRow(this,\'' + table + '\')">Delete</button>'; //Requires primary key to be 1st column
+        html += '</td>';
+        html += '</tr>';
+        console.log(row);
     });
 
+    //Inject html and build table contents
+    document.querySelector('#table').innerHTML = html;
 
+    // callback(rows);
 
-
+    console.log("Query succesfully executed");
+    typeof callback === 'function' && callback();
 }
 
 //Remove row from html table and from MySql database
@@ -938,25 +926,24 @@ function deleteRow(btn, table) {
         defaultId: 0,
         message: "Are you sure you would like to delete?",
 
-    }, function (response) {
+    }, async function (response) {
         if (response === 0) { //If user clicks yes
             var row = btn.parentNode.parentNode;
             var code = btn.value;
 
             row.parentNode.removeChild(row);
-
-            var sql = 'SHOW KEYS FROM ?? WHERE Key_name = \'PRIMARY\'';
-            connection.query(sql, table, function (err, result, fields) {
-                if (err) {
-                    console.log(err);
+            var result = await knex.raw(`PRAGMA TABLE_INFO(??)`, table);
+            console.log(result);
+            //Find primary key column
+            var primaryKey;
+            for(var i = 0; i<result.length; i++){
+                if(result[i].pk === 1){
+                    primaryKey = result[i].name;
                 }
-                var sql = 'DELETE FROM ?? WHERE ?? = ?';
-                connection.query(sql, [table, result[0].Column_name, code], function (err, result, fields) {
-                    if (err) {
-                        console.log(err);
-                    }
-                });
-            });
+            }
+            console.log(primaryKey);
+
+            var result = await knex.raw(`DELETE FROM ?? WHERE ?? = ?`, [table, primaryKey, code]);
         }
     }
     );
@@ -992,25 +979,6 @@ function loadDBDelete() {
     y.style.display = "none";
     z.style.display = "block";
 
-}
-
-function loadSettings() {
-    // document.getElementById('settingsContent').innerHTML = '<object type="text/html" data="html/dbLogin.html" height=100% width=100%></object>';
-}
-
-//Save UserInfo Settings
-async function setUserInfo() {
-    var dbUser = document.getElementById("dbUser").value;
-    var dbPassword = document.getElementById("dbPassword").value;
-    settings.set('userInfo', {
-        user: dbUser,
-        password: dbPassword
-    });
-    connection.changeUser({ user: dbUser, password: dbPassword }, function (err) {
-        if (err) throw err;
-    });
-    loadDBSelect();
-    ipcRenderer.send('refreshOnDBChange');
 }
 
 //Save Database Setting
@@ -1069,116 +1037,44 @@ function removeOptions(selectBox) {
 }
 
 //New Database
-function createNewDatabase() {
+async function createNewDatabase() {
+    var values = [['Cell'], ['Piece']];
     var name = document.getElementById("newDatabaseName").value;
-    var $query = "CREATE DATABASE " + name; //Change to ??
-    connection.query($query, function (err, result, fields) {
-        if (err) {
-            ipcRenderer.send('errorMessage', win.id, err.message);
-            console.log(err);
-        }
-        connection.changeUser({ database: name }, function (err) {
-            if (err) throw err;
-        });
-        console.log("Query succesfully executed");
-        $query = "CREATE TABLE counts (countID int(5) AUTO_INCREMENT PRIMARY KEY, speciesID int(3), speciesType varchar(10), sampleID int(5))";
-        connection.query($query, function (err, result, fields) {
-            if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.message);
-            }
-            console.log("Query succesfully executed");
-        })
-        $query = "CREATE TABLE countTypes (countType varchar(10) PRIMARY KEY)";
-        connection.query($query, function (err, result, fields) {
-            if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.message);
-            }
-            console.log("Query succesfully executed");
+    // var result = await knex.raw(`CREATE DATABASE ??`, [name]);
+    // settings.set('database', { db: name });
+    
+    var result = await knex.raw(`CREATE TABLE counts (countID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), speciesType varchar(10), sampleID int(5))`);
+    var result = await knex.raw(`CREATE TABLE countTypes (countType varchar(10) PRIMARY KEY)`);
+    var result = await knex('counttypes').insert([{countType: 'Cell'}, {countType: 'Piece'}]);
+    var result = await knex.raw(`CREATE TABLE lakes (lakeCode INTEGER PRIMARY KEY AUTOINCREMENT, lakeName varchar(10))`);
+    var result = await knex.raw(`CREATE TABLE measures (measureID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), length float(10), width float(10), area float(10), volume float(10), sampleID int(5))`);
+    var result = await knex.raw(`CREATE TABLE species (speciesID int(3) PRIMARY KEY, speciesAbbrev varchar(8), speciesName varchar(20), depth int(11), groupID varchar(5))`);
+    var result = await knex.raw(`CREATE TABLE groups (groupID varchar(5) PRIMARY KEY, groupName varchar(50))`);
+    var result = await knex.raw(`CREATE TABLE samples (sampleID int(5) PRIMARY KEY, type varchar(5), lakeID int(4), date date, crewChief varchar(5), gearID int(3), stationID int(3), numTow int(3), towLength int(5), volume float(5))`);
+    var result = await knex.raw(`CREATE TABLE calibrations (calibrationID INTEGER PRIMARY KEY AUTOINCREMENT, calibrationName varchar(10), pixelToDistanceRatio float(25))`);
+    var result = await knex.raw(`CREATE TABLE formulas (formulaID int(5) PRIMARY KEY, formulaName varchar(20))`);
 
-        })
-        var values = [['Cell'], ['Piece']];
-        $query = "INSERT INTO `counttypes`(`countType`) VALUES ?";
-        connection.query($query, [values], function (err, result, fields) {
-            if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.message);
 
-            }
-            console.log("Query succesfully executed");
-        })
-        $query = "CREATE TABLE lakes (lakeCode int(4) AUTO_INCREMENT PRIMARY KEY, lakeName varchar(10))";
-        connection.query($query, function (err, result, fields) {
-            if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.message);
-            }
-            console.log("Query succesfully executed");
-        })
-        $query = "CREATE TABLE measures (measureID int(5) AUTO_INCREMENT PRIMARY KEY, speciesID int(3), length float(10), width float(10), area float(10), volume float(10), sampleID int(5))";
-        connection.query($query, function (err, result, fields) {
-            if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.message);
-            }
-            console.log("Query succesfully executed");
-        })
-        $query = "CREATE TABLE species (speciesID int(3) PRIMARY KEY, speciesAbbrev varchar(8), speciesName varchar(20), depth int(11), groupID varchar(5))";
-        connection.query($query, function (err, result, fields) {
-            if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.message);
-            }
-            console.log("Query succesfully executed");
-        })
-        $query = "CREATE TABLE groups (groupID varchar(5) PRIMARY KEY, groupName varchar(50))";
-        connection.query($query, function (err, result, fields) {
-            if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.message);
-            }
-            console.log("Query succesfully executed");
-        })
-        $query = "CREATE TABLE samples (sampleID int(5) PRIMARY KEY, type varchar(5), lakeID int(4), date date, crewChief varchar(5), gearID int(3), stationID int(3), numTow int(3), towLength int(5), volume float(5))";
-        connection.query($query, function (err, result, fields) {
-            if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.message);
-            }
-            console.log("Query succesfully executed");
-        })
-        $query = "CREATE TABLE calibrations (calibrationID int(5) PRIMARY KEY AUTO_INCREMENT, calibrationName varchar(10), pixelToDistanceRatio float(25))";
-        connection.query($query, function (err, result, fields) {
-            if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.message);
-            }
-            console.log("Query succesfully executed");
-        })
-        //Not finished
-        $query = "CREATE TABLE formulas (formulaID int(5) PRIMARY KEY, formulaName varchar(20))";
-        connection.query($query, function (err, result, fields) {
-            if (err) {
-                ipcRenderer.send('errorMessage', win.id, err.message);
-            }
-            console.log("Query succesfully executed");
-        })
-        //Load dropdown after new database is created
-        loadDBSelect();
-    });
+    // //Set new database
+    // dialog.showMessageBox(win, {
+    //     type: "question",
+    //     buttons: ['Yes', 'No'],
+    //     defaultId: 0,
+    //     message: "Succesfully Created New Database. Would you like to use this database now?",
 
-    //Set new database
-    dialog.showMessageBox(win, {
-        type: "question",
-        buttons: ['Yes', 'No'],
-        defaultId: 0,
-        message: "Succesfully Created New Database. Would you like to use this database now?",
-
-    }, function (response) {
-        if (response === 0) { //If user clicks 'Yes'
-            settings.set('database', {
-                db: name
-            });
-            connection.changeUser({ database: name }, function (err) {
-                if (err) throw err;
-            });
-            dialog.showMessageBox(win, { message: "Set database as: " + name });
-            ipcRenderer.send('refreshOnDBChange');
-        }
-    }
-    );
+    // }, function (response) {
+    //     if (response === 0) { //If user clicks 'Yes'
+    //         settings.set('database', {
+    //             db: name
+    //         });
+    //         connection.changeUser({ database: name }, function (err) {
+    //             if (err) throw err;
+    //         });
+    //         dialog.showMessageBox(win, { message: "Set database as: " + name });
+    //         ipcRenderer.send('refreshOnDBChange');
+    //     }
+    // }
+    // );
 }
 
 //Delete database
@@ -1230,7 +1126,7 @@ async function init() {
         loadCounts('counts');
 
         //Currently getting non passive event listener warning
-        loadDBSelect();
+        // loadDBSelect();
 
         await loadSampleIDs();
         loadDashboard();

@@ -9,9 +9,9 @@ const { app, ipcMain, dialog, BrowserWindow } = require('electron');
 
 // Causes issues when packaging!!
 
-require("electron-reload")(__dirname, {
-  electron: require(`../node_modules/electron`)
-});
+// require("electron-reload")(__dirname, {
+//   electron: require(`../node_modules/electron`)
+// });
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -128,6 +128,92 @@ function createWindow() {
       measureWindow.hide()
     }
   });
+
+  mainWindow.webContents.on('crashed', function () { 
+    dialog.showMessageBox({
+      type: "error",
+      title: "Error",
+      message: "Sorry! Main Window Crashed!",
+    });
+  })
+  addWindow.webContents.on('crashed', function () { 
+    dialog.showMessageBox({
+      type: "error",
+      title: "Error",
+      message: "Sorry! Add Window Crashed!",
+    });
+  })
+  editWindow.webContents.on('crashed', function () { 
+    dialog.showMessageBox({
+      type: "error",
+      title: "Error",
+      message: "Sorry! Edit Window Crashed!",
+    });
+  })
+  infoWindow.webContents.on('crashed', function () { 
+    dialog.showMessageBox({
+      type: "error",
+      title: "Error",
+      message: "Sorry! Info Window Crashed!",
+    });
+  })
+  countWindow.webContents.on('crashed', function () { 
+    dialog.showMessageBox({
+      type: "error",
+      title: "Error",
+      message: "Sorry! Count Window Crashed!",
+    });
+  })
+  measureWindow.webContents.on('crashed', function () { 
+    dialog.showMessageBox({
+      type: "error",
+      title: "Error",
+      message: "Sorry! Meaasure Window Crashed!",
+    });
+  })
+
+  mainWindow.on('unresponsive', function () { 
+    dialog.showMessageBox({
+      type: "error",
+      title: "Error",
+      message: "Sorry! Main Window Is Unresponsive!",
+    });
+  })
+  addWindow.on('unresponsive', function () { 
+    dialog.showMessageBox({
+      type: "error",
+      title: "Error",
+      message: "Sorry! Add Window Is Unresponsive!",
+    });
+  })
+  editWindow.on('unresponsive', function () { 
+    dialog.showMessageBox({
+      type: "error",
+      title: "Error",
+      message: "Sorry! Edit Window Is Unresponsive!",
+    });
+  })
+  infoWindow.on('unresponsive', function () { 
+    dialog.showMessageBox({
+      type: "error",
+      title: "Error",
+      message: "Sorry! Info Window Is Unresponsive!",
+    });
+  })
+  countWindow.on('unresponsive', function () { 
+    dialog.showMessageBox({
+      type: "error",
+      title: "Error",
+      message: "Sorry! Count Window Is Unresponsive!",
+    });
+  })
+  measureWindow.on('unresponsive', function () { 
+    dialog.showMessageBox({
+      type: "error",
+      title: "Error",
+      message: "Sorry! Meaasure Window Is Unresponsive!",
+    });
+  })
 }
 
 // This method will be called when Electron has finished
@@ -252,4 +338,12 @@ ipcMain.on('refreshOnDBChange', function (e) {
   infoWindow.reload();
   countWindow.reload();
   measureWindow.reload();
+})
+
+process.on('uncaughtException', function () { 
+  dialog.showMessageBox({
+    type: "error",
+    title: "Error",
+    message: "Sorry! Uncaught Exception!",
+  });
 })

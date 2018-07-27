@@ -1,18 +1,8 @@
 window.$ = window.jQuery = require("../../node_modules/jquery/dist/jquery.min.js");
 const electron = require('electron');
 const { ipcRenderer } = electron;
-var mysql = require('mysql');
-var connection = require('../js/config.js').localConnect();
 var dataType = require('../js/sqltohtmldatatype.js');
-
-// connect to mysql
-connection.connect(function (err) {
-    // in case of error
-    if (err) {
-        console.log(err.code);
-        console.log(err.fatal);
-    }
-});
+var knex = require('../js/config.js').connect();
 
 ipcRenderer.on('onload-user', function (data) {
     console.log(data);
@@ -28,40 +18,78 @@ ipcRenderer.on('loadAdd', function (e, table) {
 });
 
 //Load html content into edit window
-function loadForm(table) {
+async function loadForm(table) {
 
     var html = "";
-    var sql = 'SELECT * FROM ??';
-    connection.query(sql, table, function (err, result, fields) {
-        if (err) {
-            console.log(err)
+    console.log('PRAGMA TABLE_INFO(??)',table);
+    var result = await knex.raw(`PRAGMA TABLE_INFO(groups)`);
+    console.log(result);
+    var fields = [];
+    for (var i =0;i<result.length;i++){
+        fields.push(result[i].name);
+    }
+    console.log(fields);
+    var result = await knex(table).columnInfo();
+    var fields = Object.keys(result);
+    console.log(result);
+    console.log(fields);
+    console.log(Object.values(result));
+    var name;
+    for (var i = 0; i < fields.length; i++) {
+        name = fields[i].toUpperCase();
+        type = dataType.getType(Object.values(result)[i].type);
+        console.log(Object.values(result)[i]);
+        console.log(Object.values(result)[i].type);
+        console.log(dataType.getType(Object.values(result)[i]));
+
+        if (i === 0) {
+            html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
+            html += '<input class="form-control form-control-sm" style="width:100%" type="' + type + '" id="' + name + '" name="' + name + '"></div>';
+
+
         }
-        var name;
-        for (var i = 0; i < fields.length; i++) {
-            name = fields[i].name.toUpperCase();
-            type = dataType.getType(fields[i].type);
+        else {
+            html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
+            html += '<input class="form-control form-control-sm" style="width:100%" type="' + type + '" id="' + name + '" name="' + name + '"></div>';
 
-            if (i === 0) {
-                html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
-                html += '<input class="form-control form-control-sm" style="width:100%" type="' + type + '" id="' + name + '" name="' + name + '"></div>';
-                
-
-            }
-            else {
-                html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
-                html += '<input class="form-control form-control-sm" style="width:100%" type="' + type + '" id="' + name + '" name="' + name + '"></div>';
-
-            }
         }
+    }
 
-        html += '<button id="addBtn" type="submit" class="btn btn-system btn-primary" onclick="addToDB(\'' + table + '\')">Add</button>';
+    html += '<button id="addBtn" type="submit" class="btn btn-system btn-primary" onclick="addToDB(\'' + table + '\')">Add</button>';
 
-        document.getElementById("addForm").innerHTML = html;
-    });
+    document.getElementById("addForm").innerHTML = html;
+
+    // var sql = 'SELECT * FROM ??';
+    // connection.query(sql, table, function (err, result, fields) {
+    //     if (err) {
+    //         console.log(err)
+    //     }
+    //     var name;
+    //     for (var i = 0; i < fields.length; i++) {
+    //         name = fields[i].name.toUpperCase();
+    //         type = dataType.getType(fields[i].type);
+
+    //         if (i === 0) {
+    //             html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
+    //             html += '<input class="form-control form-control-sm" style="width:100%" type="' + type + '" id="' + name + '" name="' + name + '"></div>';
+
+
+    //         }
+    //         else {
+    //             html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
+    //             html += '<input class="form-control form-control-sm" style="width:100%" type="' + type + '" id="' + name + '" name="' + name + '"></div>';
+
+    //         }
+    //     }
+
+    //     html += '<button id="addBtn" type="submit" class="btn btn-system btn-primary" onclick="addToDB(\'' + table + '\')">Add</button>';
+
+    //     document.getElementById("addForm").innerHTML = html;
+    // });
 }
 
 //Add to Database from form input
-function addToDB(table) {
+async function addToDB(table) {
 
     console.log(document.querySelector("form"));
     var formData = new FormData(document.querySelector("form"));
@@ -75,13 +103,19 @@ function addToDB(table) {
 
     console.log(keys, values);
     console.log(table);
-    var sql = "INSERT INTO ?? (??) VALUES (?)";
-    connection.query(sql, [table, keys, values], function (err, result, fields) {
-        if (err) {
-            console.log(err)
-            ipcRenderer.send('errMessage2', err);
-        }
-        ipcRenderer.send('refreshTable', table);
-    })
+
+    //Raw parameter binding
+    var result = await knex.raw('INSERT INTO ?? VALUES (' + values.map(_ => '?').join(',') + ')', [table, ...values]);
+
+    // var result = await knex(table).insert([...values]);
+    ipcRenderer.send('refreshTable', table);
+    // var sql = "INSERT INTO ?? (??) VALUES (?)";
+    // connection.query(sql, [table, keys, values], function (err, result, fields) {
+    //     if (err) {
+    //         console.log(err)
+    //         ipcRenderer.send('errMessage2', err);
+    //     }
+    //     ipcRenderer.send('refreshTable', table);
+    // })
 
 }
