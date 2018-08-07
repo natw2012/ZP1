@@ -100,7 +100,7 @@ async function loadSpeciesCountChart() {
     //     .select('species.speciesID', 'speciesAbbrev')
     //     .as('T2'))
     // .on('T1.speciesID = T2.speciesID');
-    
+
     // var test1 = await knex('counts')
     // .select('counts.speciesID', knex('counts').count('*').as('count1'))
     // .where('sampleID',sampleID)
@@ -526,9 +526,9 @@ function importData(table) {
             parse(data, async function (err, output) {
                 console.log(output);
 
-                for(var i =0;i<output.length;i++){
+                for (var i = 0; i < output.length; i++) {
                     //Raw parameter binding
-                    var result = await knex.raw('INSERT INTO ?? VALUES (' + output[i].map(_ => '?').join(',') + ')' , [table,...output[i]]);
+                    var result = await knex.raw('INSERT INTO ?? VALUES (' + output[i].map(_ => '?').join(',') + ')', [table, ...output[i]]);
                 }
                 // var result = await knex.raw('INSERT INTO ?? (' + header.map(_ => '?').join(',') + ') VALUES (' + output.map(_=> '?').join(',') + ')' , [table, header, output1]);
                 // console.log(result);
@@ -860,60 +860,64 @@ function loadAddWindow(table) {
 //Load Table function, used by several other functions
 async function loadTable(table, callback) {
 
-    var fields = await knex.raw('PRAGMA TABLE_INFO(??)', table);
-    console.log(fields);
-    var html = "";
-    var headers = [];
-    for (var i =0;i<fields.length;i++){
-        headers.push(fields[i].name);
-    }
-    var result = await knex.raw('SELECT * FROM ??', table);
-    console.log(result);
+    try {
+        var fields = await knex.raw('PRAGMA TABLE_INFO(??)', table);
+        console.log(fields);
+        var html = "";
+        var headers = [];
+        for (var i = 0; i < fields.length; i++) {
+            headers.push(fields[i].name);
+        }
+        var result = await knex.raw('SELECT * FROM ??', table);
+        console.log(result);
 
-    //Build table headers
-    html += '<thead>';
-    for (var i = 0; i < headers.length; i++) {
-        html += '<th>';
-        html += headers[i].toUpperCase();
-        html += '</th>';
-    }
-    for (var i = 0; i < 3; i++) {
-        html += '<th>';
-        html += 'ACTIONS';
-        html += '</th>';
-    }
-    console.log(headers);
-    html += '</thead>';
+        //Build table headers
+        html += '<thead>';
+        for (var i = 0; i < headers.length; i++) {
+            html += '<th>';
+            html += headers[i].toUpperCase();
+            html += '</th>';
+        }
+        for (var i = 0; i < 3; i++) {
+            html += '<th>';
+            html += 'ACTIONS';
+            html += '</th>';
+        }
+        console.log(headers);
+        html += '</thead>';
 
-    result.forEach(function (row) {
-        html += '<tr>';
+        result.forEach(function (row) {
+            html += '<tr>';
 
-        //Dynamically get row.property from header strings
-        headers.forEach(function (header) {
+            //Dynamically get row.property from header strings
+            headers.forEach(function (header) {
+                html += '<td>';
+                html += row[header];
+                html += '</td>';
+            })
             html += '<td>';
-            html += row[header];
+            html += '<button type= "button" class="btn btn-default" value="Info" onclick="makeInfoWindow(this,\'' + table + '\')">Info</button>';
             html += '</td>';
-        })
-        html += '<td>';
-        html += '<button type= "button" class="btn btn-default" value="Info" onclick="makeInfoWindow(this,\'' + table + '\')">Info</button>';
-        html += '</td>';
-        html += '<td>';
-        html += '<button type="button" class="btn btn-default" value="Edit" onclick="makeEditWindow(this,\'' + table + '\')">Edit</button>';
-        html += '</td>';
-        html += '<td>';
-        html += '<button type="button" class="btn btn-default" value="' + row[headers[0]] + '" onclick="deleteRow(this,\'' + table + '\')">Delete</button>'; //Requires primary key to be 1st column
-        html += '</td>';
-        html += '</tr>';
-        console.log(row);
-    });
+            html += '<td>';
+            html += '<button type="button" class="btn btn-default" value="Edit" onclick="makeEditWindow(this,\'' + table + '\')">Edit</button>';
+            html += '</td>';
+            html += '<td>';
+            html += '<button type="button" class="btn btn-default" value="' + row[headers[0]] + '" onclick="deleteRow(this,\'' + table + '\')">Delete</button>'; //Requires primary key to be 1st column
+            html += '</td>';
+            html += '</tr>';
+            console.log(row);
+        });
 
-    //Inject html and build table contents
-    document.querySelector('#table').innerHTML = html;
+        //Inject html and build table contents
+        document.querySelector('#table').innerHTML = html;
 
-    // callback(rows);
+        // callback(rows);
 
-    console.log("Query succesfully executed");
-    typeof callback === 'function' && callback();
+        console.log("Query succesfully executed");
+        typeof callback === 'function' && callback();
+    } catch (err) {
+        ipcRenderer.send('errorMessage', win, err);
+    }
 }
 
 //Remove row from html table and from MySql database
@@ -936,8 +940,8 @@ function deleteRow(btn, table) {
             console.log(result);
             //Find primary key column
             var primaryKey;
-            for(var i = 0; i<result.length; i++){
-                if(result[i].pk === 1){
+            for (var i = 0; i < result.length; i++) {
+                if (result[i].pk === 1) {
                     primaryKey = result[i].name;
                 }
             }
@@ -952,26 +956,28 @@ function deleteRow(btn, table) {
 /************************************************************
         SETTINGS 
 *************************************************************/
-function loadDBUserInfo() {
-    var x = document.getElementById("DBUserInfo");
+//Load Select Database File Tab
+function loadDBFile() {
+    var x = document.getElementById("DBFile");
     var y = document.getElementById("DBCreate");
     var z = document.getElementById("DBDelete");
 
     x.style.display = "block";
     y.style.display = "none";
     z.style.display = "none";
-
 }
+//Load Create Database Tab
 function loadDBCreate() {
-    var x = document.getElementById("DBUserInfo");
+    var x = document.getElementById("DBFile");
     var y = document.getElementById("DBCreate");
     var z = document.getElementById("DBDelete");
     x.style.display = "none";
     y.style.display = "block";
     z.style.display = "none";
 }
+//Load Delete Database Tab
 function loadDBDelete() {
-    var x = document.getElementById("DBUserInfo");
+    var x = document.getElementById("DBFile");
     var y = document.getElementById("DBCreate");
     var z = document.getElementById("DBDelete");
 
@@ -986,9 +992,6 @@ function setDB() {
     var dbDatabase = document.getElementById("dbDatabase").value;
     settings.set('database', {
         db: dbDatabase
-    });
-    connection.changeUser({ database: dbDatabase }, function (err) {
-        if (err) throw err;
     });
     dialog.showMessageBox(win, { message: "Set database as: " + dbDatabase });
     ipcRenderer.send('refreshOnDBChange');
@@ -1025,6 +1028,22 @@ function loadDBSelect() {
     });
 
 }
+
+function selectDBFile() {
+    dialog.showOpenDialog({
+        filters: [{ name: 'db', extensions: ['db'] }
+        ]
+    }, function (fileNames) {
+        if (fileNames === undefined) return;
+        var filename = fileNames[0].replace(/^.*[\\\/]/, '')
+        console.log(filename);
+        settings.set('database', {
+            db: filename
+        });
+        dialog.showMessageBox(win, { message: "Set database as: " + filename });
+        ipcRenderer.send('refreshOnDBChange');
+    })
+}
 //Clear options from select dropdown
 function removeOptions(selectBox) {
     console.log(selectBox);
@@ -1042,40 +1061,61 @@ async function createNewDatabase() {
     var name = document.getElementById("newDatabaseName").value;
     // var result = await knex.raw(`CREATE DATABASE ??`, [name]);
     // settings.set('database', { db: name });
-    
-    var result = await knex.raw(`CREATE TABLE counts (countID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), speciesType varchar(10), sampleID int(5))`);
-    var result = await knex.raw(`CREATE TABLE countTypes (countType varchar(10) PRIMARY KEY)`);
-    var result = await knex('counttypes').insert([{countType: 'Cell'}, {countType: 'Piece'}]);
-    var result = await knex.raw(`CREATE TABLE lakes (lakeCode INTEGER PRIMARY KEY AUTOINCREMENT, lakeName varchar(10))`);
-    var result = await knex.raw(`CREATE TABLE measures (measureID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), length float(10), width float(10), area float(10), volume float(10), sampleID int(5))`);
-    var result = await knex.raw(`CREATE TABLE species (speciesID int(3) PRIMARY KEY, speciesAbbrev varchar(8), speciesName varchar(20), depth int(11), groupID varchar(5))`);
-    var result = await knex.raw(`CREATE TABLE groups (groupID varchar(5) PRIMARY KEY, groupName varchar(50))`);
-    var result = await knex.raw(`CREATE TABLE samples (sampleID int(5) PRIMARY KEY, type varchar(5), lakeID int(4), date date, crewChief varchar(5), gearID int(3), stationID int(3), numTow int(3), towLength int(5), volume float(5))`);
-    var result = await knex.raw(`CREATE TABLE calibrations (calibrationID INTEGER PRIMARY KEY AUTOINCREMENT, calibrationName varchar(10), pixelToDistanceRatio float(25))`);
-    var result = await knex.raw(`CREATE TABLE formulas (formulaID int(5) PRIMARY KEY, formulaName varchar(20))`);
+
+    dialog.showSaveDialog({
+        filters: [{ name: 'db', extensions: ['db'] }
+        ]
+    }, async function (fileName) {
+        if (fileName === undefined) return;
+        console.log(fileName);
+        //empty content as parameter
+        var content = "";
+        fs.writeFile(fileName, content, function (err) {
+            if (err) {
+                console.log(err);
+            }
+        })
+        var knex = require('knex')({
+            client: 'sqlite3',
+            connection: {
+                filename: fileName
+            },
+            useNullAsDefault: true
+        });
+
+        var result = await knex.raw(`CREATE TABLE counts (countID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), speciesType varchar(10), sampleID int(5))`);
+        var result = await knex.raw(`CREATE TABLE countTypes (countType varchar(10) PRIMARY KEY)`);
+        var result = await knex('counttypes').insert([{ countType: 'Cell' }, { countType: 'Piece' }]);
+        var result = await knex.raw(`CREATE TABLE lakes (lakeCode INTEGER PRIMARY KEY AUTOINCREMENT, lakeName varchar(10))`);
+        var result = await knex.raw(`CREATE TABLE measures (measureID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), length float(10), width float(10), area float(10), volume float(10), sampleID int(5))`);
+        var result = await knex.raw(`CREATE TABLE species (speciesID int(3) PRIMARY KEY, speciesAbbrev varchar(8), speciesName varchar(20), depth int(11), groupID varchar(5))`);
+        var result = await knex.raw(`CREATE TABLE groups (groupID varchar(5) PRIMARY KEY, groupName varchar(50))`);
+        var result = await knex.raw(`CREATE TABLE samples (sampleID int(5) PRIMARY KEY, type varchar(5), lakeID int(4), date date, crewChief varchar(5), gearID int(3), stationID int(3), numTow int(3), towLength int(5), volume float(5))`);
+        var result = await knex.raw(`CREATE TABLE calibrations (calibrationID INTEGER PRIMARY KEY AUTOINCREMENT, calibrationName varchar(10), pixelToDistanceRatio float(25))`);
+        var result = await knex.raw(`CREATE TABLE formulas (formulaID int(5) PRIMARY KEY, formulaName varchar(20))`);
 
 
-    // //Set new database
-    // dialog.showMessageBox(win, {
-    //     type: "question",
-    //     buttons: ['Yes', 'No'],
-    //     defaultId: 0,
-    //     message: "Succesfully Created New Database. Would you like to use this database now?",
+        //Set new database
+        dialog.showMessageBox(win, {
+            type: "question",
+            buttons: ['Yes', 'No'],
+            defaultId: 0,
+            message: "Succesfully Created New Database. Would you like to use this database now?",
 
-    // }, function (response) {
-    //     if (response === 0) { //If user clicks 'Yes'
-    //         settings.set('database', {
-    //             db: name
-    //         });
-    //         connection.changeUser({ database: name }, function (err) {
-    //             if (err) throw err;
-    //         });
-    //         dialog.showMessageBox(win, { message: "Set database as: " + name });
-    //         ipcRenderer.send('refreshOnDBChange');
-    //     }
-    // }
-    // );
+        }, function (response) {
+            if (response === 0) { //If user clicks 'Yes'
+                var filename = fileName.replace(/^.*[\\\/]/, '')
+                settings.set('database', {
+                    db: filename
+                });
+                dialog.showMessageBox(win, { message: "Set database as: " + filename });
+                ipcRenderer.send('refreshOnDBChange');
+            }
+        }
+        );
+    })    
 }
+
 
 //Delete database
 function deleteDatabase() {
@@ -1103,6 +1143,15 @@ function deleteDatabase() {
     );
 }
 
+function connectToInMemoryDB() {
+    settings.set('database', {
+        db: ':memory:'
+    });
+    dialog.showMessageBox(win, { message: "Set database as: In Memory" });
+    ipcRenderer.send('refreshOnDBChange');
+
+
+}
 
 //Ensure connection to database
 function checkDBConnection() {
@@ -1119,8 +1168,8 @@ async function init() {
 
     try {
         //Load saved User Settings for Database Login
-        document.getElementById("dbUser").value = settings.get('userInfo.user');
-        document.getElementById("dbPassword").value = settings.get('userInfo.password');
+        // document.getElementById("dbUser").value = settings.get('userInfo.user');
+        // document.getElementById("dbPassword").value = settings.get('userInfo.password');
 
         //Initial loadCount as default
         loadCounts('counts');

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "electron app/main.js",
     "postinstall": "electron-builder install-app-deps",
-    "dist": "build",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
     "package-win": "electron-packager . ZP1 --overwrite --asar=true --platform=win32 --arch=ia32 --icon=assets/icons/plankton.ico --prune=true --out=release-builds"
   },
   "repository": {

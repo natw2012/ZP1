@@ -36,7 +36,7 @@ var knex = function connect() {
     return knex = require('knex')({
         client: 'sqlite3',
         connection: {
-            filename: "zp1.db"
+            filename: settings.get('database.db') //"zp1.db"
         },
         useNullAsDefault: true
     });

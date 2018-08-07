@@ -129,89 +129,89 @@ function createWindow() {
     }
   });
 
-  mainWindow.webContents.on('crashed', function () { 
+  mainWindow.webContents.on('crashed', function (e) { 
     dialog.showMessageBox({
       type: "error",
       title: "Error",
-      message: "Sorry! Main Window Crashed!",
+      message: "Sorry! Main Window Crashed!" + e,
     });
   })
-  addWindow.webContents.on('crashed', function () { 
+  addWindow.webContents.on('crashed', function (e) { 
     dialog.showMessageBox({
       type: "error",
       title: "Error",
-      message: "Sorry! Add Window Crashed!",
+      message: "Sorry! Add Window Crashed!" + e,
     });
   })
-  editWindow.webContents.on('crashed', function () { 
+  editWindow.webContents.on('crashed', function (e) { 
     dialog.showMessageBox({
       type: "error",
       title: "Error",
-      message: "Sorry! Edit Window Crashed!",
+      message: "Sorry! Edit Window Crashed!" + e,
     });
   })
-  infoWindow.webContents.on('crashed', function () { 
+  infoWindow.webContents.on('crashed', function (e) { 
     dialog.showMessageBox({
       type: "error",
       title: "Error",
-      message: "Sorry! Info Window Crashed!",
+      message: "Sorry! Info Window Crashed!" + e,
     });
   })
-  countWindow.webContents.on('crashed', function () { 
+  countWindow.webContents.on('crashed', function (e) { 
     dialog.showMessageBox({
       type: "error",
       title: "Error",
-      message: "Sorry! Count Window Crashed!",
+      message: "Sorry! Count Window Crashed!" + e,
     });
   })
-  measureWindow.webContents.on('crashed', function () { 
+  measureWindow.webContents.on('crashed', function (e) { 
     dialog.showMessageBox({
       type: "error",
       title: "Error",
-      message: "Sorry! Meaasure Window Crashed!",
+      message: "Sorry! Meaasure Window Crashed!" + e,
     });
   })
 
-  mainWindow.on('unresponsive', function () { 
+  mainWindow.on('unresponsive', function (e) { 
     dialog.showMessageBox({
       type: "error",
       title: "Error",
-      message: "Sorry! Main Window Is Unresponsive!",
+      message: "Sorry! Main Window Is Unresponsive!" + e,
     });
   })
-  addWindow.on('unresponsive', function () { 
+  addWindow.on('unresponsive', function (e) { 
     dialog.showMessageBox({
       type: "error",
       title: "Error",
-      message: "Sorry! Add Window Is Unresponsive!",
+      message: "Sorry! Add Window Is Unresponsive!" + e,
     });
   })
-  editWindow.on('unresponsive', function () { 
+  editWindow.on('unresponsive', function (e) { 
     dialog.showMessageBox({
       type: "error",
       title: "Error",
-      message: "Sorry! Edit Window Is Unresponsive!",
+      message: "Sorry! Edit Window Is Unresponsive!" + e,
     });
   })
-  infoWindow.on('unresponsive', function () { 
+  infoWindow.on('unresponsive', function (e) { 
     dialog.showMessageBox({
       type: "error",
       title: "Error",
-      message: "Sorry! Info Window Is Unresponsive!",
+      message: "Sorry! Info Window Is Unresponsive!" + e,
     });
   })
-  countWindow.on('unresponsive', function () { 
+  countWindow.on('unresponsive', function (e) { 
     dialog.showMessageBox({
       type: "error",
       title: "Error",
-      message: "Sorry! Count Window Is Unresponsive!",
+      message: "Sorry! Count Window Is Unresponsive!" + e,
     });
   })
-  measureWindow.on('unresponsive', function () { 
+  measureWindow.on('unresponsive', function (e) { 
     dialog.showMessageBox({
       type: "error",
       title: "Error",
-      message: "Sorry! Meaasure Window Is Unresponsive!",
+      message: "Sorry! Meaasure Window Is Unresponsive!" + e,
     });
   })
 }
@@ -340,10 +340,10 @@ ipcMain.on('refreshOnDBChange', function (e) {
   measureWindow.reload();
 })
 
-process.on('uncaughtException', function () { 
+process.on('uncaughtException', function (e) { 
   dialog.showMessageBox({
     type: "error",
     title: "Error",
-    message: "Sorry! Uncaught Exception!",
+    message: "Sorry! Uncaught Exception!" + e,
   });
 })
