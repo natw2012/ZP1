@@ -36,6 +36,7 @@
     "electron-reload": "^1.2.5",
     "electron-settings": "^3.2.0",
     "fabric": "^2.3.3",
+    "filehound": "^1.16.4",
     "jquery": "^3.3.1",
     "knex": "^0.15.1",
     "moment": "^2.22.2",

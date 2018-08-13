@@ -1,3 +1,6 @@
+//JS Logic for Add Window
+
+//Include modules
 window.$ = window.jQuery = require("../../node_modules/jquery/dist/jquery.min.js");
 const electron = require('electron');
 const { ipcRenderer } = electron;
@@ -58,34 +61,6 @@ async function loadForm(table) {
     html += '<button id="addBtn" type="submit" class="btn btn-system btn-primary" onclick="addToDB(\'' + table + '\')">Add</button>';
 
     document.getElementById("addForm").innerHTML = html;
-
-    // var sql = 'SELECT * FROM ??';
-    // connection.query(sql, table, function (err, result, fields) {
-    //     if (err) {
-    //         console.log(err)
-    //     }
-    //     var name;
-    //     for (var i = 0; i < fields.length; i++) {
-    //         name = fields[i].name.toUpperCase();
-    //         type = dataType.getType(fields[i].type);
-
-    //         if (i === 0) {
-    //             html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
-    //             html += '<input class="form-control form-control-sm" style="width:100%" type="' + type + '" id="' + name + '" name="' + name + '"></div>';
-
-
-    //         }
-    //         else {
-    //             html += '<div class="form-group"><label for="' + name + '">' + name + ': </label>';
-    //             html += '<input class="form-control form-control-sm" style="width:100%" type="' + type + '" id="' + name + '" name="' + name + '"></div>';
-
-    //         }
-    //     }
-
-    //     html += '<button id="addBtn" type="submit" class="btn btn-system btn-primary" onclick="addToDB(\'' + table + '\')">Add</button>';
-
-    //     document.getElementById("addForm").innerHTML = html;
-    // });
 }
 
 //Add to Database from form input
@@ -107,15 +82,6 @@ async function addToDB(table) {
     //Raw parameter binding
     var result = await knex.raw('INSERT INTO ?? VALUES (' + values.map(_ => '?').join(',') + ')', [table, ...values]);
 
-    // var result = await knex(table).insert([...values]);
     ipcRenderer.send('refreshTable', table);
-    // var sql = "INSERT INTO ?? (??) VALUES (?)";
-    // connection.query(sql, [table, keys, values], function (err, result, fields) {
-    //     if (err) {
-    //         console.log(err)
-    //         ipcRenderer.send('errMessage2', err);
-    //     }
-    //     ipcRenderer.send('refreshTable', table);
-    // })
 
 }

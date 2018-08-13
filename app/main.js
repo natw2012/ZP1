@@ -1,3 +1,5 @@
+//Main Electron JS File
+
 const electron = require('electron');
 const path = require('path');
 const url = require('url');
@@ -23,7 +25,7 @@ let countWindow;
 let measureWindow;
 
 function createWindow() {
-  // Create the browser window.
+  // Create the multiple app's windows.
   mainWindow = new BrowserWindow({ width: 800, height: 600 });
   infoWindow = new BrowserWindow({ width: 300, height: 500, parent: mainWindow, modal: true, show: false });
   editWindow = new BrowserWindow({ width: 300, height: 500, parent: mainWindow, modal: true, show: false });

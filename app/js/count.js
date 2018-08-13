@@ -1,3 +1,6 @@
+//JS logic for count window
+
+//Include modules
 var fabric = require('fabric').fabric;
 var randomColor = require('randomcolor');
 const electron = require('electron');
@@ -15,7 +18,7 @@ function random_rgba() {
     return randomColor(); //Random Color Library
 }
 
-
+//Load dropdown of Sample IDs from database
 async function loadSampleIDs() {
 
     var result = await knex('samples').select('sampleID');
@@ -28,6 +31,7 @@ async function loadSampleIDs() {
     }
 }
 
+//Load dropdown of Counting Types (Piece, Cell) from database
 async function loadCountingTypes() {
 
     var result = await knex('counttypes').select('countType');
@@ -41,6 +45,7 @@ async function loadCountingTypes() {
 
 }
 
+//Load dropdown of Species from database
 async function loadSpeciesDropdown() {
     var dropdown = document.getElementById("speciesSelect");
     var result = await knex('species').select('speciesID', 'speciesAbbrev');
@@ -50,7 +55,7 @@ async function loadSpeciesDropdown() {
         option = document.createElement("option");
         option.text = result[i].speciesID + " " + result[i].speciesAbbrev;
         option.id = result[i].speciesID;
-        option.fill = random_rgba();
+        option.fill = random_rgba();    //assigns random colours to each species
         option.stroke = random_rgba();
         speciesOption.push(option);
         document.getElementById("speciesSelect").appendChild(option);
@@ -62,14 +67,18 @@ function deleteCircle() {
     canvas.remove(canvas.getActiveObject());
     subCount();
 }
+//Clears Canvas
 function clearCanvas(event) {
     canvas.clear();
 }
+//Resize canvas to window size
 function resizeCanvas() {
     canvas.setWidth(window.innerWidth);
     canvas.setHeight(window.innerHeight);
     canvas.renderAll();
 }
+
+//Get id of selected species in dropdown
 function getSpeciesID() {
     var e = document.getElementById("speciesSelect");
     // console.log(e);
@@ -78,6 +87,8 @@ function getSpeciesID() {
     var text = e.options[e.selectedIndex].id;
     return text;
 }
+
+//Get selected type in dropdown
 function getType() {
     var e = document.getElementById("typeSelect");
     // console.log(e);
@@ -86,6 +97,8 @@ function getType() {
     var text = e.options[e.selectedIndex].value;
     return text;
 }
+
+//Get selected Sample Id in dropdown
 function getSampleID() {
     var e = document.getElementById("sampleIDSelect");
     console.log(e);
@@ -94,6 +107,7 @@ function getSampleID() {
     return text;
 }
 
+//Add Count to database
 async function addCount() {
 
     //Prevent DB insert if select is on default message
@@ -168,23 +182,10 @@ async function getCount() {
             document.getElementById("count").innerHTML = "0";
         }
     }
-    // con.connect(function (err) {
-    //     // in case of error
-    //     if (err) {
-    //         console.log(err.code);
-    //         console.log(err.fatal);
-    //     }
-
-    //     var sql = "SELECT speciesID, COUNT(*) as total FROM counts WHERE sampleID = ? GROUP BY speciesID";
-    //     con.query(sql, sampledID, function (err, result, fields) {
-    //         if (err) throw err;
-    //         console.log(result);
-    //         console.log(result[i]);
-
-    //     });
-    // });
     console.log("during getCount");
 }
+
+//Draws circle on canvas
 function drawDot() {
     var pointer = canvas.getPointer(event.e);
     var speciesColor;
@@ -196,7 +197,7 @@ function drawDot() {
 
     }
     var circle = new fabric.Circle({
-        left: pointer.x - 6,
+        left: pointer.x - 6,    //Adjusted for radius of circle
         top: pointer.y - 6,
         fill: speciesColor,
         radius: 6,
@@ -212,6 +213,8 @@ function drawDot() {
     });
     // let obj = { id: markerID };
     // console.log(markerID,obj.id);
+
+    //Removes additional Fabric js controls
     circle.setControlsVisibility({
         bl: false,
         br: false,
@@ -224,54 +227,31 @@ function drawDot() {
         mtr: false,
     });
 
-    // var border = new fabric.Circle({
-    //     left: pointer.x - 20,
-    //     top: pointer.y - 20,
-    //     fill: "black",
-    //     radius: 20,
-    //     strokeWidth: 1,
-    //     stroke: "blue",
-    //     lockMovementX: true,
-    //     lockMovementY: true,
-    //     lockRotation: true,
-    //     lockScalingFlip: true,
-    //     lockScalingX: true,
-    //     lockScalingY: true,
-    //     lockUniScaling: true,
-    // })
-    // border.setControlsVisibility({
-    //     bl: false,
-    //     br: false,
-    //     tl: false,
-    //     tr: false,
-    //     mt: false,
-    //     mb: false,
-    //     ml: false,
-    //     mr: false,
-    //     mtr: false,
-    // });
-    // canvas.add(border);
+    //Add to Canvas
     canvas.add(circle);
     
 }
 
-// function exportCount(){
-
-// }
-
+//Main Function
 function init() {
     canvas = new fabric.Canvas('canvas');
 
-    resizeCanvas();
-    loadSpeciesDropdown();
+    resizeCanvas(); //Resize canvas on load
+    
+    //Load all dropdowns and count
+    loadSpeciesDropdown(); 
     loadCountingTypes();
     loadSampleIDs();
     getCount();
+
+    //Add event listeners for resizing, buttons, and dropdowns
     window.addEventListener('resize', resizeCanvas, false);
     document.getElementById("clear").addEventListener('click', clearCanvas, false);
     document.getElementById("delete").addEventListener('click', deleteCircle, false);
     document.getElementById("speciesSelect").addEventListener('change', getCount);
     document.getElementById("sampleIDSelect").addEventListener('change', getCount);
+
+    //On Mouse Double Click, draw dot and add to database
     canvas.on('mouse:dblclick', function (options) {
         //Alert user to input species
         if (document.getElementById("sampleIDSelect").value === "Select Sample ID") {
@@ -288,4 +268,5 @@ function init() {
     });
 }
 
+//Call Main Function on load
 window.addEventListener('load', init, false);

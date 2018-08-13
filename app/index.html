@@ -110,26 +110,21 @@
             <form style="padding: 20px" id="dbSettingsForm">
               <h3>Select Database</h3>
               <div class="form-group">
-                <label id="dbDatabaseLbl">Database:</label>
+                <label>Current Database File:</label>
+                <label id="dbDatabaseLbl"></label>
                 <script>
                   var db = settings.get('database.db');
                   console.log(db);
                   document.getElementById("dbDatabaseLbl").innerHTML = db;
                 </script>
-
-                <button id="selectDB" type="button" class="btn btn-system btn-primary" onclick="selectDBFile()">Select Database</button>
-                <button id="connectToInMemoryDBBtn" type="button" class="btn btn-system btn-primary" onclick="connectToInMemoryDB()">In Memory Database</button>
-
+                <br>
+                <button id="selectDB" type="button" class="btn btn-system btn-primary" onclick="selectDBFile()">Select New Database</button>
               </div>
             </form>
           </div>
           <div class="pane" id="DBCreate" style="padding: 20px; display: none;">
             <form style="padding: 20px" id="dbSettingsForm">
               <h3>Create New Database</h3>
-              <div class="form-group">
-                <label for="newDatabaseName">Database:</label>
-                <input class="form-control form-control-sm" type="text" id="newDatabaseName" value=""></input>
-              </div>
               <div class="form-actions">
                 <button id="createDB" type="button" class="btn btn-system btn-primary" onclick="createNewDatabase()">Create New Database</button>
               </div>

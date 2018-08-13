@@ -1,3 +1,6 @@
+//JS Logic for Measure Window
+
+//Include modules
 var fabric = require('fabric').fabric;
 var randomColor = require('randomcolor');
 const electron = require('electron');

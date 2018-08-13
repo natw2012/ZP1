@@ -1,3 +1,6 @@
+//JS Logic for Edit Window
+
+//Include modules
 window.$ = window.jQuery = require("../../node_modules/jquery/dist/jquery.min.js");
 const electron = require('electron');
 const { ipcRenderer } = electron;

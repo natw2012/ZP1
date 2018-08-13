@@ -1,3 +1,5 @@
+//Module to convert SQL types to HTML data types
+
 exports.getType = function (typeID){
     switch(typeID){
         case 1: //Tiny Int

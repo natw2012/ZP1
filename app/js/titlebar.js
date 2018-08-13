@@ -1,3 +1,5 @@
+//JS for Title Bar of frameless electron window
+
 const $ = require('jquery');
 const {remote} = require('electron');
 var win = remote.getCurrentWindow();

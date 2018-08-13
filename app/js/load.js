@@ -18,6 +18,7 @@ var sqlite3 = require('sqlite3');
 var db = new sqlite3.Database('zp1.db');
 var _ = require('underscore');
 var knex = require('./js/config.js').connect();
+var FileHound = require('filehound');
 
 /************************************************************
         DASHBOARD 
@@ -1000,32 +1001,33 @@ function setDB() {
 //Load database from MySql Database into dropdown
 function loadDBSelect() {
     //Clear options 
-    removeOptions(document.getElementById("dbDatabase"));
-    removeOptions(document.getElementById("deleteDatabaseSelect"));
+    // removeOptions(document.getElementById("deleteDatabaseSelect"));
     console.log(document.getElementById("dbDatabase"));
-    // Perform a query
-    var $query = "SHOW DATABASES"
-    connection.query($query, function (err, result, fields) {
-        if (err) {
-            ipcRenderer.send('errorMessage', win.id, err.message);
-            console.log("An error ocurred performing the query.");
-            console.log(err);
-            return;
-        }
-        var option;
-        for (var i = 0; result[i] != null; i++) {
-            option = document.createElement("option");
-            option.text = result[i].Database;
-            option.id = result[i].Database;
-            document.getElementById("dbDatabase").appendChild(option);
-            document.getElementById("deleteDatabaseSelect").appendChild(option.cloneNode(true));
-        }
-        console.log("Query succesfully executed");
 
-        //Show saved database 
-        var e = document.getElementById("dbDatabase");
-        e.value = settings.get('database.db');
-    });
+    console.log("test");
+    // Perform a query
+    // var $query = "SHOW DATABASES"
+    // connection.query($query, function (err, result, fields) {
+    //     if (err) {
+    //         ipcRenderer.send('errorMessage', win.id, err.message);
+    //         console.log("An error ocurred performing the query.");
+    //         console.log(err);
+    //         return;
+    //     }
+    //     var option;
+    //     for (var i = 0; result[i] != null; i++) {
+    //         option = document.createElement("option");
+    //         option.text = result[i].Database;
+    //         option.id = result[i].Database;
+    //         document.getElementById("dbDatabase").appendChild(option);
+    //         document.getElementById("deleteDatabaseSelect").appendChild(option.cloneNode(true));
+    //     }
+    //     console.log("Query succesfully executed");
+
+    //     //Show saved database 
+    //     var e = document.getElementById("dbDatabase");
+    //     e.value = settings.get('database.db');
+    // });
 
 }
 
@@ -1057,11 +1059,6 @@ function removeOptions(selectBox) {
 
 //New Database
 async function createNewDatabase() {
-    var values = [['Cell'], ['Piece']];
-    var name = document.getElementById("newDatabaseName").value;
-    // var result = await knex.raw(`CREATE DATABASE ??`, [name]);
-    // settings.set('database', { db: name });
-
     dialog.showSaveDialog({
         filters: [{ name: 'db', extensions: ['db'] }
         ]
@@ -1143,21 +1140,6 @@ function deleteDatabase() {
     );
 }
 
-function connectToInMemoryDB() {
-    settings.set('database', {
-        db: ':memory:'
-    });
-    dialog.showMessageBox(win, { message: "Set database as: In Memory" });
-    ipcRenderer.send('refreshOnDBChange');
-
-
-}
-
-//Ensure connection to database
-function checkDBConnection() {
-
-}
-
 
 /************************************************************
         INITIALIZE 
@@ -1175,7 +1157,7 @@ async function init() {
         loadCounts('counts');
 
         //Currently getting non passive event listener warning
-        // loadDBSelect();
+        loadDBSelect();
 
         await loadSampleIDs();
         loadDashboard();
