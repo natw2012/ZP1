@@ -250,8 +250,9 @@ ipcMain.on('refreshTable', function (e, table) {
   mainWindow.webContents.send('refreshTable', table);
 })
 
-ipcMain.on('refreshMeasureDropdowns', function (e) {
+ipcMain.on('refreshCountAndMeasureDropdowns', function (e) {
   measureWindow.webContents.send('refreshMeasureDropdowns');
+  countWindow.webContents.send('refreshCountDropdowns');
 })
 
 //Display Error Message in Dialog

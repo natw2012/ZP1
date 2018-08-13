@@ -15,7 +15,7 @@ var knex = require('../js/config.js').connect();
 
 //Refresh Count Dropdowns on Call from Main
 //Receive call from another window
-ipcRenderer.on('refreshMeasureDropdowns', function (e) {
+ipcRenderer.on('refreshCountDropdowns', function (e) {
     loadSampleIDs();
     loadCountingTypes();
     loadSpeciesDropdown();
