@@ -562,7 +562,7 @@ function importData(table) {
                 }
                 //Callback issue again
                 scrollTable();
-
+                ipcRenderer.send('refreshMeasureDropdowns');
             })
         })
     })
@@ -948,7 +948,10 @@ function deleteRow(btn, table) {
             }
             console.log(primaryKey);
 
+            //Remove from database
             var result = await knex.raw(`DELETE FROM ?? WHERE ?? = ?`, [table, primaryKey, code]);
+
+            ipcRenderer.send('refreshMeasureDropdowns');
         }
     }
     );

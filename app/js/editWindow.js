@@ -70,6 +70,7 @@ async function updateDB(table) {
             var result = knex.raw('UPDATE ?? SET ?? = ? WHERE ??.?? = ?',[table, key, value, table, pKey, pKeyValue]);
             var sql = 'UPDATE ?? SET ?? = ? WHERE ??.?? = ?';
             ipcRenderer.send('refreshTable', table);
+            ipcRenderer.send('refreshMeasureDropdowns');
         }
         i++;
     }

@@ -13,6 +13,14 @@ var speciesOption = [];
 
 var knex = require('../js/config.js').connect();
 
+//Refresh Count Dropdowns on Call from Main
+//Receive call from another window
+ipcRenderer.on('refreshMeasureDropdowns', function (e) {
+    loadSampleIDs();
+    loadCountingTypes();
+    loadSpeciesDropdown();
+});
+
 //Should implement ability to choose colours in dashboard 
 function random_rgba() {
     return randomColor(); //Random Color Library
@@ -20,6 +28,8 @@ function random_rgba() {
 
 //Load dropdown of Sample IDs from database
 async function loadSampleIDs() {
+    //Clear options 
+    removeOptions(document.getElementById("sampleIDSelect"));
 
     var result = await knex('samples').select('sampleID');
     var option;
@@ -33,6 +43,8 @@ async function loadSampleIDs() {
 
 //Load dropdown of Counting Types (Piece, Cell) from database
 async function loadCountingTypes() {
+    //Clear options 
+    removeOptions(document.getElementById("typeSelect"));
 
     var result = await knex('counttypes').select('countType');
     var option;
@@ -47,6 +59,9 @@ async function loadCountingTypes() {
 
 //Load dropdown of Species from database
 async function loadSpeciesDropdown() {
+    //Clear options 
+    removeOptions(document.getElementById("speciesSelect"));
+
     var dropdown = document.getElementById("speciesSelect");
     var result = await knex('species').select('speciesID', 'speciesAbbrev');
 
@@ -62,6 +77,17 @@ async function loadSpeciesDropdown() {
     }
 
 }
+
+//Clear options from select dropdown
+function removeOptions(selectBox) {
+    console.log(selectBox);
+    if (selectBox) {
+        for (var i = selectBox.options.length - 1; i > 0; i--) {
+            selectBox.remove(i);
+        }
+    }
+}
+
 //Doesn't delete from database
 function deleteCircle() {
     canvas.remove(canvas.getActiveObject());

@@ -83,5 +83,6 @@ async function addToDB(table) {
     var result = await knex.raw('INSERT INTO ?? VALUES (' + values.map(_ => '?').join(',') + ')', [table, ...values]);
 
     ipcRenderer.send('refreshTable', table);
+    ipcRenderer.send('refreshMeasureDropdowns');
 
 }

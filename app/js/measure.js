@@ -21,6 +21,14 @@ var knex = require('../js/config.js').connect();
         GENERAL FUNCTIONS 
 *************************************************************/
 
+//Refresh Measure Dropdowns on Call from Main
+//Receive call from another window
+ipcRenderer.on('refreshMeasureDropdowns', function (e) {
+    loadSampleIDs();
+    loadSpeciesDropdown();
+    loadCustomFormulas();
+    loadCalibrationSelect();
+});
 
 //Should implement ability to choose colours in dashboard 
 function random_rgba() {
@@ -55,6 +63,9 @@ function deleteObject() {
 
 //Load Sample IDs into select
 async function loadSampleIDs() {
+    //Clear options 
+    removeOptions(document.getElementById("sampleIDSelect"));
+
     var option;
     var result = await knex('samples').select("sampleID");
     console.log(result);
@@ -68,6 +79,9 @@ async function loadSampleIDs() {
 
 //Load dropdown of species
 async function loadSpeciesDropdown() {
+    //Clear options 
+    removeOptions(document.getElementById("speciesSelect"));
+
     var option;
     var result = await knex('species').select("speciesID", "speciesAbbrev");
     console.log(result);
@@ -81,6 +95,7 @@ async function loadSpeciesDropdown() {
 
 //Load dropdown of custom formulas
 async function loadCustomFormulas() {
+
     var option;
     var result = await knex('formulas').select("formulaName");
     console.log(result);
@@ -669,7 +684,7 @@ async function setCalibrationFromDB() {
 function removeOptions(selectBox) {
     console.log(selectBox);
     if (selectBox) {
-        for (var i = selectBox.options.length - 1; i >= 0; i--) {
+        for (var i = selectBox.options.length - 1; i > 0; i--) {
             selectBox.remove(i);
         }
     }
