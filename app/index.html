@@ -49,11 +49,11 @@
                   <canvas id="speciesCountChart" width="200" height="200"></canvas>
                 </div>
                 <div class="col-sm" id="speciesMeasureChartCol">
-                    <canvas id="speciesMeasureChart" width="200" height="200"></canvas>
-                  </div>
-                  <div class="col-sm" id="biomassSampleSumChartCol">
-                      <canvas id="biomassSampleSumChart" width="200" height="200"></canvas>
-                    </div>
+                  <canvas id="speciesMeasureChart" width="200" height="200"></canvas>
+                </div>
+                <div class="col-sm" id="biomassSampleSumChartCol">
+                  <canvas id="biomassSampleSumChart" width="200" height="200"></canvas>
+                </div>
                 <!-- <div class="col-sm" id="sizeChartCol">
                   <canvas id="sizeChart" width="200" height="200"></canvas>
                 </div> -->
@@ -83,8 +83,8 @@
               <nav-item href="#" onclick="loadGroups('groups')">Groups</nav-item>
               <nav-item href="#" onclick="loadSamples('samples')">Samples</nav-item>
               <nav-item href="#" onclick="loadLakes('lakes')">Lakes</nav-item>
-              <nav-item href="#" onclick="loadGear('gear')">Gear</nav-item>
-              <nav-item href="#" onclick="loadFormulas('formulas')">Formulas</nav-item>
+              <nav-item href="#" onclick="loadGears('gears')">Gear</nav-item>
+              <!-- <nav-item href="#" onclick="loadFormulas('formulas')">Formulas</nav-item> -->
               <nav-item href="#" onclick="loadCalibrations('calibrations')">Calibrations</nav-item>
             </nav-group>
           </div>
@@ -101,46 +101,25 @@
           <div class="pane-sm sidebar">
             <nav-group class="sidebarGroup">
               <h5 class="nav-group-title">Select:</h5>
-              <nav-item href="#DBUserInfo" onclick="loadDBFile()">Load Database</nav-item>
-              <nav-item href="#DBCreate" onclick="loadDBCreate()">Create New Database</nav-item>
-              <nav-item href="#DBDelete" onclick="loadDBDelete()">Delete Database</nav-item>
+              <nav-item class="active" href="#DBSettings" onclick="loadDBSettings()">Database Settings</nav-item>
             </nav-group>
           </div>
-          <div class="pane" id="DBFile" style="padding: 20px">
-            <form style="padding: 20px" id="dbSettingsForm">
-              <h3>Select Database</h3>
-              <div class="form-group">
-                <label>Current Database File:</label>
-                <label id="dbDatabaseLbl"></label>
-                <script>
-                  var db = settings.get('database.db');
-                  console.log(db);
-                  document.getElementById("dbDatabaseLbl").innerHTML = db;
-                </script>
-                <br>
-                <button id="selectDB" type="button" class="btn btn-system btn-primary" onclick="selectDBFile()">Select New Database</button>
-              </div>
-            </form>
-          </div>
-          <div class="pane" id="DBCreate" style="padding: 20px; display: none;">
-            <form style="padding: 20px" id="dbSettingsForm">
-              <h3>Create New Database</h3>
-              <div class="form-actions">
-                <button id="createDB" type="button" class="btn btn-system btn-primary" onclick="createNewDatabase()">Create New Database</button>
-              </div>
-            </form>
-          </div>
-          <div class="pane" id="DBDelete" style="padding: 20px; display: none">
-            <form style="padding: 20px" id="dbSettingsForm">
-              <h3>Delete Database</h3>
-              <div class="form-group">
-                <label for="deleteDatabaseName">Database:</label>
-                <select class="form-control form-control-sm" type="text" id="deleteDatabaseSelect" value=""></select>
-              </div>
-              <div class="form-actions">
-                <button id="createDB" type="button" class="btn btn-system btn-primary" onclick="deleteDatabase()">Delete Database</button>
-              </div>
-            </form>
+          <div class="pane" id="DBSettings" style="padding: 20px">
+            <h3>Database Settings</h3>
+            <div class="form-group">
+              <label>Current Database File:</label>
+              <label id="dbDatabaseLbl"></label>
+              <script>
+                var db = settings.get('database.db');
+                console.log(db);
+                document.getElementById("dbDatabaseLbl").innerHTML = db;
+              </script>
+              <br>
+              <br>
+              <button id="selectDB" type="button" class="btn btn-system btn-primary" onclick="selectDBFile()">Select A Database</button>
+              <button id="createDB" type="button" class="btn btn-system btn-primary" onclick="createNewDatabase()">Create New Database</button>
+
+            </div>
           </div>
         </div>
       </div>

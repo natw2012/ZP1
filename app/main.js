@@ -29,7 +29,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({ width: 800, height: 600 });
   infoWindow = new BrowserWindow({ width: 300, height: 500, parent: mainWindow, modal: true, show: false });
   editWindow = new BrowserWindow({ width: 300, height: 500, parent: mainWindow, modal: true, show: false });
-  addWindow = new BrowserWindow({ width: 300, height: 500, /*parent: mainWindow, modal: true,*/ show: false });
+  addWindow = new BrowserWindow({ width: 300, height: 500, parent: mainWindow, modal: true, show: false });
   countWindow = new BrowserWindow({ width: 1000, height: 650, show: false, transparent: true, frame: false });
   measureWindow = new BrowserWindow({ width: 1000, height: 650, show: false, transparent: true, frame: false });
 
@@ -296,28 +296,39 @@ ipcMain.on('errorMessage2', function (e, err) {
 })
 
 ipcMain.on('showInfoWindow', function (e, table, info) {
-  infoWindow.reload((infoWindow.show()));
-  console.log(info);
-  infoWindow.webContents.on('did-finish-load', () => {
-    infoWindow.webContents.send('loadInfo', table, info);
-  })
+  infoWindow.webContents.send('loadInfo', table, info);
+  infoWindow.show();
+  infoWindow.focus();
+  
+  // infoWindow.reload((infoWindow.show()));
+  // console.log(info);
+  // infoWindow.webContents.on('did-finish-load', () => {
+  //   infoWindow.webContents.send('loadInfo', table, info);
+  // })
 })
 
 ipcMain.on('showEditWindow', function (e, table, info) {
-  editWindow.reload(editWindow.show());
+  editWindow.webContents.send('loadEdit', table, info);
+  editWindow.show();
+  editWindow.focus();
+  // editWindow.reload(editWindow.show());
 
-  editWindow.webContents.on('did-finish-load', () => {
-    editWindow.webContents.send('loadEdit', table, info);
-  })
+  // editWindow.webContents.on('did-finish-load', () => {
+  //   editWindow.webContents.send('loadEdit', table, info);
+  // })
 
 })
 
 ipcMain.on('showAddWindow', function (e, table) {
-  addWindow.reload((addWindow.show()));
+  addWindow.webContents.send('loadAdd', table);
+  addWindow.show();
+  addWindow.focus();
 
-  addWindow.webContents.on('did-finish-load', () => {
-    addWindow.webContents.send('loadAdd', table);
-  })
+  // addWindow.reload((addWindow.show()));
+
+  // addWindow.webContents.on('did-finish-load', () => {
+  //   addWindow.webContents.send('loadAdd', table);
+  // })
 })
 
 ipcMain.on('showCountWindow', function (e) {

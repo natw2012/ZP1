@@ -581,6 +581,9 @@ function exportData(table) {
         var header = Object.keys(result);
         console.log(header)
 
+        var result = await knex(table).select();
+        console.log(result);
+
         stringify(result, function (err, output) {
             fs.writeFile(fileName, header + "\n" + output, function (err) {
                 if (err === null) {
@@ -590,6 +593,7 @@ function exportData(table) {
                         buttons: ["OK"]
                     });
                 } else {
+                    ipcRenderer.send('errorMessage', err);
                     dialog.showErrorBox("Error", err.message); //Not sure if this works
                 }
             });
@@ -598,36 +602,48 @@ function exportData(table) {
 }
 
 //Change to join counts/measures with samples by sampleID, species by speciesID, samples with lakes by lakeID and with gear by gearID
-function exportJoinedData(table1, table2, table3, table4, table5) {
+function exportJoinedData(table1, table2, table3, table4, table5, table6) {
+    // table1 = counts/measures
+    // table2 = samples
+    // table3 = lakes
+    // table4 = species
+    // table5 = groups
+    // table6 = gears
 
     dialog.showSaveDialog({
         filters: [{ name: 'csv', extensions: ['csv'] }
         ]
     }, async function (fileName) {
         if (fileName === undefined) return;
-
-        var result = await knex.raw(`SELECT * FROM ?? LEFT JOIN ?? ON ??.sampleID = ??.sampleID`,
-            [table1, table2, table1, table2]);
+        var result = await knex.select('*').from(table1)
+            .leftJoin(table2,table1 + '.sampleID', table2 + '.sampleID')
+            .leftJoin(table3, table2+'.lakeID',table3+'.lakeID')
+            .leftJoin(table4, table1+'.speciesID',table4+'.speciesID')
+            .leftJoin(table5, table4+'.groupID',table5+'.groupID')
+            .leftJoin(table6, table2+'.gearID', table6+'.gearID');
+        // var result = await knex.raw(`SELECT * FROM ?? LEFT JOIN ?? ON ??.sampleID = ??.sampleID`,
+            // [table1, table2, table1, table2]);
         console.log(result);
         var header = [];
         console.log(header)
-        var fields = result[1];
-
+        var fields = Object.keys(result[0]);
+        console.log(fields);
         for (var i = 0; i < fields.length; i++) {
             console.log(fields[i]);
             //Sketchy way of doing it, should replace
             var flag = 0;
             for (var j = 0; j < header.length; j++) {
-                if (fields[i].name === header[j]) {
+                if (fields[i] === header[j]) {
                     flag = 1;
                 }
             }
             if (flag === 0) {
-                header.push(fields[i].name);
+                header.push(fields[i]);
             }
 
         }
-        stringify(result[0], {
+        console.log(header);
+        stringify(result, {
             formatters: {
                 date: function (value) {
                     return moment(value).format('YYYY-MM-DD');
@@ -682,14 +698,22 @@ function importCalibrations() {
     importData("calibrations");
 }
 
+function exportCount(){
+    exportData("counts");
+}
+
+function exportMeasure(){
+    exportData("measures");
+}
+
 //Export MySql Count Table to csv file
-function exportCount() {
-    exportJoinedData("counts", "samples");
+function exportJoinedCount() {
+    exportJoinedData("counts", "samples", "lakes", "species", "groups","gears");
 }
 
 //Export MySql Measure Table to csv file
-function exportMeasure() {
-    exportJoinedData("measures", "samples");
+function exportJoinedMeasure() {
+    exportJoinedData("measures", "samples", "lakes", "species", "groups", "gears");
 }
 
 
@@ -775,7 +799,7 @@ function loadSpecies(table, callback) {
 
 //Load Groups page
 function loadGroups(table, callback) {
-    var html = '<button class="btn btn-default" id="addGroupBtn" onclick="loadAddWindow(\'group\')">Add Group</button>';
+    var html = '<button class="btn btn-default" id="addGroupBtn" onclick="loadAddWindow(\'groups\')">Add Group</button>';
     html += '<button class="btn btn-default" id="importGroups" onclick="importGroups()">Import Group List</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
 
@@ -786,6 +810,7 @@ function loadGroups(table, callback) {
 function loadCounts(table, callback) {
     var html = '<button class="btn btn-default" id="startCountBtn" onclick="showCountWindow()">Start Counting</button>';
     html += '<button class="btn btn-default" id="exportCountBtn" onclick="exportCount()">Export Data</button>';
+    html += '<button class="btn btn-default" id="exportJoinedCountBtn" onclick="exportJoinedCount()">Export Joined Data</button>';
     html += '<button class="btn btn-default" id="importCount" onclick="importCount()">Import Data</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
 
@@ -798,6 +823,7 @@ function loadMeasures(table, callback) {
 
     var html = '<button class="btn btn-default" id="startMeasureBtn" onclick="showMeasureWindow()">Start Measuring</button>';
     html += '<button class="btn btn-default" id="exportMeasureBtn" onclick="exportMeasure()">Export Data</button>';
+    html += '<button class="btn btn-default" id="exportJoinedMeasureBtn" onclick="exportJoinedMeasure()">Export Joined Data</button>';
     html += '<button class="btn btn-default" id="importMeasureBtn" onclick="importMeasure()">Import Data</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
     loadTable(table, callback);
@@ -829,7 +855,14 @@ function loadAttributes() {
 }
 
 //Load Gear page
-function loadGear() {
+function loadGears(table, callback) {
+    var html = '<button class="btn btn-default" id="addGearBtn" onclick="loadAddWindow(\'gears\')">Add Gear</button>';
+    html += '<button class="btn btn-default" id="importGearsBtn" onclick="importGears()">Import Gears</button><br></br>';
+
+    document.querySelector('#buttonSection').innerHTML = html;
+
+    loadTable(table, callback);
+
     // document.getElementById("content").innerHTML = '<object type="text/html" data="html/gear.html" ></object>';
 }
 
@@ -960,36 +993,54 @@ function deleteRow(btn, table) {
 /************************************************************
         SETTINGS 
 *************************************************************/
+function loadDBSettings() {
+    var w = document.getElementById("DBSettings");
+    // var x = document.getElementById("DBFile");
+    // var y = document.getElementById("DBCreate");
+    // var z = document.getElementById("DBDelete");
+
+    w.style.display = "block";
+    // x.style.display = "none";
+    // y.style.display = "none";
+    // z.style.display = "none";
+}
 //Load Select Database File Tab
-function loadDBFile() {
-    var x = document.getElementById("DBFile");
-    var y = document.getElementById("DBCreate");
-    var z = document.getElementById("DBDelete");
+// function loadDBFile() {
+//     var w = document.getElementById("DBSettings");
+//     var x = document.getElementById("DBFile");
+//     var y = document.getElementById("DBCreate");
+//     var z = document.getElementById("DBDelete");
 
-    x.style.display = "block";
-    y.style.display = "none";
-    z.style.display = "none";
-}
-//Load Create Database Tab
-function loadDBCreate() {
-    var x = document.getElementById("DBFile");
-    var y = document.getElementById("DBCreate");
-    var z = document.getElementById("DBDelete");
-    x.style.display = "none";
-    y.style.display = "block";
-    z.style.display = "none";
-}
-//Load Delete Database Tab
-function loadDBDelete() {
-    var x = document.getElementById("DBFile");
-    var y = document.getElementById("DBCreate");
-    var z = document.getElementById("DBDelete");
+//     w.style.display = "none";
+//     x.style.display = "block";
+//     y.style.display = "none";
+//     z.style.display = "none";
+// }
+// //Load Create Database Tab
+// function loadDBCreate() {
+//     var w = document.getElementById("DBSettings");
+//     var x = document.getElementById("DBFile");
+//     var y = document.getElementById("DBCreate");
+//     var z = document.getElementById("DBDelete");
 
-    x.style.display = "none";
-    y.style.display = "none";
-    z.style.display = "block";
+//     w.style.display = "none";
+//     x.style.display = "none";
+//     y.style.display = "block";
+//     z.style.display = "none";
+// }
+// //Load Delete Database Tab
+// function loadDBDelete() {
+//     var w = document.getElementById("DBSettings");
+//     var x = document.getElementById("DBFile");
+//     var y = document.getElementById("DBCreate");
+//     var z = document.getElementById("DBDelete");
 
-}
+//     w.style.display = "none";
+//     x.style.display = "none";
+//     y.style.display = "none";
+//     z.style.display = "block";
+
+// }
 
 //Save Database Setting
 function setDB() {
@@ -1085,14 +1136,15 @@ async function createNewDatabase() {
 
         var result = await knex.raw(`CREATE TABLE counts (countID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), speciesType varchar(10), sampleID int(5))`);
         var result = await knex.raw(`CREATE TABLE countTypes (countType varchar(10) PRIMARY KEY)`);
-        var result = await knex('counttypes').insert([{ countType: 'Cell' }, { countType: 'Piece' }]);
-        var result = await knex.raw(`CREATE TABLE lakes (lakeCode INTEGER PRIMARY KEY AUTOINCREMENT, lakeName varchar(10))`);
+        var result = await knex('counttypes').insert([{ countType: 'Cell' }, { countType: 'Natural Units' }]);
+        var result = await knex.raw(`CREATE TABLE lakes (lakeID INTEGER PRIMARY KEY AUTOINCREMENT, lakeName varchar(10))`);
         var result = await knex.raw(`CREATE TABLE measures (measureID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), length float(10), width float(10), area float(10), volume float(10), sampleID int(5))`);
         var result = await knex.raw(`CREATE TABLE species (speciesID int(3) PRIMARY KEY, speciesAbbrev varchar(8), speciesName varchar(20), depth int(11), groupID varchar(5))`);
         var result = await knex.raw(`CREATE TABLE groups (groupID varchar(5) PRIMARY KEY, groupName varchar(50))`);
-        var result = await knex.raw(`CREATE TABLE samples (sampleID int(5) PRIMARY KEY, type varchar(5), lakeID int(4), date date, crewChief varchar(5), gearID int(3), stationID int(3), numTow int(3), towLength int(5), volume float(5))`);
+        var result = await knex.raw(`CREATE TABLE samples (sampleID int(5) PRIMARY KEY, type varchar(5), lakeID int(4), date date, crewChief varchar(5), gearID int(3), stationID int(3), numTow int(3), towLength int(5), sampleVolume float(5))`);
         var result = await knex.raw(`CREATE TABLE calibrations (calibrationID INTEGER PRIMARY KEY AUTOINCREMENT, calibrationName varchar(10), pixelToDistanceRatio float(25))`);
         var result = await knex.raw(`CREATE TABLE formulas (formulaID int(5) PRIMARY KEY, formulaName varchar(20))`);
+        var result = await knex.raw(`CREATE TABLE gears (gearID int(3) PRIMARY KEY, gearType varchar(5), gearDesc varchar(25), meshSize int(4), diameter int(6), area int(6), volume int(6))`);
 
 
         //Set new database

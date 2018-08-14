@@ -47,7 +47,7 @@ async function loadForm(table, info) {
         }
     }
 
-    html += '<button id="editBtn" type="button" class="btn btn-system btn-primary" onclick="updateDB(\'' + table + '\')">Save</button>';
+    html += '<button id="editBtn" type="submit" class="btn btn-system btn-primary" onclick="updateDB(\'' + table + '\')">Save</button>';
 
     document.getElementById("editForm").innerHTML = html;
 }
@@ -66,9 +66,12 @@ async function updateDB(table) {
             pKeyValue = value;
         }
         else {
-
-            var result = knex.raw('UPDATE ?? SET ?? = ? WHERE ??.?? = ?',[table, key, value, table, pKey, pKeyValue]);
-            var sql = 'UPDATE ?? SET ?? = ? WHERE ??.?? = ?';
+            var result = await knex(table).where(pKey, '=', pKeyValue).update({
+                [key]: value
+            });
+            console.log(result);
+            // var result = knex.raw('UPDATE ?? SET ?? = ? WHERE ??.?? = ?',[table, key, value, table, pKey, pKeyValue]);
+            // var sql = 'UPDATE ?? SET ?? = ? WHERE ??.?? = ?';
             ipcRenderer.send('refreshTable', table);
             ipcRenderer.send('refreshCountAndMeasureDropdowns');
         }
