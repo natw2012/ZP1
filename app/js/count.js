@@ -16,7 +16,7 @@ var knex = require('../js/config.js').connect();
 //Refresh Count Dropdowns on Call from Main
 //Receive call from another window
 ipcRenderer.on('refreshCountDropdowns', function (e) {
-    loadSampleIDs();
+    loadSubsampleIDs();
     loadCountingTypes();
     loadSpeciesDropdown();
 });
@@ -27,17 +27,17 @@ function random_rgba() {
 }
 
 //Load dropdown of Sample IDs from database
-async function loadSampleIDs() {
+async function loadSubsampleIDs() {
     //Clear options 
-    removeOptions(document.getElementById("sampleIDSelect"));
+    removeOptions(document.getElementById("subsampleIDSelect"));
 
-    var result = await knex('samples').select('sampleID');
+    var result = await knex('subsamples').select('subsampleID');
     var option;
     for (var i = 0; result[i] != null; i++) {
         option = document.createElement("option");
-        option.text = result[i].sampleID;
-        option.id = result[i].sampleID;
-        document.getElementById("sampleIDSelect").appendChild(option);
+        option.text = result[i].subsampleID;
+        option.id = result[i].subsampleID;
+        document.getElementById("subsampleIDSelect").appendChild(option);
     }
 }
 
@@ -133,15 +133,25 @@ function getSampleID() {
     return text;
 }
 
+
+//Get selected Sample Id in dropdown
+function getSubsampleID() {
+    var e = document.getElementById("subsampleIDSelect");
+    console.log(e);
+    var text = e.options[e.selectedIndex].value;
+    console.log(text)
+    return text;
+}
+
 //Add Count to database
 async function addCount() {
 
     //Prevent DB insert if select is on default message
     var speciesID = getSpeciesID();
-    var sampleID = getSampleID();
+    var subsampleID = getSubsampleID();
     var type = getType();
-    if (speciesID != "" && sampleID != "") {
-        var result = await knex('counts').insert({ 'speciesID': speciesID, 'speciesType': type, 'sampleID': sampleID });
+    if (speciesID != "" && subsampleID != "") {
+        var result = await knex('counts').insert({ 'speciesID': speciesID, 'speciesType': type, 'subsampleID': subsampleID });
         markerID = result.insertId;
         // console.log(markerID);
         console.log("after getCount");
@@ -179,10 +189,10 @@ function refreshCountTable() {
 //Get number of entries of selected species
 async function getCount() {
     var speciesID = getSpeciesID();
-    var sampledID = getSampleID();
+    var subsampledID = getSubsampleID();
     var result = await knex('counts')
         .select('speciesID', knex.raw('count(*) as total'))
-        .where('sampleID', sampledID)
+        .where('subsampleID', subsampledID)
         .groupBy('speciesID');
 
     console.log(result);
@@ -267,7 +277,7 @@ function init() {
     //Load all dropdowns and count
     loadSpeciesDropdown(); 
     loadCountingTypes();
-    loadSampleIDs();
+    loadSubsampleIDs();
     getCount();
 
     //Add event listeners for resizing, buttons, and dropdowns
@@ -275,13 +285,13 @@ function init() {
     document.getElementById("clear").addEventListener('click', clearCanvas, false);
     document.getElementById("delete").addEventListener('click', deleteCircle, false);
     document.getElementById("speciesSelect").addEventListener('change', getCount);
-    document.getElementById("sampleIDSelect").addEventListener('change', getCount);
+    document.getElementById("subsampleIDSelect").addEventListener('change', getCount);
 
     //On Mouse Double Click, draw dot and add to database
     canvas.on('mouse:dblclick', function (options) {
         //Alert user to input species
-        if (document.getElementById("sampleIDSelect").value === "Select Sample ID") {
-            ipcRenderer.send('errorMessage', win.id, "Must Select Sample");
+        if (document.getElementById("subsampleIDSelect").value === "Select Subsample ID") {
+            ipcRenderer.send('errorMessage', win.id, "Must Select Subsample");
         }
         else if (document.getElementById("speciesSelect").value === "Select Species") {
             ipcRenderer.send('errorMessage', win.id, "Must Select Species");

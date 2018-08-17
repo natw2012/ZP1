@@ -6,6 +6,7 @@ const electron = require('electron');
 const { ipcRenderer } = electron;
 var dataType = require('../js/sqltohtmldatatype.js');
 var knex = require('../js/config.js').connect();
+var win = electron.remote.getCurrentWindow();
 
 ipcRenderer.on('onload-user', function (data) {
     console.log(data);
@@ -24,11 +25,11 @@ ipcRenderer.on('loadAdd', function (e, table) {
 async function loadForm(table) {
 
     var html = "";
-    console.log('PRAGMA TABLE_INFO(??)',table);
+    console.log('PRAGMA TABLE_INFO(??)', table);
     var result = await knex.raw(`PRAGMA TABLE_INFO(groups)`);
     console.log(result);
     var fields = [];
-    for (var i =0;i<result.length;i++){
+    for (var i = 0; i < result.length; i++) {
         fields.push(result[i].name);
     }
     console.log(fields);
@@ -65,24 +66,32 @@ async function loadForm(table) {
 
 //Add to Database from form input
 async function addToDB(table) {
+    try {
+        console.log(document.querySelector("form"));
+        var formData = new FormData(document.querySelector("form"));
+        var keys = [];
+        var values = [];
 
-    console.log(document.querySelector("form"));
-    var formData = new FormData(document.querySelector("form"));
-    var keys = [];
-    var values = [];
+        for (var [key, value] of formData.entries()) {
+            keys.push(key);
+            values.push(value);
+        }
 
-    for (var [key, value] of formData.entries()) {
-        keys.push(key);
-        values.push(value);
+        console.log(keys, values);
+        console.log(table);
+
+        //Raw parameter binding
+        var result = await knex.raw('INSERT INTO ?? VALUES (' + values.map(_ => '?').join(',') + ')', [table, ...values]);
+
+        ipcRenderer.send('refreshTable', table);
+        ipcRenderer.send('refreshCountAndMeasureDropdowns');
+        ipcRenderer.send('hideAddWindow');
+    }
+    catch(err) {
+        ipcRenderer.send('errorMessage', win.id, err.message);
+        ipcRenderer.send('hideAddWindow');
     }
 
-    console.log(keys, values);
-    console.log(table);
 
-    //Raw parameter binding
-    var result = await knex.raw('INSERT INTO ?? VALUES (' + values.map(_ => '?').join(',') + ')', [table, ...values]);
-
-    ipcRenderer.send('refreshTable', table);
-    ipcRenderer.send('refreshCountAndMeasureDropdowns');
 
 }

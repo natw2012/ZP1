@@ -24,7 +24,7 @@ var knex = require('../js/config.js').connect();
 //Refresh Measure Dropdowns on Call from Main
 //Receive call from another window
 ipcRenderer.on('refreshMeasureDropdowns', function (e) {
-    loadSampleIDs();
+    loadSubsampleIDs();
     loadSpeciesDropdown();
     loadCustomFormulas();
     loadCalibrationSelect();
@@ -62,18 +62,18 @@ function deleteObject() {
 }
 
 //Load Sample IDs into select
-async function loadSampleIDs() {
+async function loadSubsampleIDs() {
     //Clear options 
-    removeOptions(document.getElementById("sampleIDSelect"));
+    removeOptions(document.getElementById("subsampleIDSelect"));
 
     var option;
-    var result = await knex('samples').select("sampleID");
+    var result = await knex('subsamples').select("subsampleID");
     console.log(result);
     for (var i = 0; result[i] != null; i++) {
         option = document.createElement("option");
-        option.text = result[i].sampleID;
-        option.id = result[i].sampleID;
-        document.getElementById("sampleIDSelect").appendChild(option);
+        option.text = result[i].subsampleID;
+        option.id = result[i].subsampleID;
+        document.getElementById("subsampleIDSelect").appendChild(option);
     }
 }
 
@@ -249,16 +249,16 @@ async function submit() {
     if (!calibrationRatio) {
         ipcRenderer.send('errorMessage', win.id, "Please enter known distance to calibrate");
     }
-    else if (!document.getElementById("sampleIDSelect").value) {
-        ipcRenderer.send('errorMessage', win.id, "Please select sample ID");
-        document.getElementById("sampleIDSelect").focus();
+    else if (!document.getElementById("subsampleIDSelect").value) {
+        ipcRenderer.send('errorMessage', win.id, "Please select subsample ID");
+        document.getElementById("subsampleIDSelect").focus();
     }
     else if (!document.getElementById("speciesSelect").value) {
         ipcRenderer.send('errorMessage', win.id, "Please select species");
         document.getElementById("speciesSelect").focus();
     }
     else if (!document.getElementById("lengthOutput").value) {
-        ipcRenderer.send('errorMessage', win.id, "Please draw shape");
+        ipcRenderer.send('errorMessage', win.id, "Please draw/select shape");
         document.getElementById("shapeSelect").focus();
     }
     //Should clean up this logic
@@ -277,7 +277,7 @@ async function submit() {
             width: document.getElementById("widthOutput").value,
             area: document.getElementById("totalAreaOutput").value,
             volume: document.getElementById("totalAreaOutput").value * result[0].depth,
-            sampleID: document.getElementById("sampleIDSelect").value,
+            subsampleID: document.getElementById("subsampleIDSelect").value,
         }
         //Insert measurement into db
         var result = await knex('measures').insert(measure);
@@ -604,7 +604,7 @@ function devTest() {
     pixelToDistanceRatio();
     drawRect();
     canvas.setActiveObject(canvas.item(0));
-    document.getElementById("sampleIDSelect").selectedIndex = 1;
+    document.getElementById("subsampleIDSelect").selectedIndex = 1;
     document.getElementById("speciesSelect").selectedIndex = 1;
 
 }
@@ -695,7 +695,7 @@ function removeOptions(selectBox) {
 function init() {
     canvas = new fabric.Canvas('canvas');
     resizeCanvas();
-    loadSampleIDs();
+    loadSubsampleIDs();
     loadSpeciesDropdown();
     loadCustomFormulas();
     loadCalibrationSelect()

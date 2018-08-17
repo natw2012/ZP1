@@ -36,6 +36,7 @@ var radarChart = null;
 //Refresh Dashboard
 async function refreshDashboard() {
     await loadSampleIDs();
+    await loadSubsampleIDs();
     loadDashboard();
     document.getElementById("sampleIDSelect").addEventListener('change', loadDashboard);
     window.addEventListener('resize', resizeCanvas, false);
@@ -46,6 +47,7 @@ async function loadSampleIDs() {
 
     //Clear options 
     removeOptions(document.getElementById("sampleIDSelect"));
+    removeOptions(document.getElementById("sampleIDSelectCM"));
 
     var sampleIDs = await knex('samples').select('sampleID');
     var option;
@@ -54,11 +56,29 @@ async function loadSampleIDs() {
         option.text = sampleIDs[i].sampleID;
         option.id = sampleIDs[i].sampleID;
         document.getElementById("sampleIDSelect").appendChild(option);
+        document.getElementById("sampleIDSelectCM").appendChild(option);
+    }
+
+}
+//Load Subsample IDs into select
+async function loadSubsampleIDs() {
+
+    var sampleID = getSampleID();
+    //Clear options 
+    removeOptions(document.getElementById("subsampleIDSelect"));
+
+    var subsampleIDs = await knex('subsamples').select('subsampleID').where('sampleID', sampleID);
+    var option;
+    for (var i = 0; subsampleIDs[i] != null; i++) {
+        option = document.createElement("option");
+        option.text = subsampleIDs[i].subsampleID;
+        option.id = subsampleIDs[i].subsampleID;
+        document.getElementById("subsampleIDSelect").appendChild(option);
     }
 
 }
 
-
+//Get sample ID from dashboard dropdown
 function getSampleID() {
     var e = document.getElementById("sampleIDSelect");
     if (e.options[e.selectedIndex]) {
@@ -73,44 +93,183 @@ function getSampleID() {
     }
 }
 
-async function loadSpeciesCountChart() {
+//Get sample ID from dashboard dropdown
+function getSampleIDCounts() {
+    var e = document.getElementById("sampleIDSelectCounts");
+    if (e.options[e.selectedIndex]) {
+        var text = e.options[e.selectedIndex].text;
+        console.log(text);
+        return text;
+    }
+    else {
+        //When database has no samples, return -1
+        console.log("Error in sampleID");
+        return (-1);
+    }
+}
 
+//Get subsample ID from dashboard dropdown
+function getSubsampleID() {
+    var e = document.getElementById("subsampleIDSelect");
+    if (e.options[e.selectedIndex]) {
+        var text = e.options[e.selectedIndex].text;
+        console.log(text);
+        return text;
+    }
+    else {
+        //When database has no subsamples, return -1
+        console.log("Error in subsampleID");
+        return (-1);
+    }
+}
+
+//Load sum of counts for dashboard
+async function loadCountsSum() {
     var sampleID = getSampleID();
-    console.log(sampleID);
-    var numSpecies = await knex.raw(`
-    SELECT speciesAbbrev, T1.speciesID, count1
-    FROM (
-        SELECT counts.speciesID, COUNT(*) as count1 
-        FROM counts 
-        WHERE sampleID = ?
-        GROUP BY speciesID) AS T1
-    JOIN (
-        SELECT species.speciesID, speciesAbbrev 
-        FROM species) AS T2
-    ON T1.speciesID = T2.speciesID
-    `, sampleID);
+    var subsampleID = getSubsampleID();
+    console.log(subsampleID);
+    var total = 0;
+
+    if (subsampleID === "All Subsamples") {
+        var allSubsamples = await knex('subsamples').where('sampleID', sampleID);
+
+        for (var i = 0; i < allSubsamples.length; i++) {
+            var result = await knex.raw(`
+                SELECT count1
+                FROM (
+                    SELECT COUNT(*) as count1 
+                    FROM counts 
+                    WHERE subsampleID = ?
+                    GROUP BY speciesID) 
+                `, allSubsamples[i].subsampleID);
+            for (var j = 0; j < result.length; j++) {
+                total += result[j].count1;
+            }
+        }
+    }
+    else {
+        var result = await knex.raw(`
+        SELECT count1
+            FROM (
+                SELECT COUNT(*) as count1 
+                FROM counts 
+                WHERE subsampleID = ?
+                GROUP BY speciesID) 
+        `, subsampleID);
+
+        for (var i = 0; i < result.length; i++) {
+            total += result[i].count1;
+        }
+    }
+
+    document.getElementById("countsSum").innerHTML = total;
+
+}
+
+//Load sum of measures for dashboard
+async function loadMeasuresSum() {
+    var sampleID = getSampleID();
+    var subsampleID = getSubsampleID();
+    console.log(subsampleID);
+    var total = 0;
+
+    if (subsampleID === "All Subsamples") {
+        var allSubsamples = await knex('subsamples').where('sampleID', sampleID);
+
+        for (var i = 0; i < allSubsamples.length; i++) {
+            var result = await knex.raw(`
+                SELECT count1
+                FROM (
+                    SELECT COUNT(*) as count1 
+                    FROM measures 
+                    WHERE subsampleID = ?
+                    GROUP BY speciesID) 
+                `, allSubsamples[i].subsampleID);
 
 
-    // var numSpecies = await knex.select('speciesAbbrev,T1.speciesID, count1')
-    // .from(knex('counts')
-    //     .select('counts.speciesID', 'COUNT(*) as count1')
-    //     .where('sampleID',sampleID)
-    //     .groupBy('speciesID')
-    //     .as('T1'))
-    // .join(knex('species')
-    //     .select('species.speciesID', 'speciesAbbrev')
-    //     .as('T2'))
-    // .on('T1.speciesID = T2.speciesID');
+            for (var j = 0; j < result.length; j++) {
+                console.log(result[j].count1);
+                total += result[j].count1;
+            }
+            console.log(total);
+        }
+    }
+    else {
+        var result = await knex.raw(`
+        SELECT count1
+            FROM (
+                SELECT COUNT(*) as count1 
+                FROM measures 
+                WHERE subsampleID = ?
+                GROUP BY speciesID) 
+        `, subsampleID);
 
-    // var test1 = await knex('counts')
-    // .select('counts.speciesID', knex('counts').count('*').as('count1'))
-    // .where('sampleID',sampleID)
-    // .groupBy('speciesID')
-    // .as('T1');
+        for (var i = 0; i < result.length; i++) {
+            total += result[i].count1;
+        }
+        console.log(total);
+    }
 
-    // console.log(test1);
+    document.getElementById("measuresSum").innerHTML = total;
+}
 
+//Load chart of species counts
+async function loadSpeciesCountChart() {
+    var sampleID = getSampleID();
+    var subsampleID = getSubsampleID();
+    console.log(subsampleID);
+    var numSpecies = [];
 
+    if (subsampleID === "All Subsamples") {
+        var allSubsamples = await knex('subsamples').where('sampleID', sampleID);
+
+        for (var i = 0; i < allSubsamples.length; i++) {
+            var result = await knex.raw(`
+                SELECT speciesAbbrev, T1.speciesID, count1
+                FROM (
+                    SELECT counts.speciesID, COUNT(*) as count1 
+                    FROM counts 
+                    WHERE subsampleID = ?
+                    GROUP BY speciesID) AS T1
+                JOIN (
+                    SELECT species.speciesID, speciesAbbrev 
+                    FROM species) AS T2
+                ON T1.speciesID = T2.speciesID
+                `, allSubsamples[i].subsampleID);
+
+            for (var j = 0; j < result.length; j++) {
+                if (numSpecies.length > 0) {
+                    for (var k = 0; k < numSpecies.length; k++) {
+                        if (result[j].speciesID == numSpecies[k].speciesID) {
+                            numSpecies[k].count1 += result[j].count1;
+                            break;
+                        }
+                        else if (k + 1 === numSpecies.length) {
+                            numSpecies.push(result[j]);
+                            break;
+                        }
+                    }
+                }
+                else {
+                    numSpecies.push(result[j]);
+                }
+            }
+        }
+    }
+    else {
+        numSpecies = await knex.raw(`
+        SELECT speciesAbbrev, T1.speciesID, count1
+        FROM (
+            SELECT counts.speciesID, COUNT(*) as count1 
+            FROM counts 
+            WHERE subsampleID = ?
+            GROUP BY speciesID) AS T1
+        JOIN (
+            SELECT species.speciesID, speciesAbbrev 
+            FROM species) AS T2
+        ON T1.speciesID = T2.speciesID
+        `, subsampleID);
+    }
     console.log(numSpecies);
     var str = JSON.parse(JSON.stringify(numSpecies));
     console.log(str);
@@ -166,23 +325,63 @@ async function loadSpeciesCountChart() {
     })
 }
 
+//Load chart of species measures
 async function loadSpeciesMeasureChart() {
-
-
     var sampleID = getSampleID();
-    console.log(sampleID);
-    var numSpecies = await knex.raw(`
-    SELECT speciesAbbrev, T1.speciesID, count1
-    FROM (
-        SELECT measures.speciesID, COUNT(*) as count1 
-        FROM measures 
-        WHERE sampleID = ?
-        GROUP BY speciesID) AS T1
-    JOIN (
-        SELECT species.speciesID, speciesAbbrev 
-        FROM species) AS T2
-    ON T1.speciesID = T2.speciesID
-    `, sampleID);
+    var subsampleID = getSubsampleID();
+    console.log(subsampleID);
+    var numSpecies = [];
+
+    if (subsampleID === "All Subsamples") {
+        var allSubsamples = await knex('subsamples').where('sampleID', sampleID);
+
+        for (var i = 0; i < allSubsamples.length; i++) {
+            var result = await knex.raw(`
+                SELECT speciesAbbrev, T1.speciesID, count1
+                FROM (
+                    SELECT measures.speciesID, COUNT(*) as count1 
+                    FROM measures 
+                    WHERE subsampleID = ?
+                    GROUP BY speciesID) AS T1
+                JOIN (
+                    SELECT species.speciesID, speciesAbbrev 
+                    FROM species) AS T2
+                ON T1.speciesID = T2.speciesID
+                `, allSubsamples[i].subsampleID);
+
+            for (var j = 0; j < result.length; j++) {
+                if (numSpecies.length > 0) {
+                    for (var k = 0; k < numSpecies.length; k++) {
+                        if (result[j].speciesID == numSpecies[k].speciesID) {
+                            numSpecies[k].count1 += result[j].count1;
+                            break;
+                        }
+                        else if (k + 1 === numSpecies.length) {
+                            numSpecies.push(result[j]);
+                            break;
+                        }
+                    }
+                }
+                else {
+                    numSpecies.push(result[j]);
+                }
+            }
+        }
+    }
+    else {
+        numSpecies = await knex.raw(`
+            SELECT speciesAbbrev, T1.speciesID, count1
+        FROM (
+            SELECT measures.speciesID, COUNT(*) as count1 
+            FROM measures 
+            WHERE subsampleID = ?
+            GROUP BY speciesID) AS T1
+        JOIN (
+            SELECT species.speciesID, speciesAbbrev 
+            FROM species) AS T2
+        ON T1.speciesID = T2.speciesID
+        `, subsampleID);
+    }
 
     console.log(numSpecies);
 
@@ -240,6 +439,7 @@ async function loadSpeciesMeasureChart() {
     })
 }
 
+//Load size chart
 async function loadSizeChart() {
 
     var species = await knex.raw(`
@@ -337,21 +537,65 @@ async function loadSizeChart() {
     })
 }
 
+//Load chart of biomass sample sums 
 async function loadBiomassSampleSumChart() {
+
     var sampleID = getSampleID();
-    console.log(sampleID);
-    var numSpecies = await knex.raw(`
-    SELECT speciesAbbrev, T1.speciesID, sum1
-    FROM (
-        SELECT speciesID, SUM(volume) as sum1 
-        FROM measures 
-        WHERE sampleID = ?
-        GROUP BY speciesID) AS T1
-    JOIN (
-        SELECT species.speciesID, speciesAbbrev 
-        FROM species) AS T2
-    ON T1.speciesID = T2.speciesID
-    `, sampleID);
+    var subsampleID = getSubsampleID();
+    console.log(subsampleID);
+    var numSpecies = [];
+
+    if (subsampleID === "All Subsamples") {
+        var allSubsamples = await knex('subsamples').where('sampleID', sampleID);
+
+        for (var i = 0; i < allSubsamples.length; i++) {
+            var result = await knex.raw(`
+                SELECT speciesAbbrev, T1.speciesID, sum1
+                FROM (
+                    SELECT speciesID, SUM(volume) as sum1 
+                    FROM measures 
+                    WHERE subsampleID = ?
+                    GROUP BY speciesID) AS T1
+                JOIN (
+                    SELECT species.speciesID, speciesAbbrev 
+                    FROM species) AS T2
+                ON T1.speciesID = T2.speciesID
+                `, allSubsamples[i].subsampleID);
+
+            for (var j = 0; j < result.length; j++) {
+                if (numSpecies.length > 0) {
+                    for (var k = 0; k < numSpecies.length; k++) {
+                        if (result[j].speciesID == numSpecies[k].speciesID) {
+                            numSpecies[k].sum1 += result[j].sum1;
+                            break;
+                        }
+                        else if (k + 1 === numSpecies.length) {
+                            numSpecies.push(result[j]);
+                            break;
+                        }
+                    }
+                }
+                else {
+                    numSpecies.push(result[j]);
+                }
+            }
+        }
+    }
+    else {
+        numSpecies = await knex.raw(`
+        SELECT speciesAbbrev, T1.speciesID, sum1
+        FROM (
+            SELECT speciesID, SUM(volume) as sum1 
+            FROM measures 
+            WHERE subsampleID = ?
+            GROUP BY speciesID) AS T1
+        JOIN (
+            SELECT species.speciesID, speciesAbbrev 
+            FROM species) AS T2
+        ON T1.speciesID = T2.speciesID
+        `, subsampleID);
+    }
+
     console.log(numSpecies);
 
     var str = JSON.parse(JSON.stringify(numSpecies));
@@ -418,6 +662,7 @@ async function loadBiomassSampleSumChart() {
     });
 }
 
+//Bar chart for testing
 async function loadBarChart() {
     var ctx = document.getElementById("barChart").getContext('2d');
     var data = [1, 2, 3, 4];
@@ -472,6 +717,7 @@ async function loadBarChart() {
     });
 }
 
+//Radar chart for testing
 async function loadRadarChart() {
     var ctx = document.getElementById("radarChart").getContext('2d');
     var data = [1, 2, 3, 4];
@@ -483,6 +729,7 @@ async function loadRadarChart() {
     radarChart = new Chart(ctx, { "type": "radar", "data": { "labels": ["Eating", "Drinking", "Sleeping", "Designing", "Coding", "Cycling", "Running"], "datasets": [{ "label": "My First Dataset", "data": [65, 59, 90, 81, 56, 55, 40], "fill": true, "backgroundColor": "rgba(255, 99, 132, 0.2)", "borderColor": "rgb(255, 99, 132)", "pointBackgroundColor": "rgb(255, 99, 132)", "pointBorderColor": "#fff", "pointHoverBackgroundColor": "#fff", "pointHoverBorderColor": "rgb(255, 99, 132)" }, { "label": "My Second Dataset", "data": [28, 48, 40, 19, 96, 27, 100], "fill": true, "backgroundColor": "rgba(54, 162, 235, 0.2)", "borderColor": "rgb(54, 162, 235)", "pointBackgroundColor": "rgb(54, 162, 235)", "pointBorderColor": "#fff", "pointHoverBackgroundColor": "#fff", "pointHoverBorderColor": "rgb(54, 162, 235)" }] }, "options": { "elements": { "line": { "tension": 0, "borderWidth": 3 } } } });
 }
 
+//Adjust canvas for window size changes
 function resizeCanvas() {
     canvas = document.querySelectorAll("canvas");
     console.log(canvas);
@@ -497,8 +744,12 @@ function resizeCanvas() {
     loadDashboard();
 }
 
+
+//Load all Dashboard components
 function loadDashboard() {
 
+    loadCountsSum();
+    loadMeasuresSum();
     loadSpeciesCountChart();
     loadSpeciesMeasureChart();
     loadBiomassSampleSumChart();
@@ -548,11 +799,17 @@ function importData(table) {
                 else if (table === "samples") {
                     loadSamples(table);
                 }
+                else if (table === "subsamples") {
+                    loadSubsamples(table);
+                }
                 else if (table === "formulas") {
                     loadFormulas(table);
                 }
                 else if (table === "lakes") {
                     loadLakes(table);
+                }
+                else if (table === "gears") {
+                    loadGears(table);
                 }
                 else if (table === "calibrations") {
                     loadCalibrations(table);
@@ -581,6 +838,8 @@ function exportData(table) {
         var header = Object.keys(result);
         console.log(header)
 
+        var sampleID = getSampleIDCounts();
+
         var result = await knex(table).select();
         console.log(result);
 
@@ -602,27 +861,52 @@ function exportData(table) {
 }
 
 //Change to join counts/measures with samples by sampleID, species by speciesID, samples with lakes by lakeID and with gear by gearID
-function exportJoinedData(table1, table2, table3, table4, table5, table6) {
+function exportJoinedData(cm, subsample, sample, lake, species, group, gear) {
     // table1 = counts/measures
-    // table2 = samples
-    // table3 = lakes
-    // table4 = species
-    // table5 = groups
-    // table6 = gears
+    // table2 = subsamples
+    // table3 = samples
+    // table4 = lakes
+    // table5 = species
+    // table6 = groups
+    // table7 = gears
+
+
 
     dialog.showSaveDialog({
         filters: [{ name: 'csv', extensions: ['csv'] }
         ]
     }, async function (fileName) {
         if (fileName === undefined) return;
-        var result = await knex.select('*').from(table1)
-            .leftJoin(table2,table1 + '.sampleID', table2 + '.sampleID')
-            .leftJoin(table3, table2+'.lakeID',table3+'.lakeID')
-            .leftJoin(table4, table1+'.speciesID',table4+'.speciesID')
-            .leftJoin(table5, table4+'.groupID',table5+'.groupID')
-            .leftJoin(table6, table2+'.gearID', table6+'.gearID');
+        var sampleID = getSampleIDCounts();
+        // var result = await knex.from(function(){
+        //     this.select('*').from(cm)
+        //     .leftJoin(subsample, cm + '.subsampleID', subsample + '.subsampleID')
+        //     .leftJoin(sample, subsample + '.sampleID', sample + '.sampleID')
+        //     .leftJoin(lake, sample + '.lakeID', lake + '.lakeID')
+        //     .leftJoin(species, cm + '.speciesID', species + '.speciesID')
+        //     .leftJoin(group, species + '.groupID', group + '.groupID')
+        //     .leftJoin(gear, sample + '.gearID', gear + '.gearID')
+        // })           
+        //     .where('sampleID', sampleID);
+
+        var result = await knex.from(
+            (knex(cm).select('*')
+            .leftJoin(subsample, cm + '.subsampleID', subsample + '.subsampleID').as('T2')
+            .leftJoin(sample, subsample + '.sampleID', sample + '.sampleID').as('T3')
+            .leftJoin(lake, sample + '.lakeID', lake + '.lakeID').as('T4')
+            .leftJoin(species, cm + '.speciesID', species + '.speciesID').as('T5')
+            .leftJoin(group, species + '.groupID', group + '.groupID').as('T6')
+            .leftJoin(gear, sample + '.gearID', gear + '.gearID').as('T7')
+            )
+            .as('T1')
+        )
+        .select()
+        .where('sampleID',sampleID);
+        // console.log(subquery);
+
+
         // var result = await knex.raw(`SELECT * FROM ?? LEFT JOIN ?? ON ??.sampleID = ??.sampleID`,
-            // [table1, table2, table1, table2]);
+        // [table1, table2, table1, table2]);
         console.log(result);
         var header = [];
         console.log(header)
@@ -633,7 +917,7 @@ function exportJoinedData(table1, table2, table3, table4, table5, table6) {
             //Sketchy way of doing it, should replace
             var flag = 0;
             for (var j = 0; j < header.length; j++) {
-                if (fields[i] === header[j]) {
+                if (fields[i] === header[j] || fields[i] === header[j] + ":1") {
                     flag = 1;
                 }
             }
@@ -698,22 +982,22 @@ function importCalibrations() {
     importData("calibrations");
 }
 
-function exportCount(){
+function exportCount() {
     exportData("counts");
 }
 
-function exportMeasure(){
+function exportMeasure() {
     exportData("measures");
 }
 
 //Export MySql Count Table to csv file
 function exportJoinedCount() {
-    exportJoinedData("counts", "samples", "lakes", "species", "groups","gears");
+    exportJoinedData("counts", "subsamples", "samples", "lakes", "species", "groups", "gears");
 }
 
 //Export MySql Measure Table to csv file
 function exportJoinedMeasure() {
-    exportJoinedData("measures", "samples", "lakes", "species", "groups", "gears");
+    exportJoinedData("measures", "subsamples", "samples", "lakes", "species", "groups", "gears");
 }
 
 
@@ -737,6 +1021,12 @@ ipcRenderer.on('refreshTable', function (e, table) {
     }
     else if (table === "samples") {
         loadSamples(table, scrollTable);
+    }
+    else if (table === "subsamples") {
+        loadSubsamples(table, scrollTable);
+    }
+    else if (table === "gears") {
+        loadGears(table, scrollTable);
     }
     else if (table === "calibrations") {
         loadCalibrations(table, scrollTable);
@@ -794,6 +1084,9 @@ function loadSpecies(table, callback) {
     html += '<button class="btn btn-default" id="importSpecies" onclick="importSpecies()">Import Species List</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
 
+    var exportHTML = '';
+    document.querySelector('#exportSection').innerHTML = exportHTML;
+
     loadTable(table, callback);
 }
 
@@ -803,16 +1096,30 @@ function loadGroups(table, callback) {
     html += '<button class="btn btn-default" id="importGroups" onclick="importGroups()">Import Group List</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
 
+    var exportHTML = '';
+    document.querySelector('#exportSection').innerHTML = exportHTML;
+
     loadTable(table, callback);
 }
 
 //Load Count page
 function loadCounts(table, callback) {
     var html = '<button class="btn btn-default" id="startCountBtn" onclick="showCountWindow()">Start Counting</button>';
-    html += '<button class="btn btn-default" id="exportCountBtn" onclick="exportCount()">Export Data</button>';
-    html += '<button class="btn btn-default" id="exportJoinedCountBtn" onclick="exportJoinedCount()">Export Joined Data</button>';
     html += '<button class="btn btn-default" id="importCount" onclick="importCount()">Import Data</button><br></br>';
+
+
     document.querySelector('#buttonSection').innerHTML = html;
+
+    var exportHTML = '<label id="sampleIDLblCM" for="sampleIDSelectCM">Sample ID:</label>';
+    exportHTML += '<select id="sampleIDSelectCM">';
+    exportHTML += '<option value="Select Sample ID">Select Sample ID</option>';
+    exportHTML += '</select>';
+    exportHTML += '<button class="btn btn-default" id="exportCountBtn" onclick="exportCount()">Export Data</button>';
+    exportHTML += '<button class="btn btn-default" id="exportJoinedCountBtn" onclick="exportJoinedCount()">Export Joined Data</button>';
+    
+    loadSampleIDs();
+
+    document.querySelector('#exportSection').innerHTML = exportHTML;
 
     loadTable(table, callback);
 
@@ -822,10 +1129,20 @@ function loadCounts(table, callback) {
 function loadMeasures(table, callback) {
 
     var html = '<button class="btn btn-default" id="startMeasureBtn" onclick="showMeasureWindow()">Start Measuring</button>';
-    html += '<button class="btn btn-default" id="exportMeasureBtn" onclick="exportMeasure()">Export Data</button>';
-    html += '<button class="btn btn-default" id="exportJoinedMeasureBtn" onclick="exportJoinedMeasure()">Export Joined Data</button>';
     html += '<button class="btn btn-default" id="importMeasureBtn" onclick="importMeasure()">Import Data</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
+
+    var exportHTML = '<label id="sampleIDLblCM" for="sampleIDSelectCM">Sample ID:</label>';
+    exportHTML += '<select id="sampleIDSelectCM">';
+    exportHTML += '<option value="Select Sample ID">Select Sample ID</option>';
+    exportHTML += '</select>';
+    exportHTML += '<button class="btn btn-default" id="exportMeasureBtn" onclick="exportMeasure()">Export Data</button>';
+    exportHTML += '<button class="btn btn-default" id="exportJoinedMeasureBtn" onclick="exportJoinedMeasure()">Export Joined Data</button>';
+
+    document.querySelector('#exportSection').innerHTML = exportHTML;
+
+    loadSampleIDs();
+
     loadTable(table, callback);
 }
 
@@ -836,6 +1153,9 @@ function loadFormulas(table, callback) {
 
     document.querySelector('#buttonSection').innerHTML = html;
 
+    var exportHTML = '';
+    document.querySelector('#exportSection').innerHTML = exportHTML;
+
     loadTable(table, callback);
 }
 
@@ -845,6 +1165,9 @@ function loadLakes(table, callback) {
     html += '<button class="btn btn-default" id="importLakesBtn" onclick="importLakes()">Import Lakes</button><br></br>';
 
     document.querySelector('#buttonSection').innerHTML = html;
+
+    var exportHTML = '';
+    document.querySelector('#exportSection').innerHTML = exportHTML;
 
     loadTable(table, callback);
 }
@@ -861,6 +1184,9 @@ function loadGears(table, callback) {
 
     document.querySelector('#buttonSection').innerHTML = html;
 
+    var exportHTML = '';
+    document.querySelector('#exportSection').innerHTML = exportHTML;
+
     loadTable(table, callback);
 
     // document.getElementById("content").innerHTML = '<object type="text/html" data="html/gear.html" ></object>';
@@ -873,6 +1199,22 @@ function loadSamples(table, callback) {
 
     document.querySelector('#buttonSection').innerHTML = html;
 
+    var exportHTML = '';
+    document.querySelector('#exportSection').innerHTML = exportHTML;
+
+    loadTable(table, callback);
+}
+
+//Load Subsamples Page
+function loadSubsamples(table, callback) {
+    var html = '<button class="btn btn-default" id="addSubsampleBtn" onclick="loadAddWindow(\'subsamples\')">Add Subsample</button>';
+    html += '<button class="btn btn-default" id="importSubsamplesBtn" onclick="importSubsamples()">Import Subsamples</button><br></br>';
+
+    document.querySelector('#buttonSection').innerHTML = html;
+
+    var exportHTML = '';
+    document.querySelector('#exportSection').innerHTML = exportHTML;
+
     loadTable(table, callback);
 }
 
@@ -882,6 +1224,9 @@ function loadCalibrations(table, callback) {
     html += '<button class="btn btn-default" id="importCalibrationsBtn" onclick="importCalibrations()">Import Calibrations</button><br></br>';
 
     document.querySelector('#buttonSection').innerHTML = html;
+
+    var exportHTML = '';
+    document.querySelector('#exportSection').innerHTML = exportHTML;
 
     loadTable(table, callback);
 }
@@ -950,7 +1295,7 @@ async function loadTable(table, callback) {
         console.log("Query succesfully executed");
         typeof callback === 'function' && callback();
     } catch (err) {
-        ipcRenderer.send('errorMessage', win, err);
+        ipcRenderer.send('errorMessage', win, err.message);
     }
 }
 
@@ -1104,7 +1449,7 @@ function selectDBFile() {
 function removeOptions(selectBox) {
     console.log(selectBox);
     if (selectBox) {
-        for (var i = selectBox.options.length - 1; i >= 0; i--) {
+        for (var i = selectBox.options.length - 1; i > 0; i--) {
             selectBox.remove(i);
         }
     }
@@ -1134,14 +1479,15 @@ async function createNewDatabase() {
             useNullAsDefault: true
         });
 
-        var result = await knex.raw(`CREATE TABLE counts (countID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), speciesType varchar(10), sampleID int(5))`);
+        var result = await knex.raw(`CREATE TABLE counts (countID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), speciesType varchar(10), subsampleID varchar(5))`);
         var result = await knex.raw(`CREATE TABLE countTypes (countType varchar(10) PRIMARY KEY)`);
         var result = await knex('counttypes').insert([{ countType: 'Cell' }, { countType: 'Natural Units' }]);
         var result = await knex.raw(`CREATE TABLE lakes (lakeID INTEGER PRIMARY KEY AUTOINCREMENT, lakeName varchar(10))`);
-        var result = await knex.raw(`CREATE TABLE measures (measureID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), length float(10), width float(10), area float(10), volume float(10), sampleID int(5))`);
+        var result = await knex.raw(`CREATE TABLE measures (measureID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), length float(10), width float(10), area float(10), volume float(10), subsampleID varchar(5))`);
         var result = await knex.raw(`CREATE TABLE species (speciesID int(3) PRIMARY KEY, speciesAbbrev varchar(8), speciesName varchar(20), depth int(11), groupID varchar(5))`);
         var result = await knex.raw(`CREATE TABLE groups (groupID varchar(5) PRIMARY KEY, groupName varchar(50))`);
-        var result = await knex.raw(`CREATE TABLE samples (sampleID int(5) PRIMARY KEY, type varchar(5), lakeID int(4), date date, crewChief varchar(5), gearID int(3), stationID int(3), numTow int(3), towLength int(5), sampleVolume float(5))`);
+        var result = await knex.raw(`CREATE TABLE samples (sampleID varchar(5) PRIMARY KEY, type varchar(5), lakeID int(4), sampleDate date, crewChief varchar(5), gearID int(3), stationID int(3), numTow int(3), towLength int(5), sampleVolume float(5))`);
+        var result = await knex.raw(`CREATE TABLE subsamples (subsampleID varchar(5) PRIMARY KEY, sampleID varchar(5), subsampledate date, subsampleVolume float(5))`);
         var result = await knex.raw(`CREATE TABLE calibrations (calibrationID INTEGER PRIMARY KEY AUTOINCREMENT, calibrationName varchar(10), pixelToDistanceRatio float(25))`);
         var result = await knex.raw(`CREATE TABLE formulas (formulaID int(5) PRIMARY KEY, formulaName varchar(20))`);
         var result = await knex.raw(`CREATE TABLE gears (gearID int(3) PRIMARY KEY, gearType varchar(5), gearDesc varchar(25), meshSize int(4), diameter int(6), area int(6), volume int(6))`);
@@ -1165,7 +1511,7 @@ async function createNewDatabase() {
             }
         }
         );
-    })    
+    })
 }
 
 
@@ -1216,7 +1562,9 @@ async function init() {
 
         await loadSampleIDs();
         loadDashboard();
+        document.getElementById("sampleIDSelect").addEventListener('change', loadSubsampleIDs);
         document.getElementById("sampleIDSelect").addEventListener('change', loadDashboard);
+        document.getElementById("subsampleIDSelect").addEventListener('change', loadDashboard);
         window.addEventListener('resize', resizeCanvas, false);
     }
     catch (err) {

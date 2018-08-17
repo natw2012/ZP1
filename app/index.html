@@ -33,23 +33,43 @@
         <div class="pane-group">
           <div class="pane">
             <div class="container">
+
               <div class="row" style="margin:30px">
                 <div class="col-sm">
                   <div class="form-group" align="center">
                     <button class="btn btn-default" id="refreshDashboardBtn" onclick="refreshDashboard()">Refresh</button>
                     <label id="sampleIDLbl" for="sampleIDSelect">Sample ID:</label>
                     <select id="sampleIDSelect">
+                      <option value="Select Sample ID">Select Sample ID</option>
+                    </select>
+                    <label id="subsampleIDLbl" for="subsampleIDSelect">Subsample ID:</label>
+                    <select id="subsampleIDSelect">
+                      <option value="All Subsamples">All Subsamples</option>
                     </select>
                   </div>
                 </div>
               </div>
+
+              <div class="row" style="margin:30px">
+                <div class="col-sm">
+
+                </div>
+                <div class="col-sm">
+
+                </div>
+              </div>
+
               <div class="row" style="margin:30px">
 
                 <div class="col-sm" id="speciesCountChartCol">
                   <canvas id="speciesCountChart" width="200" height="200"></canvas>
+                  <label>Total Counts:</label>
+                  <label id="countsSum"></label>
                 </div>
                 <div class="col-sm" id="speciesMeasureChartCol">
                   <canvas id="speciesMeasureChart" width="200" height="200"></canvas>
+                  <label>Total Measures:</label>
+                  <label id="measuresSum"></label>
                 </div>
                 <div class="col-sm" id="biomassSampleSumChartCol">
                   <canvas id="biomassSampleSumChart" width="200" height="200"></canvas>
@@ -82,6 +102,7 @@
               <nav-item href="#" onclick="loadSpecies('species')">Species</nav-item>
               <nav-item href="#" onclick="loadGroups('groups')">Groups</nav-item>
               <nav-item href="#" onclick="loadSamples('samples')">Samples</nav-item>
+              <nav-item href="#" onclick="loadSubsamples('subsamples')">Subsamples</nav-item>
               <nav-item href="#" onclick="loadLakes('lakes')">Lakes</nav-item>
               <nav-item href="#" onclick="loadGears('gears')">Gear</nav-item>
               <!-- <nav-item href="#" onclick="loadFormulas('formulas')">Formulas</nav-item> -->
@@ -93,6 +114,7 @@
             <div id="tableSection" style="max-height: 75%; overflow: auto">
               <table class="table-striped-custom" id="table"></table>
             </div>
+            <div id="exportSection" style="padding: 20px"></div>
           </div>
         </div>
       </div>

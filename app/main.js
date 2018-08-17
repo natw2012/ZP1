@@ -319,6 +319,10 @@ ipcMain.on('showEditWindow', function (e, table, info) {
 
 })
 
+ipcMain.on('hideEditWindow', function (e) {
+  editWindow.hide();
+})
+
 ipcMain.on('showAddWindow', function (e, table) {
   addWindow.webContents.send('loadAdd', table);
   addWindow.show();
@@ -329,6 +333,10 @@ ipcMain.on('showAddWindow', function (e, table) {
   // addWindow.webContents.on('did-finish-load', () => {
   //   addWindow.webContents.send('loadAdd', table);
   // })
+})
+
+ipcMain.on('hideAddWindow', function (e) {
+  addWindow.hide();
 })
 
 ipcMain.on('showCountWindow', function (e) {
