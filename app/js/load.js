@@ -50,13 +50,19 @@ async function loadSampleIDs() {
     removeOptions(document.getElementById("sampleIDSelectCM"));
 
     var sampleIDs = await knex('samples').select('sampleID');
+    console.log(sampleIDs)
     var option;
+    var option1;
     for (var i = 0; sampleIDs[i] != null; i++) {
         option = document.createElement("option");
         option.text = sampleIDs[i].sampleID;
         option.id = sampleIDs[i].sampleID;
-        document.getElementById("sampleIDSelect").appendChild(option);
+        option1 = document.createElement("option");
+        option1.text = option.text;
+        option1.id = option.id;
         document.getElementById("sampleIDSelectCM").appendChild(option);
+        document.getElementById("sampleIDSelect").appendChild(option1);
+
     }
 
 }
@@ -93,9 +99,9 @@ function getSampleID() {
     }
 }
 
-//Get sample ID from dashboard dropdown
+//Get sample ID from counts dropdown
 function getSampleIDCounts() {
-    var e = document.getElementById("sampleIDSelectCounts");
+    var e = document.getElementById("sampleIDSelectCM");
     if (e.options[e.selectedIndex]) {
         var text = e.options[e.selectedIndex].text;
         console.log(text);
@@ -1560,7 +1566,7 @@ async function init() {
         //Currently getting non passive event listener warning
         loadDBSelect();
 
-        await loadSampleIDs();
+        // await loadSampleIDs();
         loadDashboard();
         document.getElementById("sampleIDSelect").addEventListener('change', loadSubsampleIDs);
         document.getElementById("sampleIDSelect").addEventListener('change', loadDashboard);

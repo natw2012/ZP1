@@ -23,8 +23,8 @@
   "devDependencies": {
     "devtron": "^1.4.0",
     "electron": "^2.0.7",
-    "electron-builder": "^20.28.1",
-    "electron-packager": "^12.1.0"
+    "electron-builder": "^20.28.2",
+    "electron-packager": "^12.1.1"
   },
   "dependencies": {
     "bluebird": "^3.5.1",
@@ -35,7 +35,7 @@
     "electron-photon": "^1.1.6",
     "electron-reload": "^1.2.5",
     "electron-settings": "^3.2.0",
-    "fabric": "^2.3.5",
+    "fabric": "^2.3.6",
     "filehound": "^1.16.4",
     "jquery": "^3.3.1",
     "knex": "^0.15.2",
