@@ -150,7 +150,7 @@ async function addCount() {
     var speciesID = getSpeciesID();
     var subsampleID = getSubsampleID();
     var type = getType();
-    if (speciesID != "" && subsampleID != "") {
+    if (speciesID != "" && subsampleID != "" && type != "") {
         var result = await knex('counts').insert({ 'speciesID': speciesID, 'speciesType': type, 'subsampleID': subsampleID });
         markerID = result.insertId;
         // console.log(markerID);
@@ -293,9 +293,13 @@ function init() {
         if (document.getElementById("subsampleIDSelect").value === "Select Subsample ID") {
             ipcRenderer.send('errorMessage', win.id, "Must Select Subsample");
         }
+        else if (document.getElementById("typeSelect").value === "Select Type") {
+            ipcRenderer.send('errorMessage', win.id, "Must Select Type");
+        }
         else if (document.getElementById("speciesSelect").value === "Select Species") {
             ipcRenderer.send('errorMessage', win.id, "Must Select Species");
         }
+        
         else {
             drawDot();
             addCount();

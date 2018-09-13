@@ -720,7 +720,7 @@ function init() {
     document.getElementById("deleteObjectBtn").addEventListener('click', deleteObject, false);
     document.getElementById("shapeSelectManual").addEventListener('change', manualModeOutput, false);
 
-    document.getElementById("devBtn").addEventListener('click', devTest, false);
+    // document.getElementById("devBtn").addEventListener('click', devTest, false);
 }
 
 window.addEventListener('load', init, false);

@@ -976,12 +976,20 @@ function importSamples() {
     importData("samples");
 }
 
+function importSubsamples() {
+    importData("subsamples");
+}
+
 function importFormulas() {
     importData("formulas");
 }
 
 function importLakes() {
     importData("lakes");
+}
+
+function importGears() {
+    importData("gears");
 }
 
 function importCalibrations() {
