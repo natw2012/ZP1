@@ -160,7 +160,7 @@ function calcTotalArea() {
     });
     document.getElementById("lengthOutput").value = (maxLength * calibrationRatio).toFixed(4);
     document.getElementById("widthOutput").value = (maxWidth * calibrationRatio).toFixed(4);
-    document.getElementById("totalAreaOutput").value = (totalArea * calibrationRatio).toFixed(4);
+    document.getElementById("totalAreaOutput").value = (totalArea).toFixed(4);
 }
 
 //Calculate the pixel to measurement ratio eg. cm/pix
