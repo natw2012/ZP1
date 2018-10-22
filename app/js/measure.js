@@ -40,6 +40,8 @@ function clearOutputs() {
     document.getElementById("lengthOutput").value = "";
     document.getElementById("widthOutput").value = "";
     document.getElementById("areaOutput").value = "";
+    document.getElementById("totalLengthOutput").value = "";
+    document.getElementById("totalWidthOutput").value = "";
     document.getElementById("totalAreaOutput").value = "";
 }
 
@@ -47,6 +49,7 @@ function clearOutputs() {
 function clearCanvas(event) {
     canvas.clear();
     clearOutputs();
+    changeView();
 }
 
 //Resize canvas to fit adjusted window
@@ -59,6 +62,7 @@ function resizeCanvas() {
 //Delete selected object
 function deleteObject() {
     canvas.remove(canvas.getActiveObject());
+    changeView();
 }
 
 //Load Sample IDs into select
@@ -134,12 +138,59 @@ function onObjectScaled(e) {
             console.log(shape.type);
             calcArea(shape);
         }
+        calcTotalLength();
+        calcTotalWidth();
         calcTotalArea();
     }
     else if (mode === "manual") {
         manualModeOutput();
     }
+    else if (mode === "lengthOnly") {
+        lineLength(shape);
+        calcTotalWidth();
+        calcTotalLength();
+    }
 
+}
+
+//Calculate length of all objects on canvas
+function calcTotalLength() {
+    var totalLength = 0;
+    pixelLength = 0;
+    realLength = 0;
+
+    var objects = canvas.getObjects();
+    objects.forEach(object => {
+        // if(object.type === "line"){
+        pixelLength = object.width;
+        realLength = Number(calibrationRatio) * Number(pixelLength);
+
+        totalLength = totalLength + realLength;
+        console.log(totalLength);
+        // }
+
+    })
+    document.getElementById("totalLengthOutput").value = (totalLength).toFixed(4);
+}
+
+//Calculate width of all lines on canvas
+function calcTotalWidth() {
+    var totalWidth = 0;
+    pixelLength = 0;
+    realLength = 0;
+
+    var objects = canvas.getObjects();
+    objects.forEach(object => {
+        // if(object.type === "line"){
+        pixelLength = object.height;
+        realLength = Number(calibrationRatio) * Number(pixelLength);
+
+        totalWidth = totalWidth + realLength;
+        console.log(totalWidth);
+        // }
+
+    })
+    document.getElementById("totalWidthOutput").value = (totalWidth).toFixed(4);
 }
 
 //Calculate area of all objects on canvas
@@ -148,18 +199,21 @@ function calcTotalArea() {
     var maxLength = 0;
     var maxWidth = 0;
     var objects = canvas.getObjects();
+
+    var activeLength = 0;
+    var activeWidth = 0;
+
     objects.forEach(object => {
         totalArea = totalArea + calcArea(object);
         //If multiple shapes, output shows largest length and width
-        if (object.width > maxLength) {
-            maxLength = object.width;
-        }
-        if (object.height > maxWidth) {
-            maxWidth = object.height;
-        }
+        // if (object.width > maxLength) {
+        //     maxLength = object.width;
+        // }
+        // if (object.height > maxWidth) {
+        //     maxWidth = object.height;
+        // }
     });
-    document.getElementById("lengthOutput").value = (maxLength * calibrationRatio).toFixed(4);
-    document.getElementById("widthOutput").value = (maxWidth * calibrationRatio).toFixed(4);
+
     document.getElementById("totalAreaOutput").value = (totalArea).toFixed(4);
 }
 
@@ -187,6 +241,16 @@ async function pixelToDistanceRatio() {
     }
 
 
+}
+
+function getActiveLengthWidth() {
+    var activeObject = canvas.getActiveObject();
+    activeLength = activeObject.width;
+    activeWidth = activeObject.height;
+
+    console.log(activeLength);
+    document.getElementById("lengthOutput").value = (activeLength * calibrationRatio).toFixed(4);
+    document.getElementById("widthOutput").value = (activeWidth * calibrationRatio).toFixed(4);
 }
 
 //Find pixel length of beginning and end position of line, convert to real length by ratio and output
@@ -236,9 +300,16 @@ function unselect() {
     document.getElementById("areaOutput").value = "";
 }
 function select(e) {
-    console.log("TEst");
-    console.log(e);
+    var object = canvas.getActiveObject();
     onObjectScaled(e);
+    getActiveLengthWidth();
+    // console.log("TEst");
+    // console.log(e);
+    // onObjectScaled(e);
+}
+
+function updated(e) {
+    getActiveLengthWidth();
 }
 
 async function submit() {
@@ -268,7 +339,7 @@ async function submit() {
     }
     else {
         //get species depth
-        var result = await knex('species').select("depth").where('speciesID',species);
+        var result = await knex('species').select("depth").where('speciesID', species);
         console.log(result);
 
         let measure = {
@@ -425,6 +496,7 @@ function draw() {
     // shape = "Line";
     if (shape === "Line") {
         drawLine();
+
     }
     else if (shape === "Triangle") {
         drawTriangle();
@@ -435,6 +507,9 @@ function draw() {
     else if (shape === "Ellipse") {
         drawEllipse();
     }
+    changeView();
+    calcTotalLength();
+    calcTotalWidth();
     calcTotalArea();
     //Select newly created 
     canvas.setActiveObject(canvas.item(canvas.getObjects().length - 1));
@@ -542,15 +617,37 @@ function changeView() {
     }
 
     console.log(mode);
-    clearCanvas();
+    
     //Display all values
     if (mode === "automatic") {
+        console.log(canvas.getObjects().size);
+        console.log(canvas.getObjects().length);
+        if (canvas.getObjects().length > 1) {
+            document.querySelector('#totalLengthOutputLbl').style.display = 'initial';
+            document.querySelector('#totalLengthOutput').style.display = 'initial';
+            document.querySelector('#totalLengthOutputLbl2').style.display = 'initial';
+            document.querySelector('#totalWidthOutputLbl').style.display = 'initial';
+            document.querySelector('#totalWidthOutput').style.display = 'initial';
+            document.querySelector('#totalWidthOutputLbl2').style.display = 'initial';
+            document.querySelector('#totalAreaOutputLbl').style.display = 'initial';
+            document.querySelector('#totalAreaOutput').style.display = 'initial';
+            document.querySelector('#totalAreaOutputLbl2').style.display = 'initial';
+        }
+        else {
+            document.querySelector('#totalLengthOutputLbl').style.display = 'none';
+            document.querySelector('#totalLengthOutput').style.display = 'none';
+            document.querySelector('#totalLengthOutputLbl2').style.display = 'none';
+            document.querySelector('#totalWidthOutputLbl').style.display = 'none';
+            document.querySelector('#totalWidthOutput').style.display = 'none';
+            document.querySelector('#totalWidthOutputLbl2').style.display = 'none';
+            document.querySelector('#totalAreaOutputLbl').style.display = 'none';
+            document.querySelector('#totalAreaOutput').style.display = 'none';
+            document.querySelector('#totalAreaOutputLbl2').style.display = 'none';
+        }
         document.querySelector('#areaOutputLbl').style.display = 'initial';
         document.querySelector('#areaOutput').style.display = 'initial';
         document.querySelector('#areaOutputLbl2').style.display = 'initial';
-        document.querySelector('#totalAreaOutputLbl').style.display = 'initial';
-        document.querySelector('#totalAreaOutput').style.display = 'initial';
-        document.querySelector('#totalAreaOutputLbl2').style.display = 'initial';
+
         document.querySelector('#shapeSelect').disabled = false;
         document.querySelector('#setManual').disabled = false;
         document.querySelector('#customFormulaLbl').style.display = 'none';
@@ -703,7 +800,8 @@ function init() {
 
     canvas.on('object:scaling', onObjectScaled);
     canvas.on('selection:cleared', unselect);
-    canvas.on('object:selected', select);
+    canvas.on('selection:created', select);
+    canvas.on('selection:updated', updated);
     document.getElementById("clearBtn").addEventListener('click', clearCanvas, false);
     document.getElementById("drawShapeBtn").addEventListener('click', draw, false);
     window.addEventListener('resize', resizeCanvas, false);
@@ -717,6 +815,10 @@ function init() {
     document.getElementById("lengthOnly").addEventListener('click', changeView, false);
     document.getElementById("setManual").addEventListener('click', changeView, false);
     document.getElementById("customFormula").addEventListener('click', changeView, false);
+    document.getElementById("lengthOnly").addEventListener('click', clearCanvas, false);
+    document.getElementById("setManual").addEventListener('click', clearCanvas, false);
+    document.getElementById("customFormula").addEventListener('click', clearCanvas, false);
+
     document.getElementById("deleteObjectBtn").addEventListener('click', deleteObject, false);
     document.getElementById("shapeSelectManual").addEventListener('change', manualModeOutput, false);
 
