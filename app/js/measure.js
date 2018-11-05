@@ -287,6 +287,7 @@ function getSettings() {
         lengthOnly: document.getElementById("lengthOnly").checked,
         manual: document.getElementById("setManual").checked,
         customFormula: document.getElementById("customFormula").checked,
+        manualDepth: document.getElementById("setManualDepth").checked
     }
 
     console.log(setting);
@@ -342,12 +343,21 @@ async function submit() {
         var result = await knex('species').select("depth").where('speciesID', species);
         console.log(result);
 
+        var depth;
+        var setting = getSettings();
+        if(setting.manualDepth){
+            depth = document.getElementById("manualDepthInput").value;
+        } 
+        else{
+            depth = result[0].depth;
+        }
+
         let measure = {
             speciesID: species,
             length: document.getElementById("lengthOutput").value,
             width: document.getElementById("widthOutput").value,
             area: document.getElementById("totalAreaOutput").value,
-            volume: document.getElementById("totalAreaOutput").value * result[0].depth,
+            volume: document.getElementById("totalAreaOutput").value * depth,
             subsampleID: document.getElementById("subsampleIDSelect").value,
         }
         //Insert measurement into db
@@ -615,6 +625,14 @@ function changeView() {
     else {
         mode = "automatic";
     }
+    if(setting.manualDepth) {
+        document.querySelector('#manualDepthInput').style.display = 'initial';
+        document.querySelector('#manualDepthInputLbl').style.display = 'initial';
+    }
+    else {
+        document.querySelector('#manualDepthInput').style.display = 'none';
+        document.querySelector('#manualDepthInputLbl').style.display = 'none';
+    }
 
     console.log(mode);
     
@@ -815,9 +833,11 @@ function init() {
     document.getElementById("lengthOnly").addEventListener('click', changeView, false);
     document.getElementById("setManual").addEventListener('click', changeView, false);
     document.getElementById("customFormula").addEventListener('click', changeView, false);
+    document.getElementById("setManualDepth").addEventListener('click', changeView, false);
     document.getElementById("lengthOnly").addEventListener('click', clearCanvas, false);
     document.getElementById("setManual").addEventListener('click', clearCanvas, false);
     document.getElementById("customFormula").addEventListener('click', clearCanvas, false);
+    document.getElementById("setManualDepth").addEventListener('click', clearCanvas, false);
 
     document.getElementById("deleteObjectBtn").addEventListener('click', deleteObject, false);
     document.getElementById("shapeSelectManual").addEventListener('change', manualModeOutput, false);
