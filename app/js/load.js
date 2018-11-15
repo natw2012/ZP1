@@ -1493,7 +1493,7 @@ async function createNewDatabase() {
             useNullAsDefault: true
         });
 
-        var result = await knex.raw(`CREATE TABLE counts (countID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), speciesType varchar(10), subsampleID varchar(5))`);
+        var result = await knex.raw(`CREATE TABLE counts (countID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), subsampleID varchar(5), naturalUnitID varchar(5))`);
         var result = await knex.raw(`CREATE TABLE countTypes (countType varchar(10) PRIMARY KEY)`);
         var result = await knex('counttypes').insert([{ countType: 'Cell' }, { countType: 'Natural Units' }]);
         var result = await knex.raw(`CREATE TABLE lakes (lakeID INTEGER PRIMARY KEY AUTOINCREMENT, lakeName varchar(10))`);

@@ -28,14 +28,18 @@
                 <select id="subsampleIDSelect">
                     <option value="Select Subsample ID">Select Subsample ID</option>
                 </select>
-                <label id="typeSelectLbl" for="typeSelect">Type:</label>
-                <select id="typeSelect">
-                    <option value="Select Type">Select Type</option>
-                </select>
+
                 <label id="speciesSelectLbl" for="speciesSelect">Species:</label>
                 <select id="speciesSelect">
                     <option value="Select Species">Select Species</option>
                 </select>
+    
+                <label id="setNaturalUnitLbl" for="setNaturalUnit">Natural Unit:</label>
+                <input type="checkBox" id="setNaturalUnit"></input>
+
+                <label id="naturalUnitMultiplierInputLbl" for="naturalUnitMultiplierInput">Multiplier: </label>
+                <input type="number" name="naturalUnitMultiplierInput" id="naturalUnitMultiplierInput">            
+                
                 <label id="countLbl" for="count">Count:</label>
                 <label id="count"></label>
                 <button type="submit" id="clear">Clear</button>

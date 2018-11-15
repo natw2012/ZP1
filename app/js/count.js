@@ -17,7 +17,6 @@ var knex = require('../js/config.js').connect();
 //Receive call from another window
 ipcRenderer.on('refreshCountDropdowns', function (e) {
     loadSubsampleIDs();
-    loadCountingTypes();
     loadSpeciesDropdown();
 });
 
@@ -39,22 +38,6 @@ async function loadSubsampleIDs() {
         option.id = result[i].subsampleID;
         document.getElementById("subsampleIDSelect").appendChild(option);
     }
-}
-
-//Load dropdown of Counting Types (Piece, Cell) from database
-async function loadCountingTypes() {
-    //Clear options 
-    removeOptions(document.getElementById("typeSelect"));
-
-    var result = await knex('counttypes').select('countType');
-    var option;
-    for (var i = 0; result[i] != null; i++) {
-        option = document.createElement("option");
-        option.text = result[i].countType;
-        option.id = result[i].countType;
-        document.getElementById("typeSelect").appendChild(option);
-    }
-
 }
 
 //Load dropdown of Species from database
@@ -114,16 +97,6 @@ function getSpeciesID() {
     return text;
 }
 
-//Get selected type in dropdown
-function getType() {
-    var e = document.getElementById("typeSelect");
-    // console.log(e);
-    // console.log(e.selectedIndex);
-    // console.log(e.options[e.selectedIndex]);
-    var text = e.options[e.selectedIndex].value;
-    return text;
-}
-
 //Get selected Sample Id in dropdown
 function getSampleID() {
     var e = document.getElementById("sampleIDSelect");
@@ -149,14 +122,24 @@ async function addCount() {
     //Prevent DB insert if select is on default message
     var speciesID = getSpeciesID();
     var subsampleID = getSubsampleID();
-    var type = getType();
-    if (speciesID != "" && subsampleID != "" && type != "") {
-        var result = await knex('counts').insert({ 'speciesID': speciesID, 'speciesType': type, 'subsampleID': subsampleID });
-        markerID = result.insertId;
-        // console.log(markerID);
-        console.log("after getCount");
-        refreshCountTable();
+
+    var mult;
+    if(document.getElementById("setNaturalUnit").checked){
+        mult = document.getElementById("naturalUnitMultiplierInput").value;
+    } 
+    else{
+        mult = 1; 
     }
+    naturalUnitID = await knex('counts').max({maxID: 'countID'});
+    
+    //Insert multiple cells for natural unit
+    for (var i = 0; i < mult; i++){
+        var result = await knex('counts').insert({ 'speciesID': speciesID, 'naturalUnitID': naturalUnitID[0].maxID + 1, 'subsampleID': subsampleID });
+    }
+
+    markerID = result.insertId;
+    refreshCountTable();
+
 
     getCount(); //Refresh displayed count total
 }
@@ -166,6 +149,17 @@ function refreshCountTable() {
     ipcRenderer.send('refreshTable', "counts");
 }
 
+function changeView() {
+
+    if(document.getElementById("setNaturalUnit").checked) {
+        document.querySelector('#naturalUnitMultiplierInput').style.display = 'initial';
+        document.querySelector('#naturalUnitMultiplierInputLbl').style.display = 'initial';
+    }
+    else {
+        document.querySelector('#naturalUnitMultiplierInput').style.display = 'none';
+        document.querySelector('#naturalUnitMultiplierInputLbl').style.display = 'none';
+    }
+}
 
 // function subCount() {
 //     con.connect(function (err) {
@@ -276,9 +270,9 @@ function init() {
     
     //Load all dropdowns and count
     loadSpeciesDropdown(); 
-    loadCountingTypes();
     loadSubsampleIDs();
     getCount();
+    changeView();
 
     //Add event listeners for resizing, buttons, and dropdowns
     window.addEventListener('resize', resizeCanvas, false);
@@ -286,15 +280,13 @@ function init() {
     document.getElementById("delete").addEventListener('click', deleteCircle, false);
     document.getElementById("speciesSelect").addEventListener('change', getCount);
     document.getElementById("subsampleIDSelect").addEventListener('change', getCount);
+    document.getElementById("setNaturalUnit").addEventListener('click', changeView, false);
 
     //On Mouse Double Click, draw dot and add to database
     canvas.on('mouse:dblclick', function (options) {
         //Alert user to input species
         if (document.getElementById("subsampleIDSelect").value === "Select Subsample ID") {
             ipcRenderer.send('errorMessage', win.id, "Must Select Subsample");
-        }
-        else if (document.getElementById("typeSelect").value === "Select Type") {
-            ipcRenderer.send('errorMessage', win.id, "Must Select Type");
         }
         else if (document.getElementById("speciesSelect").value === "Select Species") {
             ipcRenderer.send('errorMessage', win.id, "Must Select Species");
