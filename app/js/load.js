@@ -1497,7 +1497,7 @@ async function createNewDatabase() {
         var result = await knex.raw(`CREATE TABLE countTypes (countType varchar(10) PRIMARY KEY)`);
         var result = await knex('counttypes').insert([{ countType: 'Cell' }, { countType: 'Natural Units' }]);
         var result = await knex.raw(`CREATE TABLE lakes (lakeID INTEGER PRIMARY KEY AUTOINCREMENT, lakeName varchar(10))`);
-        var result = await knex.raw(`CREATE TABLE measures (measureID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), length float(10), width float(10), area float(10), volume float(10), subsampleID varchar(5))`);
+        var result = await knex.raw(`CREATE TABLE measures (measureID INTEGER PRIMARY KEY AUTOINCREMENT, speciesID int(3), length float(10), width float(10), area float(10), volume float(10), subsampleID varchar(5), naturalUnitID varchar(5))`);
         var result = await knex.raw(`CREATE TABLE species (speciesID int(3) PRIMARY KEY, speciesAbbrev varchar(8), speciesName varchar(20), depth int(11), groupID varchar(5))`);
         var result = await knex.raw(`CREATE TABLE groups (groupID varchar(5) PRIMARY KEY, groupName varchar(50))`);
         var result = await knex.raw(`CREATE TABLE samples (sampleID varchar(5) PRIMARY KEY, type varchar(5), lakeID int(4), sampleDate date, crewChief varchar(5), gearID int(3), stationID int(3), numTow int(3), towLength int(5), sampleVolume float(5))`);

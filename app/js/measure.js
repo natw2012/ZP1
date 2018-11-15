@@ -287,7 +287,8 @@ function getSettings() {
         lengthOnly: document.getElementById("lengthOnly").checked,
         manual: document.getElementById("setManual").checked,
         customFormula: document.getElementById("customFormula").checked,
-        manualDepth: document.getElementById("setManualDepth").checked
+        manualDepth: document.getElementById("setManualDepth").checked,
+        naturalUnit: document.getElementById("setNaturalUnit").checked
     }
 
     console.log(setting);
@@ -352,6 +353,15 @@ async function submit() {
             depth = result[0].depth;
         }
 
+        var mult;
+        if(setting.naturalUnit){
+            mult = document.getElementById("naturalUnitMultiplierInput").value;
+        } 
+        else{
+            mult = 1; 
+        }
+
+        naturalUnitID = await knex('measures').max({maxID: 'measureID'});
         let measure = {
             speciesID: species,
             length: document.getElementById("lengthOutput").value,
@@ -359,11 +369,18 @@ async function submit() {
             area: document.getElementById("totalAreaOutput").value,
             volume: document.getElementById("totalAreaOutput").value * depth,
             subsampleID: document.getElementById("subsampleIDSelect").value,
+            naturalUnitID: naturalUnitID[0].maxID + 1
         }
-        //Insert measurement into db
-        var result = await knex('measures').insert(measure);
-        console.log(result);
-        refreshMeasureTable();
+
+        
+
+        for (var i = 0; i < mult; i++){
+            //Insert measurement into db
+            var result = await knex('measures').insert(measure);
+            console.log(result);
+            refreshMeasureTable();
+        }
+        
 
         if (document.getElementById("clearOnEnter").checked) {
             clearOutputs();
@@ -625,6 +642,7 @@ function changeView() {
     else {
         mode = "automatic";
     }
+
     if(setting.manualDepth) {
         document.querySelector('#manualDepthInput').style.display = 'initial';
         document.querySelector('#manualDepthInputLbl').style.display = 'initial';
@@ -632,6 +650,15 @@ function changeView() {
     else {
         document.querySelector('#manualDepthInput').style.display = 'none';
         document.querySelector('#manualDepthInputLbl').style.display = 'none';
+    }
+
+    if(setting.naturalUnit) {
+        document.querySelector('#naturalUnitMultiplierInput').style.display = 'initial';
+        document.querySelector('#naturalUnitMultiplierInputLbl').style.display = 'initial';
+    }
+    else {
+        document.querySelector('#naturalUnitMultiplierInput').style.display = 'none';
+        document.querySelector('#naturalUnitMultiplierInputLbl').style.display = 'none';
     }
 
     console.log(mode);
@@ -834,6 +861,7 @@ function init() {
     document.getElementById("setManual").addEventListener('click', changeView, false);
     document.getElementById("customFormula").addEventListener('click', changeView, false);
     document.getElementById("setManualDepth").addEventListener('click', changeView, false);
+    document.getElementById("setNaturalUnit").addEventListener('click', changeView, false);
     document.getElementById("lengthOnly").addEventListener('click', clearCanvas, false);
     document.getElementById("setManual").addEventListener('click', clearCanvas, false);
     document.getElementById("customFormula").addEventListener('click', clearCanvas, false);
