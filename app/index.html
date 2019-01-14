@@ -126,6 +126,7 @@
             <nav-group class="sidebarGroup">
               <h5 class="nav-group-title">Select:</h5>
               <nav-item class="active" href="#DBSettings" onclick="loadDBSettings()">Database Settings</nav-item>
+              <nav-item href="#stoppingRule" onclick="loadStoppingRule()">Stopping Rule</nav-item>
             </nav-group>
           </div>
           <div class="pane" id="DBSettings" style="padding: 20px">
@@ -144,6 +145,14 @@
               <button id="createDB" type="button" class="btn btn-system btn-primary" onclick="createNewDatabase()">Create New Database</button>
 
             </div>
+            
+          </div>
+          <div class="pane" id="stoppingRule" style="padding: 20px; display: none">
+            <h3>Stopping Rule</h3>
+            <p>This stopping rule is meant to limit the amount of species counted per subsample and will use that for further calculations of species abundancy</p>
+            <label for="stoppingRuleInput">Species Limit</label>
+            <input type="number" placeholder="eg. 50" id="stoppingRuleInput">
+            <button id="stoppingRuleButton" type="button" class="btn btn-system btn-primary" onclick="setStoppingRule()">Enter</button>
           </div>
         </div>
       </div>

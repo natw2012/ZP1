@@ -1354,52 +1354,11 @@ function deleteRow(btn, table) {
 *************************************************************/
 function loadDBSettings() {
     var w = document.getElementById("DBSettings");
-    // var x = document.getElementById("DBFile");
-    // var y = document.getElementById("DBCreate");
-    // var z = document.getElementById("DBDelete");
+    var x = document.getElementById("stoppingRule");
 
     w.style.display = "block";
-    // x.style.display = "none";
-    // y.style.display = "none";
-    // z.style.display = "none";
+    x.style.display = "none";
 }
-//Load Select Database File Tab
-// function loadDBFile() {
-//     var w = document.getElementById("DBSettings");
-//     var x = document.getElementById("DBFile");
-//     var y = document.getElementById("DBCreate");
-//     var z = document.getElementById("DBDelete");
-
-//     w.style.display = "none";
-//     x.style.display = "block";
-//     y.style.display = "none";
-//     z.style.display = "none";
-// }
-// //Load Create Database Tab
-// function loadDBCreate() {
-//     var w = document.getElementById("DBSettings");
-//     var x = document.getElementById("DBFile");
-//     var y = document.getElementById("DBCreate");
-//     var z = document.getElementById("DBDelete");
-
-//     w.style.display = "none";
-//     x.style.display = "none";
-//     y.style.display = "block";
-//     z.style.display = "none";
-// }
-// //Load Delete Database Tab
-// function loadDBDelete() {
-//     var w = document.getElementById("DBSettings");
-//     var x = document.getElementById("DBFile");
-//     var y = document.getElementById("DBCreate");
-//     var z = document.getElementById("DBDelete");
-
-//     w.style.display = "none";
-//     x.style.display = "none";
-//     y.style.display = "none";
-//     z.style.display = "block";
-
-// }
 
 //Save Database Setting
 function setDB() {
@@ -1411,38 +1370,22 @@ function setDB() {
     ipcRenderer.send('refreshOnDBChange');
 }
 
-//Load database from MySql Database into dropdown
-function loadDBSelect() {
-    //Clear options 
-    // removeOptions(document.getElementById("deleteDatabaseSelect"));
-    console.log(document.getElementById("dbDatabase"));
-
-    console.log("test");
-    // Perform a query
-    // var $query = "SHOW DATABASES"
-    // connection.query($query, function (err, result, fields) {
-    //     if (err) {
-    //         ipcRenderer.send('errorMessage', win.id, err.message);
-    //         console.log("An error ocurred performing the query.");
-    //         console.log(err);
-    //         return;
-    //     }
-    //     var option;
-    //     for (var i = 0; result[i] != null; i++) {
-    //         option = document.createElement("option");
-    //         option.text = result[i].Database;
-    //         option.id = result[i].Database;
-    //         document.getElementById("dbDatabase").appendChild(option);
-    //         document.getElementById("deleteDatabaseSelect").appendChild(option.cloneNode(true));
-    //     }
-    //     console.log("Query succesfully executed");
-
-    //     //Show saved database 
-    //     var e = document.getElementById("dbDatabase");
-    //     e.value = settings.get('database.db');
-    // });
-
+function setStoppingRule() {
+    var stoppingRule = document.getElementById("stoppingRuleInput").value;
+    settings.set('stoppingRule', {
+        stoppingRule: stoppingRule
+    });
+    dialog.showMessageBox(win, { message: "Set stopping rule as: " + stoppingRule });
 }
+
+function loadStoppingRule(newView) {
+    var w = document.getElementById("DBSettings");
+    var x = document.getElementById("stoppingRule");
+
+    w.style.display = "none";
+    x.style.display = "block";
+    
+ }
 
 function selectDBFile() {
     dialog.showOpenDialog({
@@ -1530,30 +1473,30 @@ async function createNewDatabase() {
 
 
 //Delete database
-function deleteDatabase() {
+// function deleteDatabase() {
 
-    dialog.showMessageBox(win, {
-        type: "question",
-        buttons: ['Yes', 'No'],
-        defaultId: 0,
-        message: "Are you sure you would like to delete this database?",
+//     dialog.showMessageBox(win, {
+//         type: "question",
+//         buttons: ['Yes', 'No'],
+//         defaultId: 0,
+//         message: "Are you sure you would like to delete this database?",
 
-    }, function (response) {
-        if (response === 0) { //If user clicks 'Yes'
-            var db = document.getElementById("deleteDatabaseSelect").value;
-            $query = "DROP DATABASE ??";
-            connection.query($query, db, function (err, result, fields) {
-                if (err) {
-                    console.log(err);
-                    ipcRenderer.send('errorMessage', win.id, err.message);
-                }
-                console.log("Query Succesfully executed");
-            });
-            loadDBSelect();
-        }
-    }
-    );
-}
+//     }, function (response) {
+//         if (response === 0) { //If user clicks 'Yes'
+//             var db = document.getElementById("deleteDatabaseSelect").value;
+//             $query = "DROP DATABASE ??";
+//             connection.query($query, db, function (err, result, fields) {
+//                 if (err) {
+//                     console.log(err);
+//                     ipcRenderer.send('errorMessage', win.id, err.message);
+//                 }
+//                 console.log("Query Succesfully executed");
+//             });
+//             loadDBSelect();
+//         }
+//     }
+//     );
+// }
 
 
 /************************************************************
@@ -1570,9 +1513,6 @@ async function init() {
 
         //Initial loadCount as default
         loadCounts('counts');
-
-        //Currently getting non passive event listener warning
-        loadDBSelect();
 
         // await loadSampleIDs();
         loadDashboard();
