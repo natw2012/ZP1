@@ -6,6 +6,7 @@ var randomColor = require('randomcolor');
 const electron = require('electron');
 const { ipcRenderer } = electron;
 var win = electron.remote.getCurrentWindow();
+const settings = require('electron-settings');
 console.log(win, win.id);
 
 var markerID;
@@ -141,7 +142,7 @@ async function addCount() {
     refreshCountTable();
 
 
-    getCount(); //Refresh displayed count total
+    setCounter(); //Refresh displayed count total
 }
 
 //Calls main window to refresh the count table
@@ -180,8 +181,13 @@ function changeView() {
 //     getCount();
 // }
 
+function getCount() {
+    return document.getElementById("count").innerHTML;
+}
+
+
 //Get number of entries of selected species
-async function getCount() {
+async function setCounter() {
     var speciesID = getSpeciesID();
     var subsampledID = getSubsampleID();
     var result = await knex('counts')
@@ -203,7 +209,7 @@ async function getCount() {
     for (var i = 0; result[i] != null; i++) {
         // console.log(result[i].speciesID);
         // console.log(speciesID);
-        // console.log("Inside getCount");
+        // console.log("Inside setCounter");
         if (result[i].speciesID == speciesID) {
             document.getElementById("count").innerHTML = result[i].total;
             return;
@@ -212,7 +218,7 @@ async function getCount() {
             document.getElementById("count").innerHTML = "0";
         }
     }
-    console.log("during getCount");
+    console.log("during setCounter");
 }
 
 //Draws circle on canvas
@@ -271,15 +277,15 @@ function init() {
     //Load all dropdowns and count
     loadSpeciesDropdown(); 
     loadSubsampleIDs();
-    getCount();
+    setCounter();
     changeView();
 
     //Add event listeners for resizing, buttons, and dropdowns
     window.addEventListener('resize', resizeCanvas, false);
     document.getElementById("clear").addEventListener('click', clearCanvas, false);
     document.getElementById("delete").addEventListener('click', deleteCircle, false);
-    document.getElementById("speciesSelect").addEventListener('change', getCount);
-    document.getElementById("subsampleIDSelect").addEventListener('change', getCount);
+    document.getElementById("speciesSelect").addEventListener('change', setCounter);
+    document.getElementById("subsampleIDSelect").addEventListener('change', setCounter);
     document.getElementById("setNaturalUnit").addEventListener('click', changeView, false);
 
     //On Mouse Double Click, draw dot and add to database
@@ -291,10 +297,13 @@ function init() {
         else if (document.getElementById("speciesSelect").value === "Select Species") {
             ipcRenderer.send('errorMessage', win.id, "Must Select Species");
         }
-        
         else {
             drawDot();
             addCount();
+        }
+        if (settings.get('stoppingRule.limit') == getCount()){
+            console.log(settings.get('stoppingRule.limit'))
+            ipcRenderer.send('errorMessage', win.id, "You have reached your stopping limit, finish this subsample and stop counting this species");
         }
 
     });

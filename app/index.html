@@ -127,6 +127,7 @@
               <h5 class="nav-group-title">Select:</h5>
               <nav-item class="active" href="#DBSettings" onclick="loadDBSettings()">Database Settings</nav-item>
               <nav-item href="#stoppingRule" onclick="loadStoppingRule()">Stopping Rule</nav-item>
+              <nav-item href="#export" onclick="loadExport()">Export</nav-item>
             </nav-group>
           </div>
           <div class="pane" id="DBSettings" style="padding: 20px">
@@ -141,8 +142,8 @@
               </script>
               <br>
               <br>
-              <button id="selectDB" type="button" class="btn btn-system btn-primary" onclick="selectDBFile()">Select A Database</button>
-              <button id="createDB" type="button" class="btn btn-system btn-primary" onclick="createNewDatabase()">Create New Database</button>
+              <button id="selectDB" type="button" class="btn btn-default" onclick="selectDBFile()">Select A Database</button>
+              <button id="createDB" type="button" class="btn btn-default" onclick="createNewDatabase()">Create New Database</button>
 
             </div>
             
@@ -150,9 +151,43 @@
           <div class="pane" id="stoppingRule" style="padding: 20px; display: none">
             <h3>Stopping Rule</h3>
             <p>This stopping rule is meant to limit the amount of species counted per subsample and will use that for further calculations of species abundancy</p>
-            <label for="stoppingRuleInput">Species Limit</label>
-            <input type="number" placeholder="eg. 50" id="stoppingRuleInput">
-            <button id="stoppingRuleButton" type="button" class="btn btn-system btn-primary" onclick="setStoppingRule()">Enter</button>
+            <select id="stoppingRuleOnOff">
+              <option value="ON">ON</option>
+              <option value="OFF">OFF</option>
+            </select>
+            <div id="stoppingRuleLimitDiv">
+              <label for="stoppingRuleInput">Species Limit</label>
+              <input type="number" placeholder="eg. 50" id="stoppingRuleInput">
+              <button id="stoppingRuleButton" type="button" class="btn btn-default" onclick="setStoppingRuleLimit()">Enter</button>
+            </div>
+          </div>
+          <div class="pane" id="export" style="padding: 20px; display: none">
+            <h3>Export</h3>
+            <p>Export your data into a csv file</p>
+            <input type="checkbox" id="joinedCheckbox" value="joined" checked> Joined Table
+            <br>
+            <!-- May not need this button if everything loads properly -->
+            <button class="btn btn-default" id="refreshExportBtn" onclick="refreshExport()">Refresh</button>
+            <br>
+            <label id="exportTypeSelectLbl" for="exportTypeSelect">Export:</label>
+            <select id="exportTypeSelect">
+              <option value="Select Export Type">Select Export Type</option>
+              <option value="counts">Counts</option>
+              <option value="measures">Measures</option>
+            </select>
+            <br>
+            <label id="sampleIDExportLbl" for="sampleIDSelectExport">Sample ID:</label>
+            <select id="sampleIDSelectExport">
+              <option value="Select Sample ID">Select Sample ID</option>
+            </select>
+            <br>
+            <label id="subsampleIDExportLbl" for="subsampleIDSelectExport">Subsample ID:</label>
+            <select id="subsampleIDSelectExport">
+              <option value="All Subsamples">All Subsamples</option>
+            </select>
+            <br>
+            <button class="btn btn-default" id="exportBtn" onclick="exportCSV()">Export</button>
+
           </div>
         </div>
       </div>
