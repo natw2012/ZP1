@@ -181,44 +181,38 @@ function changeView() {
 //     getCount();
 // }
 
-function getCount() {
-    return document.getElementById("count").innerHTML;
-}
-
-
 //Get number of entries of selected species
-async function setCounter() {
+async function getCount() {
     var speciesID = getSpeciesID();
     var subsampledID = getSubsampleID();
     var result = await knex('counts')
         .select('speciesID', knex.raw('count(*) as total'))
         .where('subsampleID', subsampledID)
+        .where('speciesID', speciesID)
         .groupBy('speciesID');
 
-    console.log(result);
-    
-    
-
-    // var result = await knex('species').select('speciesID', knex('species').count('*')).where('sampleID', sampledID).groupBy('speciesID');
-    if (result.length == 0) {
-        document.getElementById("count").innerHTML = "0";
+    if (result[0]) {
+        console.log(result[0].total);
+        return result[0].total;
     }
-
-    // document.getElementById("count").innerHTML = result.;
-
-    for (var i = 0; result[i] != null; i++) {
-        // console.log(result[i].speciesID);
-        // console.log(speciesID);
-        // console.log("Inside setCounter");
-        if (result[i].speciesID == speciesID) {
-            document.getElementById("count").innerHTML = result[i].total;
-            return;
-        }
-        else {
-            document.getElementById("count").innerHTML = "0";
-        }
+    else {
+        return 0
     }
-    console.log("during setCounter");
+    
+}
+
+
+//Set number of entries of selected species
+async function setCounter() {
+    
+    var count = await getCount();
+
+    if (settings.get('stoppingRule.limit') <= count){
+        document.getElementById("count").innerHTML = count + " | " + "Warning: Above Stopping Rule";
+    }
+    else {
+        document.getElementById("count").innerHTML = count;
+    }
 }
 
 //Draws circle on canvas
@@ -283,13 +277,12 @@ function init() {
     //Add event listeners for resizing, buttons, and dropdowns
     window.addEventListener('resize', resizeCanvas, false);
     document.getElementById("clear").addEventListener('click', clearCanvas, false);
-    document.getElementById("delete").addEventListener('click', deleteCircle, false);
     document.getElementById("speciesSelect").addEventListener('change', setCounter);
     document.getElementById("subsampleIDSelect").addEventListener('change', setCounter);
     document.getElementById("setNaturalUnit").addEventListener('click', changeView, false);
 
     //On Mouse Double Click, draw dot and add to database
-    canvas.on('mouse:dblclick', function (options) {
+    canvas.on('mouse:dblclick', async function (options) {
         //Alert user to input species
         if (document.getElementById("subsampleIDSelect").value === "Select Subsample ID") {
             ipcRenderer.send('errorMessage', win.id, "Must Select Subsample");
@@ -301,7 +294,8 @@ function init() {
             drawDot();
             addCount();
         }
-        if (settings.get('stoppingRule.limit') == getCount()){
+        var count = await getCount();
+        if (settings.get('stoppingRule.limit') == count){
             console.log(settings.get('stoppingRule.limit'))
             ipcRenderer.send('errorMessage', win.id, "You have reached your stopping limit, finish this subsample and stop counting this species");
         }

@@ -14,7 +14,7 @@ const settings = require('electron-settings');
 const electron = require('electron');
 const win = electron.remote.getCurrentWindow();
 // const chart = require('chart.js');
-var sqlite3 = require('sqlite3');
+var sqlite3 = require('sqlite3').verbose();
 var db = new sqlite3.Database('zp1.db');
 var _ = require('underscore');
 var knex = require('./js/config.js').connect();
@@ -1008,42 +1008,20 @@ function exportJoinedData(cm, subsample, sample, lake, species, group, gear) {
     // table7 = gears
 
 
-
     dialog.showSaveDialog({
         filters: [{ name: 'csv', extensions: ['csv'] }
         ]
     }, async function (fileName) {
         if (fileName === undefined) return;
         var sampleID = getSampleIDCounts();
-        // var result = await knex.from(function(){
-        //     this.select('*').from(cm)
-        //     .leftJoin(subsample, cm + '.subsampleID', subsample + '.subsampleID')
-        //     .leftJoin(sample, subsample + '.sampleID', sample + '.sampleID')
-        //     .leftJoin(lake, sample + '.lakeID', lake + '.lakeID')
-        //     .leftJoin(species, cm + '.speciesID', species + '.speciesID')
-        //     .leftJoin(group, species + '.groupID', group + '.groupID')
-        //     .leftJoin(gear, sample + '.gearID', gear + '.gearID')
-        // })           
-        //     .where('sampleID', sampleID);
 
-        var result = await knex.from(
-            (knex(cm).select('*')
-            .leftJoin(subsample, cm + '.subsampleID', subsample + '.subsampleID').as('T2')
-            // .leftJoin(sample, subsample + '.sampleID', sample + '.sampleID').as('T3')
-            // .leftJoin(lake, sample + '.lakeID', lake + '.lakeID').as('T4')
-            // .leftJoin(species, cm + '.speciesID', species + '.speciesID').as('T5')
-            // .leftJoin(group, species + '.groupID', group + '.groupID').as('T6')
-            // .leftJoin(gear, sample + '.gearID', gear + '.gearID').as('T7')
-            )
-            .as('T1')
-        )
-        .select()
-        .where('sampleID',sampleID);
-        // console.log(subquery);
+        var result = await knex(cm).leftJoin(subsample, cm + '.subsampleID', subsample + '.subsampleID')
+        .leftJoin(sample, subsample + '.sampleID', sample + '.sampleID').as('T3')
+        .leftJoin(lake, sample + '.lakeID', lake + '.lakeID').as('T4')
+        .leftJoin(species, cm + '.speciesID', species + '.speciesID').as('T5')
+        .leftJoin(group, species + '.groupID', group + '.groupID').as('T6')
+        .leftJoin(gear, sample + '.gearID', gear + '.gearID').as('T7')                            
 
-
-        // var result = await knex.raw(`SELECT * FROM ?? LEFT JOIN ?? ON ??.sampleID = ??.sampleID`,
-        // [table1, table2, table1, table2]);
         console.log(result);
         var header = [];
         console.log(header)
@@ -1126,25 +1104,29 @@ function importGears() {
 function importCalibrations() {
     importData("calibrations");
 }
-
+//Export SQLite Count Table to csv file
 function exportCount() {
     exportData("counts");
 }
-
+//Export SQLite Measure Table to csv file
 function exportMeasure() {
     exportData("measures");
 }
 
-//Export MySql Count Table to csv file
+//Export SQLite Joined Count Table to csv file
 function exportJoinedCount() {
     exportJoinedData("counts", "subsamples", "samples", "lakes", "species", "groups", "gears");
 }
 
-//Export MySql Measure Table to csv file
+//Export SQLite Joined Measure Table to csv file
 function exportJoinedMeasure() {
     exportJoinedData("measures", "subsamples", "samples", "lakes", "species", "groups", "gears");
 }
 
+//Export Summary of data to csv file
+function exportSummary() {
+    
+}
 
 //Receive call from another window
 ipcRenderer.on('refreshTable', function (e, table) {
@@ -1526,9 +1508,9 @@ function setStoppingRule() {
     else {
         div.style.display = "none";
         settings.set('stoppingRule', {
-            limit: 0
+            limit: 999999999
         });
-        dialog.showMessageBox(win, { message: "Set stopping rule as: 0" });
+        dialog.showMessageBox(win, { message: "Set stopping rule as: Infinite" });
 
     }
     
@@ -1543,6 +1525,13 @@ function loadStoppingRule(newView) {
     w.style.display = "none";
     x.style.display = "block";
     y.style.display = "none";
+
+    //Display current stopping rule limit
+    stoppingRule = settings.get('stoppingRule');
+    stoppingRuleInput = document.getElementById("stoppingRuleInput");
+    stoppingRuleInput.value = stoppingRule.limit;
+    console.log(stoppingRule);
+
     
  }
 
@@ -1666,6 +1655,10 @@ function exportCSV() {
             console.log("4");
             exportMeasure();
         }
+    }
+    else if(exportType == "summary"){
+        console.log("5");
+        exportSummary();
     }
     else {
         ipcRenderer.send('errorMessage', win.id, "Please select your export fields");

@@ -115,8 +115,8 @@ async function loadCustomFormulas() {
 function onObjectScaled(e) {
     //Eliminates caching error during scaling
     fabric.Object.prototype.objectCaching = false;
-    console.log(e); //Something here
-    console.log(e.target);
+    // console.log(e); //Something here
+    // console.log(e.target);
     var allShapes = e.target;
     allShapes.width = allShapes.scaleX * allShapes.width;
     allShapes.height = allShapes.scaleY * allShapes.height;
@@ -127,7 +127,7 @@ function onObjectScaled(e) {
     allShapes.scaleY = 1;
 
     var oneShape = e.target.canvas._objects;
-    console.log(oneShape);
+    // console.log(oneShape);
     shape = canvas.getActiveObject();
     if (mode === "automatic") {
         if (shape.type === "line") {
@@ -402,7 +402,7 @@ function refreshMeasureTable() {
 //Calls area calc function depending on shape
 function calcArea(obj) {
     var type = obj.type;
-    console.log(type);
+    // console.log(type);
     if (type === "rect") {
         return rectArea(obj);
     }
