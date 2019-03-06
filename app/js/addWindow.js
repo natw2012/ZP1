@@ -59,7 +59,7 @@ async function loadForm(table) {
         }
     }
 
-    html += '<button id="addBtn" type="submit" class="btn btn-system btn-primary" onclick="addToDB(\'' + table + '\')">Add</button>';
+    html += '<button id="addBtn" type="submit" class="btn btn-default" onclick="addToDB(\'' + table + '\')">Add</button>';
 
     document.getElementById("addForm").innerHTML = html;
 }

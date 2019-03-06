@@ -33,6 +33,14 @@ async function loadSubsampleIDs() {
 
     var result = await knex('subsamples').select('subsampleID');
     var option;
+
+    
+    option = document.createElement("option");
+    option.text = "Add Subsample";
+    option.value = "Add Subsample";
+    document.getElementById("subsampleIDSelect").appendChild(option);
+
+
     for (var i = 0; result[i] != null; i++) {
         option = document.createElement("option");
         option.text = result[i].subsampleID;
@@ -50,6 +58,13 @@ async function loadSpeciesDropdown() {
     var result = await knex('species').select('speciesID', 'speciesAbbrev');
 
     var option;
+
+    option = document.createElement("option");
+    option.text = "Add Species";
+    option.value = "Add Species";
+    document.getElementById("speciesSelect").appendChild(option);
+
+
     for (var i = 0; result[i] != null; i++) {
         option = document.createElement("option");
         option.text = result[i].speciesID + " " + result[i].speciesAbbrev;
@@ -182,7 +197,7 @@ function changeView() {
 // }
 
 //Get number of entries of selected species
-async function getCount() {
+async function getSpeciesCount() {
     var speciesID = getSpeciesID();
     var subsampledID = getSubsampleID();
     var result = await knex('counts')
@@ -197,23 +212,67 @@ async function getCount() {
     }
     else {
         return 0
-    }
-    
+    }   
 }
 
+//Get number of entries of selected species
+async function getTotalCount() {
+    var speciesID = getSpeciesID();
+    var subsampledID = getSubsampleID();
+    var result = await knex('counts')
+        .select(knex.raw('count(*) as total'))
+        .where('subsampleID', subsampledID)
 
-//Set number of entries of selected species
-async function setCounter() {
-    
-    var count = await getCount();
+    console.log(result)
 
-    if (settings.get('stoppingRule.limit') <= count){
-        document.getElementById("count").innerHTML = count + " | " + "Warning: Above Stopping Rule";
+    if (result[0]) {
+        console.log(result[0].total);
+        return result[0].total;
     }
     else {
-        document.getElementById("count").innerHTML = count;
+        return 0
+    }
+    
+}
+
+//Set number of entries of selected species and total count
+async function setCounter() {
+    
+    var speciesCount = await getSpeciesCount();
+    var totalCount = await getTotalCount();
+
+    if (settings.get('stoppingRule.limit') <= speciesCount){
+        document.getElementById("speciesCount").innerHTML = speciesCount + " | " + "Warning: Above Stopping Rule";
+    }
+    else {
+        document.getElementById("speciesCount").innerHTML = speciesCount;
+    }
+    document.getElementById("totalCount").innerHTML = totalCount;
+
+}
+
+function addSpecies(){
+    console.log("Test");
+    if (document.getElementById("speciesSelect").value === "Add Species"){
+        loadAddWindow('species');
+        document.getElementById("speciesSelect").value = "Select Species";
+    }
+
+}
+
+function addSubsample(){
+    console.log("test2");
+    if (document.getElementById("subsampleIDSelect").value === "Add Subsample"){
+        loadAddWindow('subsamples');
+        document.getElementById("speciesSelect").value = "Select Subsample ID";
     }
 }
+
+//Load Add Browser Window 
+function loadAddWindow(table) {
+    ipcRenderer.send('showAddWindow', table);
+}
+
 
 //Draws circle on canvas
 function drawDot() {
@@ -280,6 +339,8 @@ function init() {
     document.getElementById("speciesSelect").addEventListener('change', setCounter);
     document.getElementById("subsampleIDSelect").addEventListener('change', setCounter);
     document.getElementById("setNaturalUnit").addEventListener('click', changeView, false);
+    document.getElementById("speciesSelect").addEventListener('change',addSpecies);
+    document.getElementById("subsampleIDSelect").addEventListener('change', addSubsample);
 
     //On Mouse Double Click, draw dot and add to database
     canvas.on('mouse:dblclick', async function (options) {

@@ -47,7 +47,7 @@ async function loadForm(table, info) {
         }
     }
 
-    html += '<button id="editBtn" type="submit" class="btn btn-system btn-primary" onclick="updateDB(\'' + table + '\')">Save</button>';
+    html += '<button id="editBtn" type="submit" class="btn btn-default" onclick="updateDB(\'' + table + '\')">Save</button>';
 
     document.getElementById("editForm").innerHTML = html;
 }
