@@ -943,59 +943,59 @@ function exportData(table) {
 // }
 
 //Export summary spreadsheet
-// function exportSummary(table) {
-//     dialog.showSaveDialog({
-//         filters: [{ name: 'csv', extensions: ['csv'] }
-//         ]
-//     }, async function (fileName) {
-//         if (fileName === undefined) return;
+function exportSummary() {
+    dialog.showSaveDialog({
+        filters: [{ name: 'csv', extensions: ['csv'] }
+        ]
+    }, async function (fileName) {
+        if (fileName === undefined) return;
 
 
-//         // Get sum of 
+        // Get sum of 
         
 
-//         var result = await knex.raw(`
-//         SELECT count1
-//             FROM (
-//                 SELECT COUNT(*) as count1 
-//                 FROM measures 
-//                 WHERE subsampleID = ?
-//                 GROUP BY speciesID) 
-//         `, subsampleID);
+        var result = await knex.raw(`
+        SELECT count1
+            FROM (
+                SELECT COUNT(*) as count1 
+                FROM measures 
+                WHERE subsampleID = ?
+                GROUP BY speciesID) 
+        `, subsampleID);
 
-//         for (var i = 0; i < result.length; i++) {
-//             total += result[i].count1;
-//         }
-//         console.log(total);
+        for (var i = 0; i < result.length; i++) {
+            total += result[i].count1;
+        }
+        console.log(total);
 
         
         
-//         var result = await knex(table).columnInfo();
-//         console.log(result);
-//         var header = Object.keys(result);
-//         console.log(header)
+        var result = await knex(table).columnInfo();
+        console.log(result);
+        var header = Object.keys(result);
+        console.log(header)
 
-//         var sampleID = getSampleIDCounts();
+        var sampleID = getSampleIDCounts();
 
-//         var result = await knex(table).select();
-//         console.log(result);
+        var result = await knex(table).select();
+        console.log(result);
 
-//         stringify(result, function (err, output) {
-//             fs.writeFile(fileName, header + "\n" + output, function (err) {
-//                 if (err === null) {
+        stringify(result, function (err, output) {
+            fs.writeFile(fileName, header + "\n" + output, function (err) {
+                if (err === null) {
 
-//                     dialog.showMessageBox(win, {
-//                         message: "The file has been saved! :-)",
-//                         buttons: ["OK"]
-//                     });
-//                 } else {
-//                     ipcRenderer.send('errorMessage', err);
-//                     dialog.showErrorBox("Error", err.message); //Not sure if this works
-//                 }
-//             });
-//         });
-//     });
-// }
+                    dialog.showMessageBox(win, {
+                        message: "The file has been saved! :-)",
+                        buttons: ["OK"]
+                    });
+                } else {
+                    ipcRenderer.send('errorMessage', err);
+                    dialog.showErrorBox("Error", err.message); //Not sure if this works
+                }
+            });
+        });
+    });
+}
 
 //Change to join counts/measures with samples by sampleID, species by speciesID, samples with lakes by lakeID and with gear by gearID
 function exportJoinedData(cm, subsample, sample, lake, species, group, gear) {
@@ -1211,9 +1211,6 @@ function loadSpecies(table, callback) {
     html += '<button class="btn btn-default" id="importSpecies" onclick="importSpecies()">Import Species List</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
 
-    var exportHTML = '';
-    document.querySelector('#exportSection').innerHTML = exportHTML;
-
     loadTable(table, callback);
 }
 
@@ -1222,9 +1219,6 @@ function loadGroups(table, callback) {
     var html = '<button class="btn btn-default" id="addGroupBtn" onclick="loadAddWindow(\'groups\')">Add Group</button>';
     html += '<button class="btn btn-default" id="importGroups" onclick="importGroups()">Import Group List</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
-
-    var exportHTML = '';
-    document.querySelector('#exportSection').innerHTML = exportHTML;
 
     loadTable(table, callback);
 }
@@ -1236,17 +1230,8 @@ function loadCounts(table, callback) {
 
 
     document.querySelector('#buttonSection').innerHTML = html;
-
-    var exportHTML = '<label id="sampleIDLblCM" for="sampleIDSelectCM">Sample ID:</label>';
-    exportHTML += '<select id="sampleIDSelectCM">';
-    exportHTML += '<option value="Select Sample ID">Select Sample ID</option>';
-    exportHTML += '</select>';
-    exportHTML += '<button class="btn btn-default" id="exportCountBtn" onclick="exportCount()">Export Data</button>';
-    exportHTML += '<button class="btn btn-default" id="exportJoinedCountBtn" onclick="exportJoinedCount()">Export Joined Data</button>';
-    
+   
     loadSampleIDs();
-
-    document.querySelector('#exportSection').innerHTML = exportHTML;
 
     loadTable(table, callback);
 
@@ -1258,15 +1243,6 @@ function loadMeasures(table, callback) {
     var html = '<button class="btn btn-default" id="startMeasureBtn" onclick="showMeasureWindow()">Start Measuring</button>';
     html += '<button class="btn btn-default" id="importMeasureBtn" onclick="importMeasure()">Import Data</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
-
-    var exportHTML = '<label id="sampleIDLblCM" for="sampleIDSelectCM">Sample ID:</label>';
-    exportHTML += '<select id="sampleIDSelectCM">';
-    exportHTML += '<option value="Select Sample ID">Select Sample ID</option>';
-    exportHTML += '</select>';
-    exportHTML += '<button class="btn btn-default" id="exportMeasureBtn" onclick="exportMeasure()">Export Data</button>';
-    exportHTML += '<button class="btn btn-default" id="exportJoinedMeasureBtn" onclick="exportJoinedMeasure()">Export Joined Data</button>';
-
-    document.querySelector('#exportSection').innerHTML = exportHTML;
 
     loadSampleIDs();
 
@@ -1280,9 +1256,6 @@ function loadFormulas(table, callback) {
 
     document.querySelector('#buttonSection').innerHTML = html;
 
-    var exportHTML = '';
-    document.querySelector('#exportSection').innerHTML = exportHTML;
-
     loadTable(table, callback);
 }
 
@@ -1292,9 +1265,6 @@ function loadLakes(table, callback) {
     html += '<button class="btn btn-default" id="importLakesBtn" onclick="importLakes()">Import Lakes</button><br></br>';
 
     document.querySelector('#buttonSection').innerHTML = html;
-
-    var exportHTML = '';
-    document.querySelector('#exportSection').innerHTML = exportHTML;
 
     loadTable(table, callback);
 }
@@ -1311,9 +1281,6 @@ function loadGears(table, callback) {
 
     document.querySelector('#buttonSection').innerHTML = html;
 
-    var exportHTML = '';
-    document.querySelector('#exportSection').innerHTML = exportHTML;
-
     loadTable(table, callback);
 
     // document.getElementById("content").innerHTML = '<object type="text/html" data="html/gear.html" ></object>';
@@ -1326,9 +1293,6 @@ function loadSamples(table, callback) {
 
     document.querySelector('#buttonSection').innerHTML = html;
 
-    var exportHTML = '';
-    document.querySelector('#exportSection').innerHTML = exportHTML;
-
     loadTable(table, callback);
 }
 
@@ -1339,9 +1303,6 @@ function loadSubsamples(table, callback) {
 
     document.querySelector('#buttonSection').innerHTML = html;
 
-    var exportHTML = '';
-    document.querySelector('#exportSection').innerHTML = exportHTML;
-
     loadTable(table, callback);
 }
 
@@ -1351,9 +1312,6 @@ function loadCalibrations(table, callback) {
     html += '<button class="btn btn-default" id="importCalibrationsBtn" onclick="importCalibrations()">Import Calibrations</button><br></br>';
 
     document.querySelector('#buttonSection').innerHTML = html;
-
-    var exportHTML = '';
-    document.querySelector('#exportSection').innerHTML = exportHTML;
 
     loadTable(table, callback);
 }
