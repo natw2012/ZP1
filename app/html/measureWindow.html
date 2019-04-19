@@ -98,9 +98,13 @@
               <label id="shapeSelectLbl" for="shapeSelect">Shape:</label>
               <select id="shapeSelect">
                 <option>Line</option>
-                <option>Triangle</option>
-                <option>Rectangle</option>
-                <option>Ellipse</option>
+                <option>Ellipsoid</option>
+                <option>Cylinder</option>
+                <option>Cone</option>
+                <option>Cuboid</option>
+                <option>Pyramid</option>
+                <option>Tetrahedron</option>
+                <option>Prism</option>
               </select>
               <button id="drawShapeBtn">Draw</button>
             </div>
@@ -110,10 +114,14 @@
             <div class="form-group">
               <label id="shapeSelectManualLbl" for="shapeSelectManual">Shape:</label>
               <select id="shapeSelectManual">
-                <option>Select Shape:</option>
-                <option>Triangle</option>
-                <option>Rectangle</option>
-                <option>Ellipse</option>
+                <option>Line</option>
+                <option>Ellipsoid</option>
+                <option>Cylinder</option>
+                <option>Cone</option>
+                <option>Cuboid</option>
+                <option>Pyramid</option>
+                <option>Tetrahedron</option>
+                <option>Prism</option>
               </select>
             </div>
           </div>
@@ -157,6 +165,13 @@
               </label>
             </div>
             <div class="form-group">
+              <label id="volumeOutputLbl" for="volumeOutput">Volume:</label>
+              <input type="textbox" id="volumeOutput" style="width: 75px" readonly></input>
+              <label id="volumeOutputLbl2" for="volumeOutput">&microm
+                <sup>3</sup>
+              </label>
+            </div>
+            <div class="form-group">
               <label id="totalLengthOutputLbl" for="totalLengthOutput">Tot. Length:</label>
               <input type="textbox" id="totalLengthOutput" style="width: 75px" readonly></input>
               <label id="totalLengthOutputLbl2" for="totalLengthOutput">&microm</label>
@@ -170,6 +185,13 @@
               <label id="totalAreaOutputLbl" for="totalAreaOutput">Tot. Area:</label>
               <input type="textbox" id="totalAreaOutput" style="width: 75px" readonly></input>
               <label id="totalAreaOutputLbl2" for="totalAreaOutput">&microm
+                <sup>3</sup>
+              </label>
+            </div>
+            <div class="form-group">
+              <label id="totalVolumeOutputLbl" for="totalVolumeOutput">Tot. Volume:</label>
+              <input type="textbox" id="totalVolumeOutput" style="width: 75px" readonly></input>
+              <label id="totalVolumeOutputLbl2" for="totalVolumeOutput">&microm
                 <sup>2</sup>
               </label>
             </div>

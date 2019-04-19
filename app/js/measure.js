@@ -137,10 +137,12 @@ function onObjectScaled(e) {
             console.log(shape);
             console.log(shape.type);
             calcArea(shape);
+            calcVolume(shape);
         }
         calcTotalLength();
         calcTotalWidth();
         calcTotalArea();
+        calcTotalVolume();
     }
     else if (mode === "manual") {
         manualModeOutput();
@@ -214,7 +216,19 @@ function calcTotalArea() {
         // }
     });
 
-    document.getElementById("totalAreaOutput").value = (totalArea).toFixed(4);
+    document.getElementById("totalAreaOutput").value = (totalArea).toFixed(2);
+}
+
+//Calculate volume of all objects on canavas
+function calcTotalVolume(){
+    var totalVolume = 0;
+    var objects = canvas.getObjects();
+
+    objects.forEach(async(object) => {
+        totalVolume = totalVolume + await calcVolume(object);
+    });
+    console.log(totalVolume);
+    document.getElementById("totalVolumeOutput").value = (totalVolume).toFixed(2);
 }
 
 //Calculate the pixel to measurement ratio eg. cm/pix
@@ -260,6 +274,30 @@ function lineLength(line) {
     console.log(pixelLength, realLength);
     document.getElementById("lengthOutput").value = realLength.toFixed(4);
 }
+
+//Get depth from database or manually set depth
+async function getDepth(){
+    try {
+        var species = getSpecies();
+        //get species depth
+        var result = await knex('species').select("depth").where('speciesID', species);
+        console.log("result");
+
+        var depth;
+        var setting = getSettings();
+        if(setting.manualDepth){
+            depth = document.getElementById("manualDepthInput").value;
+        } 
+        else{
+            depth = result[0].depth;
+        }
+        console.log(depth)
+        return depth.valueOf();
+    } catch (error) {
+        ipcRenderer.send('errorMessage', win.id, "Please select species");
+    }
+    
+}
 //Find shape input
 function getShape() {
     var e = document.getElementById("shapeSelect");
@@ -273,6 +311,7 @@ function getSpecies() {
     var text = e.options[e.selectedIndex].id;
     console.log(text);
     return text;
+    
 }
 
 function getCalibration() {
@@ -300,6 +339,7 @@ function unselect() {
     document.getElementById("lengthOutput").value = "";
     document.getElementById("widthOutput").value = "";
     document.getElementById("areaOutput").value = "";
+    document.getElementById("volumeOutput").value = "";
 }
 function select(e) {
     var object = canvas.getActiveObject();
@@ -340,18 +380,6 @@ async function submit() {
         document.getElementById("shapeSelectManual").focus();
     }
     else {
-        //get species depth
-        var result = await knex('species').select("depth").where('speciesID', species);
-        console.log(result);
-
-        var depth;
-        var setting = getSettings();
-        if(setting.manualDepth){
-            depth = document.getElementById("manualDepthInput").value;
-        } 
-        else{
-            depth = result[0].depth;
-        }
 
         var mult;
         if(setting.naturalUnit){
@@ -367,7 +395,7 @@ async function submit() {
             length: document.getElementById("lengthOutput").value,
             width: document.getElementById("widthOutput").value,
             area: document.getElementById("totalAreaOutput").value,
-            volume: document.getElementById("totalAreaOutput").value * depth,
+            volume: document.getElementById("totalVolumeOutput").value,
             subsampleID: document.getElementById("subsampleIDSelect").value,
             naturalUnitID: naturalUnitID[0].maxID + 1
         }
@@ -399,10 +427,10 @@ function refreshMeasureTable() {
 *************************************************************/
 
 
-//Calls area calc function depending on shape
+//Calls area calc function depending on shape base
 function calcArea(obj) {
     var type = obj.type;
-    // console.log(type);
+    console.log(type);
     if (type === "rect") {
         return rectArea(obj);
     }
@@ -418,6 +446,40 @@ function calcArea(obj) {
     else if (type === "ellipse") {
         return ellipseArea(obj);
     }
+}
+
+//Calc volume depending on shape
+function calcVolume(obj){
+    var type = obj.type;
+    var colour = obj.stroke;
+    //3D Ellipse
+    if (type === "ellipse" && colour === "blue") {
+        return ellipsoidVolume(obj);
+    }
+    //Cylinder
+    else if (type === "ellipse" && colour === "red") {
+        return cylinderVolume(obj);
+    }
+    //Cone
+    else if (type === "ellipse" && colour === "green") {
+        return coneVolume(obj);
+    }
+    //Pyramid
+    else if (type === "rect" && colour === "blue") {
+        return pyramidVolume(obj);
+    }
+    //Cuboid
+    else if (type === "rect" && colour === "red") {
+        return cuboidVolume(obj);
+    }
+    //Tetradron
+    else if (type === "triangle" && colour === "blue") {
+        return tetrahedronVolume(obj);
+    }
+    //Prism
+    else if (type === "triangle" && colour === "red") {
+        return prismVolume(obj);
+    }
 
 }
 
@@ -427,35 +489,85 @@ function rectArea(rect) {
     console.log(rect);
     //Slight measuring issue with rect.width = inside perimeter while line.width = outside
     var area = rect.width * rect.height * Math.pow(calibrationRatio, 2);
-    document.getElementById("lengthOutput").value = (rect.width * calibrationRatio).toFixed(4);
-    document.getElementById("widthOutput").value = (rect.height * calibrationRatio).toFixed(4);
-    document.getElementById("areaOutput").value = area.toFixed(4);
+    document.getElementById("lengthOutput").value = (rect.width * calibrationRatio).toFixed(2);
+    document.getElementById("widthOutput").value = (rect.height * calibrationRatio).toFixed(2);
+    document.getElementById("areaOutput").value = area.toFixed(2);
     return area;
 }
 //Calc Area of Circle
 function circleArea(circ) {
     console.log("circle");
     var area = Math.PI * Math.pow(circ.radius, 2) * Math.pow(calibrationRatio, 2);
-    document.getElementById("lengthOutput").value = (circ.width * calibrationRatio).toFixed(4);
-    document.getElementById("widthOutput").value = (circ.height * calibrationRatio).toFixed(4);
-    document.getElementById("areaOutput").value = area.toFixed(4);
+    document.getElementById("lengthOutput").value = (circ.width * calibrationRatio).toFixed(2);
+    document.getElementById("widthOutput").value = (circ.height * calibrationRatio).toFixed(2);
+    document.getElementById("areaOutput").value = area.toFixed(2);
     return area;
 }
 //Calc Area of Triangle
 function triangleArea(tri) {
     var area = tri.width * tri.height / 2 * Math.pow(calibrationRatio, 2);
-    document.getElementById("lengthOutput").value = (tri.width * calibrationRatio).toFixed(4);
-    document.getElementById("widthOutput").value = (tri.height * calibrationRatio).toFixed(4);
-    document.getElementById("areaOutput").value = area.toFixed(4);
+    document.getElementById("lengthOutput").value = (tri.width * calibrationRatio).toFixed(2);
+    document.getElementById("widthOutput").value = (tri.height * calibrationRatio).toFixed(2);
+    document.getElementById("areaOutput").value = area.toFixed(2);
     return area;
 }
 //Calc Area of Ellipse
 function ellipseArea(el) {
     var area = el.rx * el.ry * Math.PI * Math.pow(calibrationRatio, 2);
-    document.getElementById("lengthOutput").value = (el.width * calibrationRatio).toFixed(4);
-    document.getElementById("widthOutput").value = (el.height * calibrationRatio).toFixed(4);
-    document.getElementById("areaOutput").value = area.toFixed(4);
+    document.getElementById("lengthOutput").value = (el.width * calibrationRatio).toFixed(2);
+    document.getElementById("widthOutput").value = (el.height * calibrationRatio).toFixed(2);
+    document.getElementById("areaOutput").value = area.toFixed(2);
     return area;
+}
+//Calc Volume of 3D Ellipse beware of rx being depth
+function ellipsoidVolume(el){
+    var volume = 4/3 * el.rx * el.rx * el.ry * Math.PI * Math.pow(calibrationRatio, 2);
+    document.getElementById("volumeOutput").value = volume.toFixed(2);
+    return volume;
+}
+//Calc Volume of Cylinder
+async function cylinderVolume(el){
+    var depth = await getDepth();
+    console.log(typeof depth)
+    console.log(depth)
+    var volume = depth * el.rx * el.ry * Math.PI * Math.pow(calibrationRatio, 2);
+    document.getElementById("volumeOutput").value = volume.toFixed(2);
+    return volume;
+}
+//Calc Volume of Cone
+async function coneVolume(el){
+    var depth = await getDepth();
+    var volume = 1/3 * depth * el.rx * el.ry * Math.PI * Math.pow(calibrationRatio, 2);
+    document.getElementById("volumeOutput").value = volume.toFixed(2);
+    return volume;
+}
+//Calc Volume of Cuboid
+async function cuboidVolume(rect){
+    var depth = await getDepth();
+    var volume = depth * rect.width * rect.height * Math.pow(calibrationRatio, 2);
+    document.getElementById("volumeOutput").value = volume.toFixed(2);
+    return volume;
+}
+//Calc Volume of Pyramid
+async function pyramidVolume(rect){
+    var depth = await getDepth();
+    var volume = 1/3 * depth * rect.width * rect.height * Math.pow(calibrationRatio, 2);
+    document.getElementById("volumeOutput").value = volume.toFixed(2);
+    return volume;
+}
+//Calc Volume of Tetrahedron
+async function tetrahedronVolume(tri){
+    var depth = await getDepth();
+    var volume = depth * tri.width * tri.height / (6*Math.sqrt(2)) * Math.pow(calibrationRatio, 2);
+    document.getElementById("volumeOutput").value = volume.toFixed(2);
+    return volume;
+}
+//Calc Volume of Prism
+async function prismVolume(tri){
+    var depth = await getDepth();
+    var volume = depth * tri.width * tri.height / 2 * Math.pow(calibrationRatio, 2);
+    document.getElementById("volumeOutput").value = volume.toFixed(2);
+    return volume;
 }
 
 function drawLine() {
@@ -480,12 +592,12 @@ function drawLine() {
     canvas.add(line);
 }
 
-function drawRect() {
+function drawRect(colour) {
     var rect = new fabric.Rect({
         left: 100,
         top: 100,
         fill: 'transparent',
-        stroke: 'red',
+        stroke: colour,
         strokeWidth: 3,
         width: 100,
         height: 100,
@@ -493,46 +605,81 @@ function drawRect() {
     canvas.add(rect);
 }
 
-function drawTriangle() {
+function drawTriangle(colour) {
     var triangle = new fabric.Triangle({
         left: 100,
         top: 100,
         fill: 'transparent',
-        stroke: 'red',
+        stroke: colour,
         strokeWidth: 3,
         width: 100,
         height: 100,
     });
     canvas.add(triangle);
 }
-function drawEllipse() {
+function drawEllipse(colour) {
     var ellipse = new fabric.Ellipse({
         left: 100,
         top: 100,
         fill: 'transparent',
-        stroke: 'red',
+        stroke: colour,
         strokeWidth: 3,
         rx: 100,
         ry: 50,
     });
     canvas.add(ellipse);
 }
+function drawCircle(colour) {
+    var circle = new fabric.Circle({
+        left: 100,
+        top: 100,
+        fill: 'transparent',
+        stroke: colour,
+        strokeWidth: 3,
+        radius: 100
+    });
+    canvas.add(circle);
+}
+
 //Draw controller 
 function draw() {
     var shape = getShape();
     // shape = "Line";
     if (shape === "Line") {
         drawLine();
-
     }
     else if (shape === "Triangle") {
-        drawTriangle();
+        drawTriangle('red');
     }
     else if (shape === "Rectangle") {
-        drawRect();
+        drawRect('red');
     }
     else if (shape === "Ellipse") {
-        drawEllipse();
+        drawEllipse('red');
+    }
+    else if (shape === "Circle") {
+        drawCircle('red');
+    }
+    else if (shape === "Ellipsoid") {
+        drawEllipse('blue');
+    }
+    else if (shape === "Cylinder") {
+        drawEllipse('red');
+    }
+    else if (shape === "Cone") {
+        drawEllipse('green');
+    }
+    else if (shape === "Cuboid") {
+        drawRect('red');
+    }
+    else if (shape === "Pyramid") {
+        drawRect('blue');
+    }
+    else if (shape === "Tetrahedron") {
+        drawTriangle('blue');
+    }
+    else if (shape === "Prism") {
+        drawTriangle('red');
     }
     changeView();
     calcTotalLength();
@@ -601,9 +748,9 @@ async function manualModeOutput() {
     });
 
     var realLength = Number(calibrationRatio) * Number(lengthLine);
-    document.getElementById("lengthOutput").value = realLength.toFixed(4);
+    document.getElementById("lengthOutput").value = realLength.toFixed(2);
     var realWidth = Number(calibrationRatio) * Number(widthLine);
-    document.getElementById("widthOutput").value = realWidth.toFixed(4);
+    document.getElementById("widthOutput").value = realWidth.toFixed(2);
 
     var shape = document.getElementById("shapeSelectManual").value;
     var area;
@@ -621,8 +768,8 @@ async function manualModeOutput() {
     else {
         area = 0;
     }
-    document.getElementById("areaOutput").value = area.toFixed(4);
-    document.getElementById("totalAreaOutput").value = area.toFixed(4);
+    document.getElementById("areaOutput").value = area.toFixed(2);
+    document.getElementById("totalAreaOutput").value = area.toFixed(2);
 }
 
 function changeView() {
@@ -677,6 +824,9 @@ function changeView() {
             document.querySelector('#totalAreaOutputLbl').style.display = 'initial';
             document.querySelector('#totalAreaOutput').style.display = 'initial';
             document.querySelector('#totalAreaOutputLbl2').style.display = 'initial';
+            document.querySelector('#totalVolumeOutputLbl').style.display = 'initial';
+            document.querySelector('#totalVolumeOutput').style.display = 'initial';
+            document.querySelector('#totalVolumeOutputLbl2').style.display = 'initial';
         }
         else {
             document.querySelector('#totalLengthOutputLbl').style.display = 'none';
@@ -688,10 +838,16 @@ function changeView() {
             document.querySelector('#totalAreaOutputLbl').style.display = 'none';
             document.querySelector('#totalAreaOutput').style.display = 'none';
             document.querySelector('#totalAreaOutputLbl2').style.display = 'none';
+            document.querySelector('#totalVolumeOutputLbl').style.display = 'none';
+            document.querySelector('#totalVolumeOutput').style.display = 'none';
+            document.querySelector('#totalVolumeOutputLbl2').style.display = 'none';
         }
         document.querySelector('#areaOutputLbl').style.display = 'initial';
         document.querySelector('#areaOutput').style.display = 'initial';
         document.querySelector('#areaOutputLbl2').style.display = 'initial';
+        document.querySelector('#volumeOutputLbl').style.display = 'initial';
+        document.querySelector('#volumeOutput').style.display = 'initial';
+        document.querySelector('#volumeOutputLbl2').style.display = 'initial';
 
         document.querySelector('#shapeSelect').disabled = false;
         document.querySelector('#setManual').disabled = false;

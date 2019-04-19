@@ -1230,8 +1230,6 @@ function loadCounts(table, callback) {
 
 
     document.querySelector('#buttonSection').innerHTML = html;
-   
-    loadSampleIDs();
 
     loadTable(table, callback);
 
@@ -1244,14 +1242,12 @@ function loadMeasures(table, callback) {
     html += '<button class="btn btn-default" id="importMeasureBtn" onclick="importMeasure()">Import Data</button><br></br>';
     document.querySelector('#buttonSection').innerHTML = html;
 
-    loadSampleIDs();
-
     loadTable(table, callback);
 }
 
 //Load Formulas page
 function loadFormulas(table, callback) {
-    var html = '<button class="btn btn-default" id="addFormulaBtn" onclick="loadAddFormula(\'formula\')">Add Formula</button>';
+    var html = '<button class="btn btn-default" id="addFormulaBtn" onclick="loadAddWindow(\'formulas\')">Add Formula</button>';
     html += '<button class="btn btn-default" id="importFormulasBtn" onclick="importFormulas()">Import Formulas</button><br></br>';
 
     document.querySelector('#buttonSection').innerHTML = html;

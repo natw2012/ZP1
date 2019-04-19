@@ -22,9 +22,9 @@
   "homepage": "https://github.com/natw2012/ZP1#readme",
   "devDependencies": {
     "devtron": "^1.4.0",
-    "electron": "^2.0.9",
-    "electron-builder": "^20.38.5",
-    "electron-packager": "^13.0.1"
+    "electron": "^2.0.18",
+    "electron-builder": "^20.39.0",
+    "electron-packager": "^13.1.1"
   },
   "dependencies": {
     "bcrypt": "^3.0.4",
