@@ -381,6 +381,7 @@ async function submit() {
     }
     else {
 
+        var setting = getSettings();
         var mult;
         if(setting.naturalUnit){
             mult = document.getElementById("naturalUnitMultiplierInput").value;

@@ -47,7 +47,6 @@ async function loadSampleIDs() {
 
     //Clear options 
     removeOptions(document.getElementById("sampleIDSelect"));
-    removeOptions(document.getElementById("sampleIDSelectCM"));
     removeOptions(document.getElementById("sampleIDSelectExport"));
 
     var sampleIDs = await knex('samples').select('sampleID');
@@ -64,7 +63,6 @@ async function loadSampleIDs() {
         option2 = document.createElement("option");
         option2.text = option.text;
         option2.id = option.id;
-        document.getElementById("sampleIDSelectCM").appendChild(option);
         document.getElementById("sampleIDSelect").appendChild(option1);
         document.getElementById("sampleIDSelectExport").appendChild(option2);
 
@@ -1497,6 +1495,9 @@ function loadStoppingRule(newView) {
     w.style.display = "none";
     x.style.display = "none";
     y.style.display = "block";
+
+    loadSampleIDs();
+    loadSubsampleIDsExport();
     
  }
 
