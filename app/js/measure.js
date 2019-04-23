@@ -7,14 +7,11 @@ const electron = require('electron');
 const { ipcRenderer } = electron;
 var win = electron.remote.getCurrentWindow();
 
-
+//Global variables
 var calibrationRatio;
 var pixelLength;
 var realLength;
-
 var mode = "automatic"; //Default set to automatic
-
-console.log(window.location.href);
 var knex = require('../js/config.js').connect();
 
 /************************************************************
@@ -72,7 +69,6 @@ async function loadSubsampleIDs() {
 
     var option;
     var result = await knex('subsamples').select("subsampleID");
-    console.log(result);
     for (var i = 0; result[i] != null; i++) {
         option = document.createElement("option");
         option.text = result[i].subsampleID;
@@ -88,7 +84,6 @@ async function loadSpeciesDropdown() {
 
     var option;
     var result = await knex('species').select("speciesID", "speciesAbbrev");
-    console.log(result);
     for (var i = 0; result[i] != null; i++) {
         option = document.createElement("option");
         option.text = result[i].speciesID + " " + result[i].speciesAbbrev;
@@ -102,7 +97,6 @@ async function loadCustomFormulas() {
 
     var option;
     var result = await knex('formulas').select("formulaName");
-    console.log(result);
     for (var i = 0; result[i] != null; i++) {
         option = document.createElement("option");
         option.text = result[i].speciesName;
@@ -134,8 +128,6 @@ function onObjectScaled(e) {
             lineLength(shape);
         }
         else {
-            console.log(shape);
-            console.log(shape.type);
             calcArea(shape);
             calcVolume(shape);
         }
@@ -168,7 +160,6 @@ function calcTotalLength() {
         realLength = Number(calibrationRatio) * Number(pixelLength);
 
         totalLength = totalLength + realLength;
-        console.log(totalLength);
         // }
 
     })
@@ -188,7 +179,6 @@ function calcTotalWidth() {
         realLength = Number(calibrationRatio) * Number(pixelLength);
 
         totalWidth = totalWidth + realLength;
-        console.log(totalWidth);
         // }
 
     })
@@ -220,14 +210,12 @@ function calcTotalArea() {
 }
 
 //Calculate volume of all objects on canavas
-function calcTotalVolume(){
+async function calcTotalVolume(){
     var totalVolume = 0;
     var objects = canvas.getObjects();
-
-    objects.forEach(async(object) => {
+    for (const object of objects){
         totalVolume = totalVolume + await calcVolume(object);
-    });
-    console.log(totalVolume);
+    }
     document.getElementById("totalVolumeOutput").value = (totalVolume).toFixed(2);
 }
 
@@ -253,25 +241,26 @@ async function pixelToDistanceRatio() {
             // ipcRenderer.send('errorMessage', err.message);
         }
     }
-
-
 }
 
-function getActiveLengthWidth() {
+//Output length, width, area, volume, of selected object on canvas
+async function getActiveDimensions() {
     var activeObject = canvas.getActiveObject();
     activeLength = activeObject.width;
     activeWidth = activeObject.height;
+    var activeArea = await calcArea(activeObject);
+    var activeVolume = await calcVolume(activeObject);
 
-    console.log(activeLength);
-    document.getElementById("lengthOutput").value = (activeLength * calibrationRatio).toFixed(4);
-    document.getElementById("widthOutput").value = (activeWidth * calibrationRatio).toFixed(4);
+    document.getElementById("lengthOutput").value = (activeLength * calibrationRatio).toFixed(2);
+    document.getElementById("widthOutput").value = (activeWidth * calibrationRatio).toFixed(2);
+    document.getElementById("areaOutput").value = (activeArea).toFixed(2);
+    document.getElementById("volumeOutput").value = (activeVolume).toFixed(2);
 }
 
 //Find pixel length of beginning and end position of line, convert to real length by ratio and output
 function lineLength(line) {
     pixelLength = line.width;
     realLength = Number(calibrationRatio) * Number(pixelLength);
-    console.log(pixelLength, realLength);
     document.getElementById("lengthOutput").value = realLength.toFixed(4);
 }
 
@@ -281,7 +270,6 @@ async function getDepth(){
         var species = getSpecies();
         //get species depth
         var result = await knex('species').select("depth").where('speciesID', species);
-        console.log("result");
 
         var depth;
         var setting = getSettings();
@@ -291,7 +279,6 @@ async function getDepth(){
         else{
             depth = result[0].depth;
         }
-        console.log(depth)
         return depth.valueOf();
     } catch (error) {
         ipcRenderer.send('errorMessage', win.id, "Please select species");
@@ -302,25 +289,22 @@ async function getDepth(){
 function getShape() {
     var e = document.getElementById("shapeSelect");
     var text = e.options[e.selectedIndex].text;
-    console.log(text);
     return text;
 }
-
+//Get selected species from dropdown
 function getSpecies() {
     var e = document.getElementById("speciesSelect");
     var text = e.options[e.selectedIndex].id;
-    console.log(text);
     return text;
     
 }
-
+//Get calibration setting from dropdown
 function getCalibration() {
     var e = document.getElementById("calibrationSelect");
     var text = e.options[e.selectedIndex].id;
-    console.log(text);
     return text;
 }
-
+//Get Settings
 function getSettings() {
     var setting = {
         lengthOnly: document.getElementById("lengthOnly").checked,
@@ -329,31 +313,28 @@ function getSettings() {
         manualDepth: document.getElementById("setManualDepth").checked,
         naturalUnit: document.getElementById("setNaturalUnit").checked
     }
-
-    console.log(setting);
     return setting;
 
 }
-
+//If no objects on canvas are selected, empty output
 function unselect() {
     document.getElementById("lengthOutput").value = "";
     document.getElementById("widthOutput").value = "";
     document.getElementById("areaOutput").value = "";
     document.getElementById("volumeOutput").value = "";
 }
+//If object is selected on canvas, get dimensions of selected object
 function select(e) {
     var object = canvas.getActiveObject();
     onObjectScaled(e);
-    getActiveLengthWidth();
-    // console.log("TEst");
-    // console.log(e);
-    // onObjectScaled(e);
-}
+    getActiveDimensions();
 
+}
+//If object is updated, get dimensions of selected object
 function updated(e) {
-    getActiveLengthWidth();
+    getActiveDimensions();
 }
-
+//Submit 
 async function submit() {
     var species = getSpecies();
     var e = document.getElementById("speciesSelect");
@@ -401,16 +382,12 @@ async function submit() {
             naturalUnitID: naturalUnitID[0].maxID + 1
         }
 
-        
-
         for (var i = 0; i < mult; i++){
             //Insert measurement into db
             var result = await knex('measures').insert(measure);
-            console.log(result);
             refreshMeasureTable();
         }
         
-
         if (document.getElementById("clearOnEnter").checked) {
             clearOutputs();
             clearCanvas();
@@ -431,7 +408,6 @@ function refreshMeasureTable() {
 //Calls area calc function depending on shape base
 function calcArea(obj) {
     var type = obj.type;
-    console.log(type);
     if (type === "rect") {
         return rectArea(obj);
     }
@@ -450,12 +426,12 @@ function calcArea(obj) {
 }
 
 //Calc volume depending on shape
-function calcVolume(obj){
+async function calcVolume(obj){
     var type = obj.type;
     var colour = obj.stroke;
     //3D Ellipse
     if (type === "ellipse" && colour === "blue") {
-        return ellipsoidVolume(obj);
+        return ellipsoidVolume(obj);   
     }
     //Cylinder
     else if (type === "ellipse" && colour === "red") {
@@ -471,7 +447,7 @@ function calcVolume(obj){
     }
     //Cuboid
     else if (type === "rect" && colour === "red") {
-        return cuboidVolume(obj);
+        return await cuboidVolume(obj);
     }
     //Tetradron
     else if (type === "triangle" && colour === "blue") {
@@ -486,8 +462,6 @@ function calcVolume(obj){
 
 //Calc Area of Rectangle
 function rectArea(rect) {
-    console.log("rect");
-    console.log(rect);
     //Slight measuring issue with rect.width = inside perimeter while line.width = outside
     var area = rect.width * rect.height * Math.pow(calibrationRatio, 2);
     document.getElementById("lengthOutput").value = (rect.width * calibrationRatio).toFixed(2);
@@ -497,7 +471,6 @@ function rectArea(rect) {
 }
 //Calc Area of Circle
 function circleArea(circ) {
-    console.log("circle");
     var area = Math.PI * Math.pow(circ.radius, 2) * Math.pow(calibrationRatio, 2);
     document.getElementById("lengthOutput").value = (circ.width * calibrationRatio).toFixed(2);
     document.getElementById("widthOutput").value = (circ.height * calibrationRatio).toFixed(2);
@@ -529,8 +502,6 @@ function ellipsoidVolume(el){
 //Calc Volume of Cylinder
 async function cylinderVolume(el){
     var depth = await getDepth();
-    console.log(typeof depth)
-    console.log(depth)
     var volume = depth * el.rx * el.ry * Math.PI * Math.pow(calibrationRatio, 2);
     document.getElementById("volumeOutput").value = volume.toFixed(2);
     return volume;
@@ -570,7 +541,7 @@ async function prismVolume(tri){
     document.getElementById("volumeOutput").value = volume.toFixed(2);
     return volume;
 }
-
+//Draw Line on canvas
 function drawLine() {
     var line = new fabric.Line([100, 100, 200, 100], {
         left: 100,
@@ -592,7 +563,7 @@ function drawLine() {
 
     canvas.add(line);
 }
-
+//Draw rectangle on canvas
 function drawRect(colour) {
     var rect = new fabric.Rect({
         left: 100,
@@ -605,7 +576,7 @@ function drawRect(colour) {
     });
     canvas.add(rect);
 }
-
+//Draw triangle on canvas
 function drawTriangle(colour) {
     var triangle = new fabric.Triangle({
         left: 100,
@@ -618,6 +589,7 @@ function drawTriangle(colour) {
     });
     canvas.add(triangle);
 }
+//Draw ellipse on canvas
 function drawEllipse(colour) {
     var ellipse = new fabric.Ellipse({
         left: 100,
@@ -630,6 +602,7 @@ function drawEllipse(colour) {
     });
     canvas.add(ellipse);
 }
+//Draw circle on canvas
 function drawCircle(colour) {
     var circle = new fabric.Circle({
         left: 100,
@@ -644,6 +617,11 @@ function drawCircle(colour) {
 
 //Draw controller 
 function draw() {
+    //check if species has been selected 
+    if(!getSpecies()){
+        ipcRenderer.send('errorMessage', win.id, "Please select species");
+        return;
+    }
     var shape = getShape();
     // shape = "Line";
     if (shape === "Line") {
@@ -693,7 +671,7 @@ function draw() {
 /************************************************************
         MANUAL MODE FUNCTIONS 
 *************************************************************/
-
+//Sets to manual mode
 function manualMode() {
     var lengthLine = new fabric.Line([100, 100, 200, 100], {
         id: 'lengthLine',
@@ -773,6 +751,7 @@ async function manualModeOutput() {
     document.getElementById("totalAreaOutput").value = area.toFixed(2);
 }
 
+//Change between manual and automatic views
 function changeView() {
     var setting = getSettings();
 
@@ -808,13 +787,9 @@ function changeView() {
         document.querySelector('#naturalUnitMultiplierInput').style.display = 'none';
         document.querySelector('#naturalUnitMultiplierInputLbl').style.display = 'none';
     }
-
-    console.log(mode);
     
     //Display all values
     if (mode === "automatic") {
-        console.log(canvas.getObjects().size);
-        console.log(canvas.getObjects().length);
         if (canvas.getObjects().length > 1) {
             document.querySelector('#totalLengthOutputLbl').style.display = 'initial';
             document.querySelector('#totalLengthOutput').style.display = 'initial';
@@ -915,7 +890,6 @@ function devTest() {
 //Load Calibrations Dropdown
 async function loadCalibrationSelect() {
     var result = await knex('calibrations').select("calibrationID", "calibrationName");
-    console.log(result);
 
     //Clear options 
     removeOptions(document.getElementById("calibrationSelect"));
@@ -974,14 +948,12 @@ function cancelCalibration() {
 async function setCalibrationFromDB() {
     calibrationID = getCalibration();
     var result = await knex('calibrations').select('pixelToDistanceRatio').where('calibrationID', calibrationID);
-    console.log(result[0].pixelToDistanceRatio);
     calibrationRatio = result[0].pixelToDistanceRatio;
     document.getElementById("pdRatio").value = calibrationRatio;
 }
 
 //Clear options from select dropdown
 function removeOptions(selectBox) {
-    console.log(selectBox);
     if (selectBox) {
         for (var i = selectBox.options.length - 1; i > 0; i--) {
             selectBox.remove(i);

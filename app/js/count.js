@@ -7,7 +7,6 @@ const electron = require('electron');
 const { ipcRenderer } = electron;
 var win = electron.remote.getCurrentWindow();
 const settings = require('electron-settings');
-console.log(win, win.id);
 
 var markerID;
 var speciesOption = [];
@@ -34,7 +33,6 @@ async function loadSubsampleIDs() {
     var result = await knex('subsamples').select('subsampleID');
     var option;
 
-    
     option = document.createElement("option");
     option.text = "Add Subsample";
     option.value = "Add Subsample";
