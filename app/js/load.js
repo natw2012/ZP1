@@ -753,8 +753,8 @@ function loadDashboard() {
     loadSpeciesMeasureChart();
     loadBiomassSampleSumChart();
     // loadSizeChart();
-    loadBarChart();
-    loadRadarChart();
+    // loadBarChart();
+    // loadRadarChart();
 }
 
 

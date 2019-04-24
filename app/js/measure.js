@@ -374,8 +374,8 @@ async function submit() {
         naturalUnitID = await knex('measures').max({maxID: 'measureID'});
         let measure = {
             speciesID: species,
-            length: document.getElementById("lengthOutput").value,
-            width: document.getElementById("widthOutput").value,
+            length: document.getElementById("totalLengthOutput").value,
+            width: document.getElementById("totalWidthOutput").value,
             area: document.getElementById("totalAreaOutput").value,
             volume: document.getElementById("totalVolumeOutput").value,
             subsampleID: document.getElementById("subsampleIDSelect").value,
